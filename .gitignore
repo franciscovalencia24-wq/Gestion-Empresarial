@@ -1,0 +1,56 @@
+# ─── Seguridad: NUNCA subir credenciales al repositorio ───────────────────────
+.env
+
+# ─── Entorno virtual Python ───────────────────────────────────────────────────
+venv/
+.venv/
+env/
+
+# ─── Base de datos local (contiene datos privados de clientes) ────────────────
+data/processed/*.db
+data/processed/*.sqlite
+data/processed/*.sql
+data/vector_db_local/
+db.sqlite3
+data/crm_database.db
+*.sqlite3
+
+# ─── Resguardos y Archivos Pesados (>100MB) ───────────────────────────────────
+backups/
+*.zip
+*.tar.gz
+*.mp4
+*.pptx
+*.docx
+
+# ─── Sesión de WhatsApp (contiene tokens de autenticación) ───────────────────
+data/whatsapp_session/
+
+# ─── Archivos cacheados de Python ─────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# ─── Archivos de datos sensibles (no compartir) ───────────────────────────────
+data/raw/*.xlsx
+data/raw/*.csv
+*.csv
+
+# ─── Archivos temporales del sistema ──────────────────────────────────────────
+*.tmp
+*.log
+*.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Capturas de diagnóstico de Playwright ────────────────────────────────────
+data/wa_error*.png
+debug_fallo*.png
+
+# ─── IDEs y editores ──────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -1,61 +1,15 @@
-import streamlit as st
 import pandas as pd
-import plotly.express as px
 import os
 import sys
+import logging
 import tempfile
 import subprocess
-import logging
-from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, Float, Date, Text
-from sqlalchemy.orm import declarative_base, sessionmaker
 
-# Configuración de Página Streamlit
-st.set_page_config(
-    page_title="Gestión Empresarial - FV Asesorías",
-    page_icon="🏢",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+sys.path.append(os.getcwd())
+from src.database.connection import SessionLocal
+from src.database.models import CompanyFinancialMovement, CompanyAccount
 
-# Prevenir que la traducción automática de Google Chrome rompa el DOM de React
-st.markdown("""
-<head>
-    <meta name="google" content="notranslate">
-</head>
-<style>
-    html { translate: no !important; }
-</style>
-""", unsafe_allow_html=True)
-
-# -----------------------------------------------------------------------------
-# BASE DE DATOS E INGESTION AUTOCONTENIDA (SQLite)
-# -----------------------------------------------------------------------------
-DB_PATH = "sqlite:///data/crm_database.db"
-os.makedirs("data", exist_ok=True)
-engine = create_engine(DB_PATH, connect_args={"check_same_thread": False})
-Base = declarative_base()
-
-class CompanyFinancialMovement(Base):
-    __tablename__ = 'company_financial_movements'
-    id = Column(Integer, primary_base=True, primary_key=True, autoincrement=True)
-    empresa = Column(String(100), default="FV Asesorías SpA")
-    tipo_movimiento = Column(String(50)) # INGRESO, EGRESO, PRESTAMO_SOCIO, DEVOLUCION_SOCIO, MOVIMIENTO_CTA_CTE
-    categoria = Column(String(100)) # FACTURACION, GASTO, PRÉSTAMO, etc.
-    fecha = Column(Date)
-    periodo = Column(String(20))
-    folio_factura = Column(String(50))
-    rut_contraparte = Column(String(20))
-    razon_social = Column(String(200))
-    concepto = Column(Text)
-    monto_neto = Column(Float, default=0.0)
-    monto_iva = Column(Float, default=0.0)
-    monto_total = Column(Float, default=0.0)
-    cuenta_corriente = Column(String(100))
-    observaciones = Column(Text)
-
-Base.metadata.create_all(engine)
-SessionLocal = sessionmaker(bind=engine)
+logging.basicConfig(level=logging.INFO)
 
 def normalize_period(per_raw, fecha_dt=None):
     if pd.notna(per_raw):
@@ -70,7 +24,7 @@ def normalize_period(per_raw, fecha_dt=None):
 
 def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesorías SpA"):
     if not os.path.exists(excel_path):
-        return {"status": "error", "message": f"El archivo '{excel_path}' no se encuentra."}
+        return {"status": "error", "message": f"El archivo {excel_path} no existe en la raíz del proyecto."}
 
     db = SessionLocal()
     try:
@@ -82,21 +36,24 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
             xl = pd.ExcelFile(temp_path)
 
         added_count = 0
+
+        # Limpiar registros previos de la empresa para evitar duplicaciones al re-sincronizar
         db.query(CompanyFinancialMovement).filter(CompanyFinancialMovement.empresa == company_name).delete()
         db.commit()
 
+        # PARSEAR HOJA DETALLE 26 (Fuente oficial de Ingresos, Egresos y Movimientos de Socios)
         if "DETALLE 26" in xl.sheet_names:
             df_det = xl.parse("DETALLE 26")
             
-            # 1. ABONOS (Ingresos: Cols 0-7)
+            # 1. Parsear ABONOS (Ingresos Brutos: Cols 0-7)
             for idx, row in df_det.iterrows():
-                fecha_raw = row.iloc[0]
-                folio_raw = row.iloc[1]
-                concepto_raw = row.iloc[2]
-                periodo_raw = row.iloc[3]
-                neto_raw = row.iloc[5]
-                iva_raw = row.iloc[6]
-                total_raw = row.iloc[7]
+                fecha_raw = row.iloc[0] # FECHA
+                folio_raw = row.iloc[1] # FOLIO / NRO
+                concepto_raw = row.iloc[2] # CONCEPTO
+                periodo_raw = row.iloc[3] # PERIODO
+                neto_raw = row.iloc[5] # NETO
+                iva_raw = row.iloc[6] # IVA
+                total_raw = row.iloc[7] # TOTAL
 
                 if pd.notna(total_raw) and isinstance(total_raw, (int, float)) and total_raw > 0:
                     concepto_str = str(concepto_raw).strip() if pd.notna(concepto_raw) else ""
@@ -105,7 +62,8 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
 
                     fecha_dt = None
                     if pd.notna(fecha_raw):
-                        try: fecha_dt = pd.to_datetime(fecha_raw).date()
+                        try:
+                            fecha_dt = pd.to_datetime(fecha_raw).date()
                         except: pass
                     
                     periodo_str = normalize_period(periodo_raw, fecha_dt)
@@ -128,15 +86,15 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
                     db.add(mov)
                     added_count += 1
 
-            # 2. EGRESOS (Gastos: Cols 9-16)
+            # 2. Parsear EGRESOS (Gastos / Pagos: Cols 9-16)
             for idx, row in df_det.iterrows():
-                fecha_raw = row.iloc[9]
-                proveedor_raw = row.iloc[11]
-                detalle_raw = row.iloc[12]
-                cuenta_raw = row.iloc[13]
-                neto_raw = row.iloc[14]
-                iva_raw = row.iloc[15]
-                total_raw = row.iloc[16]
+                fecha_raw = row.iloc[9] # FECHA.1
+                proveedor_raw = row.iloc[11] # PROVEEDOR / ENTIDAD
+                detalle_raw = row.iloc[12] # DETALLE
+                cuenta_raw = row.iloc[13] # CUENTA CORRIENTE
+                neto_raw = row.iloc[14] # NETO
+                iva_raw = row.iloc[15] # IVA
+                total_raw = row.iloc[16] # TOTAL
 
                 if pd.notna(total_raw) and isinstance(total_raw, (int, float)) and total_raw > 0:
                     prov_str = str(proveedor_raw).strip() if pd.notna(proveedor_raw) else ""
@@ -145,12 +103,14 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
 
                     fecha_dt = None
                     if pd.notna(fecha_raw):
-                        try: fecha_dt = pd.to_datetime(fecha_raw).date()
+                        try:
+                            fecha_dt = pd.to_datetime(fecha_raw).date()
                         except: pass
                     
                     periodo_str = normalize_period(None, fecha_dt)
                     det_str = str(detalle_raw).strip() if pd.notna(detalle_raw) else ""
                     cuenta_str = str(cuenta_raw).strip() if pd.notna(cuenta_raw) else "CTA. CTE. BCI: FV ASESORIAS"
+
                     concepto_full = f"{prov_str} - {det_str}".strip(" -")
 
                     cat = "GASTO / COMPRA"
@@ -178,7 +138,7 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
                     db.add(mov)
                     added_count += 1
 
-            # 3. MOVIMIENTOS SOCIOS (Cols 18-21)
+            # 3. Parsear MOVIMIENTOS CTA CTE Y PRÉSTAMOS A SOCIOS (Cols 18-21)
             for idx, row in df_det.iterrows():
                 if len(row) > 21:
                     fecha_raw = row.iloc[18]
@@ -193,16 +153,19 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
 
                         fecha_dt = None
                         if pd.notna(fecha_raw):
-                            try: fecha_dt = pd.to_datetime(fecha_raw).date()
+                            try:
+                                fecha_dt = pd.to_datetime(fecha_raw).date()
                             except: pass
 
                         periodo_str = normalize_period(None, fecha_dt)
                         cuenta_str = str(cuenta_raw).strip() if pd.notna(cuenta_raw) else "CTA. CTE. BANCO CHILE: FCO"
 
+                        # Identificar Socio (Francisco Valencia vs Natalia Tapia)
                         socio_nombre = "FRANCISCO VALENCIA (SOCIO)"
                         if "NATALIA" in cuenta_str.upper() or "NATALIA" in conc_str.upper():
                             socio_nombre = "NATALIA TAPIA (SOCIA)"
 
+                        # Clasificar Préstamo a Socio o Devolución/Reembolso
                         tipo_mov = "MOVIMIENTO_CTA_CTE"
                         cat = "REEMBOLSO GASTO / COMPRA SOCIO"
                         conc_upper = conc_str.upper()
@@ -235,21 +198,19 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
                         added_count += 1
 
         db.commit()
-        return {"status": "success", "message": f"Sincronizados {added_count} registros."}
+        return {
+            "status": "success",
+            "message": f"Se importaron exitosamente {added_count} movimientos contables reales desde '{excel_path}' para {company_name}."
+        }
+
     except Exception as e:
         db.rollback()
-        return {"status": "error", "message": str(e)}
+        import traceback
+        traceback.print_exc()
+        return {"status": "error", "message": f"Error importando Excel: {str(e)}"}
     finally:
         db.close()
 
-def fmt_money(val):
-    if val is None or pd.isna(val): return "$ 0"
-    return f"$ {val:,.0f}".replace(",", ".")
-
-# -----------------------------------------------------------------------------
-# INTERFAZ DE USUARIO PRINCIPAL
-# -----------------------------------------------------------------------------
-from src.web.company_management_ui import render_company_management_ui
-
-render_company_management_ui()
-
+if __name__ == "__main__":
+    res = import_fv_excel()
+    print(res)

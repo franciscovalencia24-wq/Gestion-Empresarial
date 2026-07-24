@@ -1,0 +1,257 @@
+﻿import os
+import markdown
+from xhtml2pdf import pisa
+import base64
+from datetime import datetime
+import io
+
+try:
+    from src.database.models import SessionLocal, Prospect
+    def get_client_name(rut):
+        if not rut: return "N/A"
+        db = SessionLocal()
+        try:
+            cliente = db.query(Prospect).filter(Prospect.rut == rut).first()
+            if cliente:
+                return cliente.nombre if cliente.nombre else f"RUT: {rut}"
+            return f"RUT: {rut}"
+        except:
+            return f"RUT: {rut}"
+        finally:
+            db.close()
+except ImportError:
+    def get_client_name(rut):
+        return f"RUT: {rut}"
+
+def get_fv_logo_b64():
+    # Priorizar SVG segÃºn reglas
+    svg_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "assets", "NUEVO LOGO FV.svg")
+    png_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "assets", "NUEVO LOGO FV.png")
+    
+    if os.path.exists(svg_path):
+        with open(svg_path, "rb") as f:
+            return "data:image/svg+xml;base64," + base64.b64encode(f.read()).decode('utf-8')
+    elif os.path.exists(png_path):
+        with open(png_path, "rb") as f:
+            return "data:image/png;base64," + base64.b64encode(f.read()).decode('utf-8')
+    return ""
+
+def get_altus_logo_b64():
+    # Priorizar SVG segÃºn reglas
+    svg_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "assets", "Logo_ALTUS AI_Principal.svg")
+    png_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "assets", "ALTUS_AI_LOGO_BORDES_SUAVIZADOS.png")
+    
+    if os.path.exists(svg_path):
+        with open(svg_path, "rb") as f:
+            return "data:image/svg+xml;base64," + base64.b64encode(f.read()).decode('utf-8')
+    elif os.path.exists(png_path):
+        with open(png_path, "rb") as f:
+            return "data:image/png;base64," + base64.b64encode(f.read()).decode('utf-8')
+    return ""
+
+def generar_pdf_analisis_integral(ticker, tech_opinion, fund_opinion, is_generic=True, client_rut=None):
+    fv_b64 = get_fv_logo_b64()
+    altus_b64 = get_altus_logo_b64()
+    fecha_hoy = datetime.now().strftime("%d-%m-%Y")
+    
+    # Resolver nombre de destinatario
+    if is_generic:
+        destinatario = "Reporte de Mercado (CarÃ¡cter General)"
+    else:
+        nombre_cliente = get_client_name(client_rut)
+        destinatario = f"Preparado exclusivamente para: {nombre_cliente}"
+    
+    md_content = f"""
+## 1. Veredicto Cuantitativo (AnÃ¡lisis TÃ©cnico)
+
+{tech_opinion if tech_opinion else 'No se solicitÃ³ anÃ¡lisis tÃ©cnico.'}
+
+---
+
+## 2. Veredicto Corporativo (AnÃ¡lisis Fundamental)
+
+{fund_opinion if fund_opinion else 'No se solicitÃ³ anÃ¡lisis fundamental.'}
+
+---
+
+## MetodologÃ­a y Fuentes de Datos (Transparencia)
+
+Este informe ha sido generado de manera automatizada utilizando **Altus AI**, combinando procesamiento de lenguaje natural y motores matemÃ¡ticos cuantitativos.
+
+*   **ConexiÃ³n y Fuentes:** Los datos de mercado, balances financieros, ratios y precios de cierre son obtenidos en tiempo real a travÃ©s de conexiones vÃ­a API con proveedores de grado institucional (Yahoo Finance / yfinance API, Alpha Vantage).
+*   **CÃ¡lculos MatemÃ¡ticos (Cuantitativos):** Los indicadores tÃ©cnicos como RSI (Relative Strength Index), MACD (Moving Average Convergence Divergence) y Bandas de Bollinger son calculados algorÃ­tmicamente sobre las series de tiempo del activo. Estas mÃ©tricas estadÃ­sticas evalÃºan el momentum, la volatilidad y la tendencia estructural del instrumento.
+*   **CÃ¡lculos Fundamentales:** Los ratios corporativos (P/E Ratio, P/B Ratio, Free Cash Flow) son procesados directamente desde los reportes trimestrales y anuales de la compaÃ±Ã­a emisora, estandarizando la valoraciÃ³n actual contra mÃ©tricas histÃ³ricas.
+*   **Nota Legal:** El presente documento es netamente informativo e ilustrativo. Las conclusiones arrojadas por los modelos matemÃ¡ticos y de inteligencia artificial no constituyen una recomendaciÃ³n formal de compra o venta de valores.
+"""
+    
+    html_content = markdown.markdown(md_content, extensions=['tables'])
+    html_content = html_content.replace('<table>', '<table class="data-table">')
+    html_content = html_content.replace('<hr />', '<pdf:nextpage />').replace('<hr>', '<pdf:nextpage />')
+    html_content = html_content.replace('<li><p>', '<li>').replace('</p></li>', '</li>')
+    html_content = html_content.replace('<li>\n<p>', '<li>').replace('</p>\n</li>', '</li>')
+    
+    titulo = f"Informe de AnÃ¡lisis Integral - {ticker}"
+    
+    html_template = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <meta charset="utf-8">
+    <style>
+        @page {{
+            size: letter portrait;
+            margin: 1.5cm 1.5cm 2.5cm 1.5cm;
+            @frame footer {{
+                -pdf-frame-content: footer_content;
+                bottom: 1.0cm;
+                margin-left: 1.5cm;
+                margin-right: 1.5cm;
+                height: 1.0cm;
+            }}
+        }}
+        body {{
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 10.5pt;
+            color: #2b3035;
+            line-height: 1.6;
+            text-align: justify;
+        }}
+        p {{
+            text-align: justify;
+            margin-bottom: 12px;
+        }}
+        h1, h2, h3 {{
+            color: #0A2342;
+            margin-top: 18px;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }}
+        h1 {{ border-bottom: 2px solid #D4AF37; padding-bottom: 4px; font-size: 16pt; }}
+        h2 {{ font-size: 14pt; }}
+        h3 {{ font-size: 12pt; }}
+        
+        strong, b {{
+            font-weight: bold;
+            color: #0A2342; /* Las negritas en azul corporativo sutil para destacar */
+        }}
+        ul, ol {{
+            margin-top: 5px;
+            margin-bottom: 12px;
+            padding-left: 20px;
+        }}
+        li {{
+            margin-bottom: 6px;
+            text-align: left;
+        }}
+        em, i {{
+            font-style: italic;
+        }}
+        
+        .corp-desc {{
+            background-color: #f8fafc;
+            border-left: 3px solid #D4AF37;
+            padding: 12px;
+            font-size: 9pt;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #374151;
+        }}
+        .contact-info {{
+            background-color: #f8fafc;
+            border-left: 3px solid #D4AF37;
+            padding: 8px 12px;
+            font-size: 9pt;
+            font-weight: bold;
+            color: #0A2342;
+        }}
+        
+        table {{
+            width: 100%;
+            -pdf-keep-in-frame-mode: shrink;
+            border-collapse: collapse;
+        }}
+        th {{
+            background-color: #0A2342;
+            color: white;
+            font-weight: bold;
+            padding: 4px;
+            border: 1px solid #0A2342;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 7pt;
+        }}
+        td {{
+            border: 1px solid #cbd5e1;
+            padding: 4px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 7pt;
+        }}
+
+        #footer_content {{
+            font-size: 8pt;
+            color: #6b7280;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 5px;
+        }}
+    </style>
+    </head>
+    <body>
+        <table style="width: 100%; border-bottom: 2px solid #0A2342; margin-bottom: 20px; padding-bottom: 10px;">
+            <tr>
+                <td style="text-align: left; width: 40%; vertical-align: middle; border:none;">
+                    <img src="{fv_b64}" width="140">
+                </td>
+                <td style="text-align: right; width: 60%; vertical-align: middle; border:none;">
+                    <table style="width: 100%; border: none; margin: 0; padding: 0;">
+                        <tr style="border: none; background-color: transparent;">
+                            <td style="text-align: right; vertical-align: middle; border: none; padding-right: 12px;">
+                                <span style="font-size: 11pt; color: #0A2342; font-weight: bold;">Digital Family Office Analytics</span><br>
+                                <span style="font-size: 8pt; color: #6b7280;">Fecha de EmisiÃ³n: {fecha_hoy}</span>
+                            </td>
+                            <td style="text-align: right; width: 80px; vertical-align: middle; border: none; padding: 0;">
+                                <img src="{altus_b64}" width="65">
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        
+        <div style="text-align: right; font-size: 8pt; color: #6b7280; margin-bottom: 15px;">
+            AnÃ¡lisis procesado cuantitativamente por <strong>Altus AI</strong> para uso exclusivo de FV AsesorÃ­as e Inversiones
+        </div>
+
+        <h1>{titulo}</h1>
+        
+        <p><strong>Instrumento Analizado:</strong> {ticker}</p>
+        <p><strong>Destinatario:</strong> {destinatario}</p>
+
+        <div class="markdown-content">
+            {html_content}
+        </div>
+        
+        <div class="corp-desc">
+            <strong>Sobre FV AsesorÃ­as e Inversiones</strong><br>
+            Somos un Multi-Family Office Digital impulsado por Inteligencia Artificial. Combinamos la tecnologÃ­a de una Startup WealthTech con la exclusividad de la banca privada para auditar portafolios de forma cuantitativa, cruzar normativas tributarias complejas (como el Estate Tax) y entregar estrategias patrimoniales hiper-personalizadas de grado institucional.
+        </div>
+        
+        <div class="contact-info">
+            Contacto: contacto@fv-inversiones.com | +569 89779862
+        </div>
+        
+        <div id="footer_content">
+            FV AsesorÃ­as e Inversiones | AnÃ¡lisis Confidencial | PÃ¡gina <pdf:pagenumber> de <pdf:pagecount>
+        </div>
+    </body>
+    </html>
+    """
+    
+    result_bytes = io.BytesIO()
+    pisa_status = pisa.CreatePDF(html_template, dest=result_bytes, encoding='utf-8')
+    
+    if pisa_status.err:
+        return None
+    return result_bytes.getvalue()
+

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=Noto+Color+Emoji&display=swap');
+        :root {
+            --bg-color: #0b1016;
+            --card-bg: #111827;
+            --text-main: #f1f5f9;
+            --text-muted: #cbd5e1;
+            --accent-blue: #38bdf8;
+            --accent-red: #f87171;
+            --accent-green: #34d399;
+            --border-color: #1e293b;
+        }
+        body { margin: 0; padding: 0; font-family: 'Plus Jakarta Sans', 'Noto Color Emoji', sans-serif; background: var(--bg-color); color: var(--text-main); }
+        .slide { width: 2160px; height: 2160px; position: relative; box-sizing: border-box; padding: 120px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+        .logo-container img { height: 350px; object-fit: contain; transform: scale(1.2); }
+        
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 60px; }
+        .tag { background: #1e293b; padding: 16px 32px; border-radius: 40px; font-weight: 700; font-size: 28px; color: var(--accent-blue); letter-spacing: 2px;}
+        
+        /* Slide 1 */
+        .headline { font-size: 100px; font-weight: 800; line-height: 1.15; margin: 0 0 50px 0; text-transform: uppercase; }
+        .news-img-container { width: 100%; height: 1100px; background-color: var(--bg-color); border-radius: 32px; border: 4px solid var(--border-color); display: flex; align-items: center; justify-content: center; overflow: hidden;}
+        .news-img { width: 100%; height: 100%; object-fit: cover; }
+        .news-text { font-size: 40px; line-height: 1.5; color: var(--text-muted); text-align: justify; }
+        
+        /* Slide 2 & 3 Headers */
+        .section-title { font-size: 72px; font-weight: 800; color: var(--accent-blue); margin-bottom: 50px; text-transform: uppercase;}
+        
+        /* Slide 2 */
+        .grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 35px; }
+        .market-card { background: var(--card-bg); border-radius: 32px; padding: 35px; border: 3px solid var(--border-color); }
+        .region-title { font-size: 38px; font-weight: 800; margin-bottom: 25px; display: flex; align-items: center; gap: 15px;}
+        .idx-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; font-size: 30px; padding-bottom: 15px; border-bottom: 2px solid #1e293b; }
+        .idx-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .idx-val { font-weight: 700; }
+        .alza { color: var(--accent-green); }
+        .baja { color: var(--accent-red); }
+        .neutral { color: var(--text-muted); }
+        
+        /* Slide 3 Local */
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; }
+        .local-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .local-table th { font-size: 32px; color: var(--text-muted); text-transform: uppercase; text-align: right; padding-bottom: 20px; font-weight: 700; border-bottom: 3px solid var(--border-color);}
+        .local-table th:first-child { text-align: left; }
+        .local-table td { padding: 30px 0; border-bottom: 2px solid var(--border-color); font-size: 36px; font-weight: 700;}
+        .local-table tr:last-child td { border-bottom: none; }
+        
+        /* Modifiers */
+        .compact-table th { font-size: 26px; padding-bottom: 10px; }
+        .compact-table td { padding: 15px 0; font-size: 28px; }
+        
+        /* Arrows */
+        .arrow { width: 36px; height: 36px; display: inline-block; vertical-align: middle; margin-right: 10px; }
+        
+        /* Multifondos specific */
+        .fondo-circle { display: inline-flex; align-items: center; justify-content: center; width: 50px; height: 50px; border-radius: 50%; color: white; font-weight: 800; font-size: 32px; margin-right: 15px; }
+        .fondo-a { background-color: #ef4444; }
+        .fondo-b { background-color: #f97316; }
+        .fondo-c { background-color: #eab308; }
+        .fondo-d { background-color: #3b82f6; }
+        .fondo-e { background-color: #22c55e; }
+        
+        .relevance { font-size: 32px; text-transform: uppercase; text-align: right; font-weight: 800;}
+        .compact-table .relevance { font-size: 24px; }
+        
+        /* Slide 4: CTA */
+        .cta-container { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .cta-title { font-size: 110px; font-weight: 800; margin-bottom: 50px; line-height: 1.2;}
+        .cta-sub { font-size: 55px; color: var(--text-muted); margin-bottom: 80px; max-width: 1600px; line-height: 1.4;}
+        .contact-box { background: var(--card-bg); border: 4px solid var(--accent-blue); padding: 60px 80px; border-radius: 60px; font-size: 50px; font-weight: 700; width: 80%; margin-bottom: 80px;}
+        .contact-item { margin: 25px 0; display: flex; align-items: center; justify-content: center; gap: 30px;}
+        
+        /* Disclaimer */
+        .disclaimer-box { background: var(--card-bg); border-radius: 32px; padding: 40px; border: 3px solid var(--border-color); text-align: left; font-size: 26px; color: var(--text-muted); line-height: 1.5; margin-top: 40px; display: flex; gap: 40px;}
+        .disclaimer-section { flex: 1; text-align: justify;}
+        .disclaimer-title { color: #fff; font-weight: 800; font-size: 28px; margin-bottom: 15px; text-transform: uppercase; text-align: left;}
+    </style>
+</head>
+<body>
+
+    <!-- SLIDE 1: Noticia -->
+    <div class="slide" style="justify-content: flex-start; padding-top: 80px;">
+        <div class="top-bar">
+            <div class="tag">ALERTA DE MERCADO</div>
+            <div class="logo-container">
+                <img src="{{ json_data.logo_fv_base64 }}" alt="FV" style="height: 280px; object-fit: contain;">
+            </div>
+        </div>
+        <h1 class="headline">{{ json_data.titulo_principal }}</h1>
+        <div style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 60px; margin-top: 20px;">
+            <div class="news-text" style="display: flex; flex-direction: column; justify-content: flex-start;">
+                {{ json_data.noticia_completa }}
+                <div style="margin-top: 60px; font-size: 32px; color: #94a3b8; font-weight: 600; line-height: 1.6;">
+                    🗞️ Fuente: {{ json_data.fuente_noticia }}<br>🕒 {{ json_data.fecha_noticia }}
+                </div>
+            </div>
+            <div class="news-img-container">
+                <img class="news-img" src="{{ json_data.news_img_b64 }}">
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 2: Mercados Globales -->
+    <div class="slide" style="justify-content: flex-start; padding-top: 80px;">
+        <div class="top-bar">
+            <div class="tag">PANORAMA GLOBAL</div>
+            <div class="logo-container">
+                <img src="{{ json_data.logo_fv_base64 }}" alt="FV" style="height: 280px; object-fit: contain;">
+            </div>
+        </div>
+        <h2 class="section-title">POSIBLES IMPACTOS EN ÍNDICES GLOBALES</h2>
+        <div class="grid-6">
+            <div class="market-card" style="grid-column: span 3;">
+                <div class="region-title">🇺🇸 EE.UU. - 🇪🇺 EUROPA</div>
+                <table class="local-table compact-table">
+                    <tr><th style="text-align:left">Índice</th><th style="text-align:right">Valor</th><th style="text-align:right">Efecto</th><th style="text-align:right">Relevancia</th></tr>
+                    {% for region in ['USA', 'EUROPA'] %}
+                    {% for idx in json_data.impacto_global[region] %}
+                    {% if 'nan' not in idx.valor|string|lower %}
+                    <tr>
+                        <td>
+                            <span style="font-size: 14px; margin-right: 4px;">{% if region == 'USA' %}🇺🇸{% elif region == 'EUROPA' %}🇪🇺{% endif %}</span>
+                            {{ idx.nombre }}
+                        </td>
+                        <td class="idx-val" style="text-align: right; color: #fff;">{{ idx.valor }}</td>
+                        <td class="idx-val {% if idx.efecto == 'BAJA' %}baja{% elif idx.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}" style="text-align: right;">
+                            {% if idx.efecto == 'BAJA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17h10V7"/><path d="M7 7l10 10"/></svg>
+                            {% elif idx.efecto == 'ALZA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+                            {% else %}−{% endif %}
+                        </td>
+                        <td class="relevance {% if idx.efecto == 'BAJA' %}baja{% elif idx.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}" style="text-align: right;">{{ idx.relevancia }}</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                    {% endfor %}
+                </table>
+            </div>
+
+            <div class="market-card" style="grid-column: span 3;">
+                <div class="region-title">🌏 ASIA - 🌍 GLOBAL - 🌎 LATAM</div>
+                <table class="local-table compact-table">
+                    <tr><th style="text-align:left">Índice</th><th style="text-align:right">Valor</th><th style="text-align:right">Efecto</th><th style="text-align:right">Relevancia</th></tr>
+                    {% for region in ['ASIA', 'MSCI', 'CHILE', 'BRASIL'] %}
+                    {% for idx in json_data.impacto_global[region] %}
+                    {% if 'nan' not in idx.valor|string|lower %}
+                    <tr>
+                        <td>
+                            <span style="font-size: 14px; margin-right: 4px;">{% if region == 'ASIA' %}🌏{% elif region == 'MSCI' %}🌍{% elif region == 'CHILE' %}🇨🇱{% elif region == 'BRASIL' %}🇧🇷{% endif %}</span>
+                            {{ idx.nombre }}
+                        </td>
+                        <td class="idx-val" style="text-align: right; color: #fff;">{{ idx.valor }}</td>
+                        <td class="idx-val {% if idx.efecto == 'BAJA' %}baja{% elif idx.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}" style="text-align: right;">
+                            {% if idx.efecto == 'BAJA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17h10V7"/><path d="M7 7l10 10"/></svg>
+                            {% elif idx.efecto == 'ALZA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+                            {% else %}−{% endif %}
+                        </td>
+                        <td class="relevance {% if idx.efecto == 'BAJA' %}baja{% elif idx.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}" style="text-align: right;">{{ idx.relevancia }}</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                    {% endfor %}
+                </table>
+            </div>
+            
+            <!-- MONEDAS -->
+            <div class="market-card" style="grid-column: span 3;">
+                <div class="region-title">💵 MONEDAS</div>
+                <table class="local-table compact-table">
+                    <tr><th>Monedas</th><th>Valor</th><th>Efecto</th><th>Relevancia</th></tr>
+                    {% for item in json_data.impacto_local.monedas %}
+                    <tr>
+                        <td>{{ item.nombre }}</td>
+                        <td class="idx-val" style="text-align: right; color: #fff;">{{ item.valor }}</td>
+                        <td class="idx-val {% if item.efecto == 'BAJA' %}baja{% elif item.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}" style="text-align: right;">
+                            {% if item.efecto == 'BAJA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17h10V7"/><path d="M7 7l10 10"/></svg>
+                            {% elif item.efecto == 'ALZA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+                            {% else %}−{% endif %}
+                        </td>
+                        <td class="relevance {% if item.efecto == 'BAJA' %}baja{% elif item.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}">{{ item.relevancia }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            
+            <!-- COMMODITIES -->
+            <div class="market-card" style="grid-column: span 3;">
+                <div class="region-title">🛢️ COMMODITIES</div>
+                <table class="local-table compact-table">
+                    <tr><th>Commodities</th><th>Cierre</th><th>Efecto</th><th>Relevancia</th></tr>
+                    {% for item in json_data.impacto_local.commodities %}
+                    <tr>
+                        <td>{{ item.nombre }}</td>
+                        <td class="idx-val" style="text-align: right; color: #fff;">{{ item.valor|default('N/D') }}</td>
+                        <td class="idx-val {% if item.efecto == 'BAJA' %}baja{% elif item.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}" style="text-align: right;">
+                            {% if item.efecto == 'BAJA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17h10V7"/><path d="M7 7l10 10"/></svg>
+                            {% elif item.efecto == 'ALZA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+                            {% else %}−{% endif %}
+                        </td>
+                        <td class="relevance {% if item.efecto == 'BAJA' %}baja{% elif item.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}">{{ item.relevancia }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SLIDE 3: Mercado Local -->
+    <div class="slide" style="justify-content: flex-start; padding-top: 80px;">
+        <div class="top-bar">
+            <div class="tag">ANÁLISIS PREVISIONAL</div>
+            <div class="logo-container">
+                <img src="{{ json_data.logo_fv_base64 }}" alt="FV" style="height: 280px; object-fit: contain;">
+            </div>
+        </div>
+        <h2 class="section-title">POSIBLES IMPACTOS INSTRUMENTOS LOCALES</h2>
+        
+        <div class="grid-2">
+            <!-- Fondos Mutuos -->
+            <div class="market-card">
+                <table class="local-table">
+                    <tr><th>Fondos Mutuos</th><th>Efecto</th><th>Relevancia</th></tr>
+                    {% for item in json_data.impacto_local.fondos_mutuos %}
+                    <tr>
+                        <td>{{ item.nombre }}</td>
+                        <td class="idx-val {% if item.efecto == 'BAJA' %}baja{% elif item.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}" style="text-align: right;">
+                            {% if item.efecto == 'BAJA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17h10V7"/><path d="M7 7l10 10"/></svg>
+                            {% elif item.efecto == 'ALZA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+                            {% else %}−{% endif %}
+                        </td>
+                        <td class="relevance {% if item.efecto == 'BAJA' %}baja{% elif item.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}">{{ item.relevancia }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+            
+            <!-- Multifondos -->
+            <div class="market-card">
+                <table class="local-table">
+                    <tr><th>Multifondos</th><th>Efecto</th><th>Relevancia</th></tr>
+                    {% for item in json_data.impacto_local.multifondos %}
+                    {% if 'nan' not in item.nombre|string|lower %}
+                    {% set letra = item.nombre.replace('Fondo', '').strip() %}
+                    <tr>
+                        <td style="display: flex; align-items: center;">
+                            <span class="fondo-circle fondo-{{ letra|lower }}">{{ letra }}</span>
+                            <span style="font-size: 24px; color: var(--text-muted); font-weight: 600;">{{ 'Riesgoso (Hasta 80% RV)' if letra == 'A' else 'Riesgoso (Hasta 60% RV)' if letra == 'B' else 'Intermedio (Hasta 40% RV)' if letra == 'C' else 'Conservador (Hasta 20% RV)' if letra == 'D' else 'Conservador (Hasta 5% RV)' if letra == 'E' else '' }}</span>
+                        </td>
+                        <td class="idx-val {% if item.efecto == 'BAJA' %}baja{% elif item.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}" style="text-align: right;">
+                            {% if item.efecto == 'BAJA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17h10V7"/><path d="M7 7l10 10"/></svg>
+                            {% elif item.efecto == 'ALZA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+                            {% else %}−{% endif %}
+                        </td>
+                        <td class="relevance {% if item.efecto == 'BAJA' %}baja{% elif item.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}">{{ item.relevancia }}</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </table>
+            </div>
+        </div>
+        
+        {% if json_data.explicacion_multifondos %}
+        <div class="market-card" style="margin-top: 40px; border-left: 10px solid var(--accent-blue);">
+            <div style="font-size: 38px; line-height: 1.6; color: var(--text-main);">{{ json_data.explicacion_multifondos }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- SLIDE 4: Call to Action -->
+    <div class="slide" style="background: linear-gradient(180deg, #080c12 0%, #0f172a 100%);">
+        <div class="top-bar">
+            <div class="tag">RADIOGRAFÍA PATRIMONIAL</div>
+        </div>
+        <div class="cta-container">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 80px; margin-bottom: 80px;">
+                <img src="{{ json_data.logo_fv_base64 }}" style="height: 380px; object-fit: contain;" alt="FV">
+                <div style="font-size: 80px; color: #38bdf8; font-weight: 800; transform: translateY(-20px);">+</div>
+                <img src="{{ json_data.logo_altus_base64 }}" style="height: 190px; object-fit: contain; transform: scale(1.1);" alt="ALTUS AI">
+            </div>
+            
+            <div class="cta-title">¿Estás preparado para este escenario?</div>
+            <div class="cta-sub">Descubre cómo proteger tu portafolio ante estos desafíos con nuestro software avanzado ALTUS AI.</div>
+            
+            <div class="contact-box">
+                <div class="contact-item">✉️ contacto@fv-inversiones.com</div>
+                <div class="contact-item"><img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" alt="WA" style="width: 56px; height: 56px;"> +56 9 6677 9662</div>
+            </div>
+            
+            <div class="disclaimer-box">
+                <div class="disclaimer-section" style="border-right: 2px solid var(--border-color); padding-right: 40px;">
+                    <div class="disclaimer-title">Sobre FV Asesorías e Inversiones</div>
+                    Somos un Multi-Family Office Digital impulsado por Inteligencia Artificial. Combinamos la tecnología de una Startup WealthTech con la exclusividad de la banca privada para auditar portafolios de forma cuantitativa, cruzar normativas tributarias complejas y entregar estrategias patrimoniales hiper-personalizadas de grado institucional.
+                </div>
+                <div class="disclaimer-section" style="padding-left: 40px;">
+                    <div class="disclaimer-title">Aviso Legal</div>
+                    Las visiones y proyecciones macroeconómicas presentadas han sido procesadas mediante inteligencia artificial (Altus AI). Este documento no constituye una recomendación de inversión vinculante, sino una herramienta de información estratégica. Los mercados son volátiles y las rentabilidades pasadas no garantizan retornos futuros.
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

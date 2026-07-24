@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent-blue: #38bdf8;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-orange: #f97316;
+            --border-color: #334155;
+        }
+        
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            width: 2160px; /* Tamaño 4K vertical o cuadrado por slide */
+        }
+        
+        .slide {
+            width: 2160px;
+            height: 2160px;
+            padding: 100px 120px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            background-color: var(--bg-color);
+            border-bottom: 2px solid #000;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 60px;
+            width: 100%;
+        }
+
+        .tag {
+            background: rgba(56, 189, 248, 0.1);
+            color: var(--accent-blue);
+            padding: 20px 40px;
+            border-radius: 40px;
+            font-size: 36px;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 2px solid rgba(56, 189, 248, 0.2);
+        }
+
+        .tag-a {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--accent-red);
+            padding: 20px 40px;
+            border-radius: 40px;
+            font-size: 36px;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 2px solid rgba(239, 68, 68, 0.4);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+        }
+
+        .tag-b {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--accent-green);
+            padding: 20px 40px;
+            border-radius: 40px;
+            font-size: 36px;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 2px solid rgba(34, 197, 94, 0.4);
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+        }
+
+        .logo-container img {
+            height: 350px;
+            object-fit: contain;
+        }
+
+        /* Slide 1 - Portada */
+        .cover-title {
+            font-size: 130px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-top: 150px;
+            margin-bottom: 60px;
+            background: linear-gradient(90deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .cover-subtitle {
+            font-size: 60px;
+            color: var(--text-muted);
+            line-height: 1.4;
+            max-width: 1600px;
+        }
+        
+        .client-box {
+            margin-top: auto;
+            margin-bottom: 150px;
+            background: var(--card-bg);
+            border-left: 15px solid var(--accent-blue);
+            padding: 60px;
+            border-radius: 20px;
+        }
+        
+        .client-name {
+            font-size: 70px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 20px;
+        }
+        
+        .report-date {
+            font-size: 40px;
+            color: var(--text-muted);
+        }
+
+        /* Slide 2 & 3 - Secciones */
+        .section-title {
+            font-size: 80px;
+            font-weight: 800;
+            color: var(--accent-blue);
+            margin-bottom: 60px;
+            text-transform: uppercase;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 50px; }
+        
+        .metric-card {
+            background: var(--card-bg);
+            border-radius: 30px;
+            padding: 50px;
+            border: 3px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .metric-card.highlight {
+            border-color: var(--accent-blue);
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+        }
+        
+        .metric-label {
+            font-size: 36px;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+        
+        .metric-value {
+            font-size: 75px;
+            font-weight: 800;
+            color: #fff;
+        }
+        
+        .metric-value.red { color: var(--accent-red); }
+        .metric-value.green { color: var(--accent-green); }
+        .metric-value.blue { color: var(--accent-blue); }
+
+        .text-box {
+            background: rgba(51, 65, 85, 0.4);
+            border-radius: 30px;
+            padding: 50px;
+            font-size: 40px;
+            line-height: 1.6;
+            color: #e2e8f0;
+            border-left: 10px solid var(--accent-orange);
+            margin-top: 40px;
+        }
+
+        /* Slide 4 - Graficos */
+        .chart-container {
+            width: 100%;
+            height: 1100px;
+            background-color: var(--card-bg);
+            border-radius: 40px;
+            border: 4px solid var(--border-color);
+            margin-top: 40px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .chart-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .summary-box {
+            background: linear-gradient(90deg, rgba(34,197,94,0.1) 0%, rgba(56,189,248,0.1) 100%);
+            border: 3px solid var(--accent-green);
+            border-radius: 30px;
+            padding: 50px;
+            margin-top: 50px;
+            font-size: 48px;
+            font-weight: 700;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        /* Slide 5 - Disclaimer */
+        .cta-container { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+        .cta-title { font-size: 110px; font-weight: 800; margin-bottom: 50px; line-height: 1.2;}
+        .cta-sub { font-size: 55px; color: var(--text-muted); margin-bottom: 80px; max-width: 1600px; line-height: 1.4;}
+        .contact-box { background: var(--card-bg); border: 4px solid var(--accent-blue); padding: 60px 80px; border-radius: 60px; font-size: 50px; font-weight: 700; width: 80%; margin-bottom: 80px;}
+        .contact-item { margin: 25px 0; display: flex; align-items: center; justify-content: center; gap: 30px;}
+        
+        .disclaimer-box { background: var(--card-bg); border-radius: 32px; padding: 40px; border: 3px solid var(--border-color); text-align: left; font-size: 26px; color: var(--text-muted); line-height: 1.5; margin-top: 40px; display: flex; gap: 40px;}
+        .disclaimer-section { flex: 1; text-align: justify;}
+        .disclaimer-title { color: #fff; font-weight: 800; font-size: 28px; margin-bottom: 15px; text-transform: uppercase; text-align: left;}
+        
+    </style>
+</head>
+<body>
+
+    <!-- SLIDE 1: Portada -->
+    <div class="slide">
+        <div class="top-bar">
+            <div class="tag">SIMULADOR FINANCIERO</div>
+            <div class="logo-container">
+                <img src="{{ data.logo_fv_base64 }}" alt="FV">
+            </div>
+        </div>
+        
+        <h1 class="cover-title">ANÁLISIS COMPARATIVO:<br>CRÉDITO DE CONSUMO VS. DESCAPITALIZACIÓN</h1>
+        <p class="cover-subtitle" style="text-align: justify;">Una evaluación matemática para determinar si es más rentable financiar un proyecto con deuda bancaria o rescatando su capital invertido, considerando el costo de oportunidad y el interés compuesto.</p>
+        
+        <div class="client-box">
+            <div class="client-name">Preparado para: {{ data.cliente_nombre }}</div>
+            <div class="report-date">{{ data.fecha_reporte }}</div>
+        </div>
+    </div>
+
+    <!-- SLIDE 2: Análisis del Crédito -->
+    <div class="slide">
+        <div class="top-bar">
+            <div class="tag-a">🛑 ESCENARIO A: DEUDA BANCARIA</div>
+            <div class="logo-container">
+                <img src="{{ data.logo_fv_base64 }}" alt="FV">
+            </div>
+        </div>
+        <h2 class="section-title">CONDICIONES DEL CRÉDITO SOLICITADO</h2>
+        
+        <div class="grid-2" style="margin-bottom: 50px;">
+            <div class="metric-card">
+                <div class="metric-label">Monto Solicitado</div>
+                <div class="metric-value blue">{{ data.cr_monto }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Plazo Total</div>
+                <div class="metric-value">{{ data.cr_plazo_meses }} Meses</div>
+            </div>
+        </div>
+        
+        <div class="grid-3">
+            <div class="metric-card">
+                <div class="metric-label">Interés Total del Período</div>
+                <div class="metric-value">{{ data.cr_tasa_total }}%</div>
+            </div>
+            <div class="metric-card highlight">
+                <div class="metric-label">Valor Cuota Mensual</div>
+                <div class="metric-value">{{ data.cr_cuota }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Costo Total (Monto + Intereses)</div>
+                <div class="metric-value red">{{ data.cr_costo_total }}</div>
+            </div>
+        </div>
+        
+        <div class="text-box">
+            {{ data.texto_seguro }}
+        </div>
+    </div>
+
+    <!-- SLIDE 3: Análisis de Inversiones -->
+    <div class="slide">
+        <div class="top-bar">
+            <div class="tag-b">🌱 ESCENARIO B: INVERSIÓN Y COSTO DE OPORTUNIDAD</div>
+            <div class="logo-container">
+                <img src="{{ data.logo_fv_base64 }}" alt="FV">
+            </div>
+        </div>
+        <h2 class="section-title">PROYECCIÓN DEL CAPITAL SI NO SE RESCATA</h2>
+        <p style="font-size: 40px; color: var(--text-muted); margin-bottom: 60px;">Si en lugar de retirar <strong>{{ data.cr_monto }}</strong> para financiar su proyecto usted opta por el crédito, su capital inicial seguirá invertido trabajando a interés compuesto por <strong>{{ data.cr_plazo_meses }} meses ({{ data.cr_plazo_anios }} años)</strong>. Estos son los escenarios proyectados:</p>
+        
+        <div class="grid-3" style="margin-top: 80px;">
+            <div class="metric-card">
+                <div class="metric-label">Escenario Pesimista<br><span style="font-size: 28px; color: var(--accent-blue);">Retorno: {{ data.inv_tasa_cons }}% anual</span></div>
+                <div class="metric-value green" style="font-size: 65px; margin-top: 20px;">{{ data.inv_final_cons }}</div>
+                <div style="font-size: 32px; color: var(--text-muted); margin-top: 15px;">Ganancia: +{{ data.inv_ganancia_cons }}</div>
+            </div>
+            <div class="metric-card highlight">
+                <div class="metric-label">Escenario Base<br><span style="font-size: 28px; color: var(--accent-blue);">Retorno: {{ data.inv_tasa_mod }}% anual</span></div>
+                <div class="metric-value green" style="font-size: 65px; margin-top: 20px;">{{ data.inv_final_mod }}</div>
+                <div style="font-size: 32px; color: var(--text-muted); margin-top: 15px;">Ganancia: +{{ data.inv_ganancia_mod }}</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Escenario Optimista<br><span style="font-size: 28px; color: var(--accent-blue);">Retorno: {{ data.inv_tasa_opt }}% anual</span></div>
+                <div class="metric-value green" style="font-size: 65px; margin-top: 20px;">{{ data.inv_final_opt }}</div>
+                <div style="font-size: 32px; color: var(--text-muted); margin-top: 15px;">Ganancia: +{{ data.inv_ganancia_opt }}</div>
+            </div>
+        </div>
+        
+        <div class="text-box" style="border-left-color: var(--accent-green); margin-top: 80px;">
+            <strong>El poder del Interés Compuesto:</strong><br>
+            Descapitalizarse implica incurrir en un "Costo de Oportunidad", perdiendo todos los retornos futuros que ese dinero habría generado durante el plazo del crédito.
+        </div>
+    </div>
+
+    <!-- SLIDE 4: Gráfico y Conclusión -->
+    <div class="slide">
+        <div class="top-bar">
+            <div class="tag">COMPARATIVA VISUAL</div>
+            <div class="logo-container">
+                <img src="{{ data.logo_fv_base64 }}" alt="FV">
+            </div>
+        </div>
+        <h2 class="section-title">CRECIMIENTO PATRIMONIAL VS. COSTO DE DEUDA</h2>
+        
+        <div class="chart-container">
+            <img class="chart-img" src="{{ data.chart_b64 }}">
+        </div>
+        
+        <div class="summary-box">
+            {{ data.conclusion_html }}
+        </div>
+    </div>
+
+    <!-- SLIDE 5: Call to Action -->
+    <div class="slide" style="background: linear-gradient(180deg, #080c12 0%, #0f172a 100%);">
+        <div class="top-bar">
+            <div class="tag">ASESORÍA ESTRATÉGICA</div>
+        </div>
+        <div class="cta-container">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 80px; margin-bottom: 80px;">
+                <img src="{{ data.logo_fv_base64 }}" style="height: 450px; object-fit: contain;" alt="FV">
+                <div style="font-size: 80px; color: #38bdf8; font-weight: 800;">+</div>
+                <img src="{{ data.logo_altus_base64 }}" style="height: 450px;" alt="ALTUS AI">
+            </div>
+            <h2 class="cta-title">Tome decisiones informadas<br>con análisis cuantitativo.</h2>
+            <p class="cta-sub">Consulte a su asesor patrimonial sobre cómo ejecutar la estrategia más eficiente para su patrimonio.</p>
+            
+            <div class="contact-box">
+                <div class="contact-item">✉️ contacto@fv-inversiones.com</div>
+                <div class="contact-item">💬 WhatsApp: +56 9 6677 9662</div>
+            </div>
+        </div>
+        
+        <div class="disclaimer-box">
+            <div class="disclaimer-section">
+                <div class="disclaimer-title">Sobre FV Asesorías</div>
+                En FV Asesorías e Inversiones nos dedicamos a ofrecer asesoramiento independiente y estrategias a medida, priorizando la protección y crecimiento del patrimonio de nuestros clientes a través de un análisis cuantitativo riguroso.
+            </div>
+            <div class="disclaimer-section">
+                <div class="disclaimer-title">Aviso Legal</div>
+                Este informe es generado por ALTUS AI y tiene fines exclusivamente informativos y educativos. Las proyecciones de rentabilidad presentadas son simulaciones matemáticas basadas en datos propuestos y no garantizan rendimientos futuros. La conveniencia de adquirir deuda o rescatar inversiones depende de la situación financiera, perfil de riesgo y objetivos de cada cliente. Se recomienda validar las tasas vigentes directamente con su institución financiera.
+            </div>
+        </div>
+    </div>
+</body>
+</html>
