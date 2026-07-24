@@ -109,63 +109,104 @@ def render_company_management_ui():
                 "Razón Social / Proveedor", "Concepto / Detalle", "Monto Neto", "IVA", "Monto Total", "Cuenta Corriente", "Observaciones"
             ])
 
-        # FORMULARIO NUEVO MOVIMIENTO
+        # FORMULARIO NUEVO MOVIMIENTO (INTERACTIVO Y REACTIVO EN TIEMPO REAL)
         if show_new_form:
             with st.expander("📝 Formulario de Registro Manual de Movimiento", expanded=True):
-                with st.form("form_nuevo_mov"):
-                    fc1, fc2, fc3 = st.columns(3)
-                    with fc1:
-                        n_tipo = st.selectbox("Tipo de Movimiento", ["EGRESO", "INGRESO", "PRESTAMO_SOCIO", "DEVOLUCION_SOCIO", "MOVIMIENTO_CTA_CTE"])
-                        n_categoria = st.selectbox("Categoría", ["ARRIENDO", "GASTO / COMPRA", "FACTURACION / ABONO", "PRÉSTAMO A SOCIO", "DEVOLUCIÓN PRÉSTAMO SOCIO", "REEMBOLSO GASTO / COMPRA SOCIO", "PAGO SUELDOS SOCIO", "IMPUESTOS F29", "OTROS"])
-                        n_fecha = st.date_input("Fecha", value=datetime.today())
-                    with fc2:
-                        n_folio = st.text_input("N° Factura / Folio", value="")
-                        n_rut = st.text_input("RUT Contraparte / Proveedor", value="")
-                        n_razon_opt = st.selectbox("Socio / Proveedor / Entidad", [
-                            "OTRO PROVEEDOR / ENTIDAD (ej: Arriendo Oficina / Inmobiliaria)",
-                            "FRANCISCO VALENCIA (SOCIO)",
-                            "NATALIA TAPIA (SOCIA)"
-                        ])
-                        if "OTRO" in n_razon_opt:
-                            n_razon = st.text_input("Nombre Razón Social / Proveedor", value="Inmobiliaria / Pago Arriendo")
-                        else:
-                            n_razon = n_razon_opt
-                    with fc3:
-                        n_concepto = st.text_input("Concepto / Detalle", value="Pago de Arriendo Oficina")
-                        n_neto = st.number_input("Monto Neto ($)", min_value=0, value=0, step=10000, format="%d", help="Sin decimales, ej: 200000 para $200.000")
-                        n_iva = st.number_input("Monto IVA ($)", min_value=0, value=0, step=1000, format="%d", help="Sin decimales, ej: 38000 para $38.000")
-                        n_cuenta = st.selectbox("Cuenta Corriente Destino/Origen", [
-                            "CTA. CTE. BCI: FV ASESORIAS",
-                            "CTA. CTE. BANCO CHILE: FCO",
-                            "CTA. CTE. BANCO SANTANDER: NATALIA",
-                            "CTA. CTE. BANCO CHILE: NATALIA"
-                        ])
+                fc1, fc2, fc3 = st.columns(3)
+                with fc1:
+                    n_tipo = st.selectbox("Tipo de Movimiento", ["EGRESO", "INGRESO", "PRESTAMO_SOCIO", "DEVOLUCION_SOCIO", "MOVIMIENTO_CTA_CTE"], key="n_mov_tipo")
+                    n_categoria = st.selectbox("Categoría", ["ARRIENDO", "GASTO / COMPRA", "FACTURACION / ABONO", "PRÉSTAMO A SOCIO", "DEVOLUCIÓN PRÉSTAMO SOCIO", "REEMBOLSO GASTO / COMPRA SOCIO", "PAGO SUELDOS SOCIO", "IMPUESTOS F29", "OTROS"], key="n_mov_cat")
+                    n_fecha = st.date_input("Fecha", value=datetime.today(), key="n_mov_fecha")
 
-                    st.info(f"💵 **Neto:** {fmt_money(n_neto)} | 🏛️ **IVA:** {fmt_money(n_iva)} | 💰 **Total Movimiento:** {fmt_money(n_neto + n_iva)}")
-                    submit_mov = st.form_submit_button("💾 Guardar Movimiento en BD")
-                    if submit_mov:
-                        n_total = n_neto + n_iva
-                        n_periodo = n_fecha.strftime("%Y-%m")
-                        new_db_mov = CompanyFinancialMovement(
-                            empresa=empresa_sel,
-                            tipo_movimiento=n_tipo,
-                            categoria=n_categoria,
-                            fecha=n_fecha,
-                            periodo=n_periodo,
-                            folio_factura=n_folio,
-                            rut_contraparte=n_rut,
-                            razon_social=n_razon,
-                            concepto=n_concepto,
-                            monto_neto=n_neto,
-                            monto_iva=n_iva,
-                            monto_total=n_total,
-                            cuenta_corriente=n_cuenta,
-                            observaciones="Registrado manualmente desde Dashboard Web"
+                with fc2:
+                    n_folio = st.text_input("N° Factura / Folio", value="", key="n_mov_folio")
+                    n_rut = st.text_input("RUT Contraparte / Proveedor", value="", key="n_mov_rut")
+                    n_razon_opt = st.selectbox("Socio / Proveedor / Entidad", [
+                        "OTRO PROVEEDOR / ENTIDAD (ej: Arriendo Oficina / Inmobiliaria)",
+                        "FRANCISCO VALENCIA (SOCIO)",
+                        "NATALIA TAPIA (SOCIA)"
+                    ], key="n_mov_razon_opt")
+                    if "OTRO" in n_razon_opt:
+                        n_razon = st.text_input("Nombre Razón Social / Proveedor", value="Inmobiliaria / Pago Arriendo", key="n_mov_razon_txt")
+                    else:
+                        n_razon = n_razon_opt
+
+                with fc3:
+                    n_concepto = st.text_input("Concepto / Detalle", value="Pago de Arriendo Oficina", key="n_mov_concepto")
+                    
+                    # MONTO NETO CON MOSTRADOR EN TIEMPO REAL
+                    default_neto = 200000 if n_categoria == "ARRIENDO" else 0
+                    n_neto = st.number_input(
+                        "Monto Neto ($)",
+                        min_value=0,
+                        value=default_neto,
+                        step=10000,
+                        format="%d",
+                        key="n_neto_input_val",
+                        help="Monto en pesos chilenos sin decimales"
+                    )
+                    
+                    # CASILLA CASILLA PARA CALCULAR IVA (19%) AUTOMÁTICAMENTE
+                    n_calc_iva = st.checkbox(
+                        "☑️ Calcular IVA (19%) automáticamente",
+                        value=False,
+                        key="n_chk_calc_iva_auto",
+                        help="Marca esta casilla si la factura o gasto incluye 19% IVA afecto. Déjala desmarcada para Arriendos u Honorarios Exentos."
+                    )
+                    
+                    if n_calc_iva:
+                        auto_iva = int(round(n_neto * 0.19))
+                        n_iva = st.number_input(
+                            f"Monto IVA (19%) ➔ {fmt_money(auto_iva)}",
+                            min_value=0,
+                            value=auto_iva,
+                            step=1000,
+                            format="%d",
+                            key="n_iva_val_auto"
                         )
-                        db.add(new_db_mov)
-                        db.commit()
-                        st.success("✅ Movimiento (Arriendo/Gasto) registrado exitosamente.")
-                        st.rerun()
+                    else:
+                        n_iva = st.number_input(
+                            f"Monto IVA ($) ➔ {fmt_money(0)}",
+                            min_value=0,
+                            value=0,
+                            step=1000,
+                            format="%d",
+                            key="n_iva_val_manual"
+                        )
+
+                    # ETIQUETA SOLICITADA: "Cuenta Corriente Origen"
+                    n_cuenta = st.selectbox("Cuenta Corriente Origen", [
+                        "CTA. CTE. BCI: FV ASESORIAS",
+                        "CTA. CTE. BANCO CHILE: FCO",
+                        "CTA. CTE. BANCO SANTANDER: NATALIA",
+                        "CTA. CTE. BANCO CHILE: NATALIA"
+                    ], key="n_mov_cuenta_sel")
+
+                n_total = n_neto + n_iva
+                st.info(f"💵 **Neto:** {fmt_money(n_neto)} | 🏛️ **IVA:** {fmt_money(n_iva)} {'(19% Calculado)' if n_calc_iva else '(Exento)'} | 💰 **Total Movimiento:** {fmt_money(n_total)}")
+
+                if st.button("💾 Guardar Movimiento en BD", key="btn_save_manual_mov_btn", type="primary"):
+                    n_periodo = n_fecha.strftime("%Y-%m")
+                    new_db_mov = CompanyFinancialMovement(
+                        empresa=empresa_sel,
+                        tipo_movimiento=n_tipo,
+                        categoria=n_categoria,
+                        fecha=n_fecha,
+                        periodo=n_periodo,
+                        folio_factura=n_folio,
+                        rut_contraparte=n_rut,
+                        razon_social=n_razon,
+                        concepto=n_concepto,
+                        monto_neto=n_neto,
+                        monto_iva=n_iva,
+                        monto_total=n_total,
+                        cuenta_corriente=n_cuenta,
+                        observaciones="Registrado manualmente desde Dashboard Web"
+                    )
+                    db.add(new_db_mov)
+                    db.commit()
+                    st.success(f"✅ Movimiento registrado exitosamente: {n_concepto} por {fmt_money(n_total)} en {n_cuenta}.")
+                    st.rerun()
 
         # 3. KPI METRICAS CONSOLIDADAS CON PRÉSTAMOS A SOCIOS Y SALDO BCI
         df_ingresos = df_all[df_all["Tipo"] == "INGRESO"] if not df_all.empty else pd.DataFrame()
