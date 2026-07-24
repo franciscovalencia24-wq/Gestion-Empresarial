@@ -528,9 +528,9 @@ class MarketDataEngine:
     def render_infographic(self, global_stats, ai_data, mode="auto"):
         logging.info("Renderizando infografía completa a PNG...")
         
-        # Cargar logos en Base64 para evitar errores de ruta local en html2image
-        logo_fv = self.get_base64_image("assets/Logo_FV_Negativo.png")
-        logo_altus = self.get_base64_image("assets/Logo_ALTUS AI_Negativo.png")
+        # Cargar logos SVG vectoriales para máxima nitidez (cumpliendo AGENTS.md)
+        logo_fv = self.get_base64_image("assets/Logo_FV_Negativo.svg")
+        logo_altus = self.get_base64_image("assets/Logo_ALTUS AI_Negativo.svg")
         
         # Descargar la imagen generada y el mapa para inyectarlos nativamente y evitar demoras de red
         if ai_data['imagen_noticia'].startswith('data:image'):
@@ -569,9 +569,7 @@ class MarketDataEngine:
                 with open(chart_path, "wb") as f:
                     f.write(image_data)
                 
-                # Chromium necesita file:/// con slashes normales y encoding de espacios
                 chart_path_url = chart_path.replace(chr(92), '/')
-                # Codificamos espacios y caracteres raros en la ruta (excepto los / y :)
                 import urllib.parse
                 chart_path_url = urllib.parse.quote(chart_path_url, safe='/:')
                 ai_data['news_img_b64'] = f"file:///{chart_path_url}"
@@ -583,7 +581,24 @@ class MarketDataEngine:
         
         ai_data['agenda_dates'] = self.get_agenda_dates()
         if mode in ["weekly", "audio"]:
-            ai_data['weekly_chart_b64'] = self.generate_weekly_chart_base64(ai_data)
+            b64_weekly = self.generate_weekly_chart_base64(ai_data)
+            if b64_weekly and b64_weekly.startswith('data:image'):
+                try:
+                    b64_data = b64_weekly.split(",")[1]
+                    img_bytes = base64.b64decode(b64_data)
+                    w_chart_path = os.path.abspath(f"{out_dir}/weekly_chart_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
+                    with open(w_chart_path, "wb") as f:
+                        f.write(img_bytes)
+                    
+                    w_url = w_chart_path.replace(chr(92), '/')
+                    import urllib.parse
+                    w_url = urllib.parse.quote(w_url, safe='/:')
+                    ai_data['weekly_chart_b64'] = f"file:///{w_url}"
+                except Exception as e:
+                    logging.error(f"Error guardando grafico semanal a disco: {e}")
+                    ai_data['weekly_chart_b64'] = b64_weekly
+            else:
+                ai_data['weekly_chart_b64'] = b64_weekly
 
         env = Environment(loader=FileSystemLoader('src/web/templates'))
         if mode in ["weekly", "audio"]:
@@ -601,8 +616,8 @@ class MarketDataEngine:
         img_name = f"infografia_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         
         if mode in ["weekly", "audio"]:
-            # Captura ajustada al resumen semanal con grafico visual
-            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 1720))
+            # Captura ajustada al resumen semanal con grafico visual (1950px alto)
+            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 1950))
         else:
             # Captura completa para infografía diaria
             hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 3400))
