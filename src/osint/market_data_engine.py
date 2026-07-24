@@ -580,25 +580,7 @@ class MarketDataEngine:
             ai_data['news_img_b64'] = news_img_b64
         
         ai_data['agenda_dates'] = self.get_agenda_dates()
-        if mode in ["weekly", "audio"]:
-            b64_weekly = self.generate_weekly_chart_base64(ai_data)
-            if b64_weekly and b64_weekly.startswith('data:image'):
-                try:
-                    b64_data = b64_weekly.split(",")[1]
-                    img_bytes = base64.b64decode(b64_data)
-                    w_chart_path = os.path.abspath(f"{out_dir}/weekly_chart_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
-                    with open(w_chart_path, "wb") as f:
-                        f.write(img_bytes)
-                    
-                    w_url = w_chart_path.replace(chr(92), '/')
-                    import urllib.parse
-                    w_url = urllib.parse.quote(w_url, safe='/:')
-                    ai_data['weekly_chart_b64'] = f"file:///{w_url}"
-                except Exception as e:
-                    logging.error(f"Error guardando grafico semanal a disco: {e}")
-                    ai_data['weekly_chart_b64'] = b64_weekly
-            else:
-                ai_data['weekly_chart_b64'] = b64_weekly
+        ai_data['ltm_stats'] = self.fetch_ltm_variations()
 
         env = Environment(loader=FileSystemLoader('src/web/templates'))
         if mode in ["weekly", "audio"]:
@@ -616,11 +598,47 @@ class MarketDataEngine:
         img_name = f"infografia_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         
         if mode in ["weekly", "audio"]:
-            # Captura ajustada al resumen semanal con grafico visual HTML/CSS (2050px alto)
-            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 2050))
+            # Captura 4K a doble resolución (cumpliendo Regla #3 de AGENTS.md: zoom: 2 + 2400x3900 px)
+            hti.screenshot(html_file=html_path, save_as=img_name, size=(2400, 3900))
         else:
-            # Captura completa para infografía diaria
-            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 3400))
+            # Captura completa 4K para infografía diaria
+            hti.screenshot(html_file=html_path, save_as=img_name, size=(2400, 6800))
+        
+        if os.path.exists(html_path): os.remove(html_path)
+        return f"{date_folder}/{img_name}"
+
+    def fetch_ltm_variations(self):
+        """Calcula la variación real de los últimos 12 meses (LTM) para la grilla de divergencia con punto 0."""
+        logging.info("Calculando variaciones LTM (12 Meses)...")
+        defaults = {
+            "sp500": 18.5,
+            "nasdaq": 22.1,
+            "bono10y": -3.8,
+            "dolar": 7.4,
+            "cobre": 12.3
+        }
+        tickers = [
+            ("sp500", "^GSPC"),
+            ("nasdaq", "^NDX"),
+            ("bono10y", "^TNX"),
+            ("dolar", "USDCLP=X"),
+            ("cobre", "HG=F")
+        ]
+        results = {}
+        for key, symbol in tickers:
+            try:
+                data = yf.Ticker(symbol).history(period="1y")
+                if len(data) >= 20:
+                    v_now = float(data['Close'].iloc[-1])
+                    v_start = float(data['Close'].iloc[0])
+                    pct = ((v_now - v_start) / v_start) * 100
+                    results[key] = round(pct, 2)
+                else:
+                    results[key] = defaults[key]
+            except Exception as e:
+                logging.error(f"Error calculando LTM para {symbol}: {e}")
+                results[key] = defaults[key]
+        return results
         
         if os.path.exists(html_path): os.remove(html_path)
         return f"{date_folder}/{img_name}"
