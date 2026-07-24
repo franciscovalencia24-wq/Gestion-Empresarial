@@ -699,6 +699,9 @@ class MarketDataEngine:
             df = ode.get_cochilco_production_data()
             custom_news_text = ode.generate_llm_context(df)
             self.cochilco_chart_b64 = ode.generate_production_chart_base64(df)
+        elif mode == "audio" and custom_input:
+            logging.info("Iniciando procesamiento de Infografía desde Reporte de Audio de Mercado")
+            custom_news_text = custom_input
             
         if mode == "auto":
             self.fetch_reuters_news()
