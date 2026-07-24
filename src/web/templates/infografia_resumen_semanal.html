@@ -23,7 +23,7 @@
             color: var(--text-main);
             width: 1200px;
             margin: 0;
-            padding: 45px;
+            padding: 40px;
             box-sizing: border-box;
         }
         
@@ -33,15 +33,16 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 2px solid var(--card-border);
-            padding-bottom: 20px;
-            margin-bottom: 25px;
+            padding-bottom: 16px;
+            margin-bottom: 20px;
         }
         .brand-box {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 18px;
         }
-        .logo-img { height: 48px; object-fit: contain; }
+        .logo-fv { height: 42px; width: auto; object-fit: contain; }
+        .logo-altus { height: 28px; width: auto; object-fit: contain; filter: brightness(1.1); }
 
         .weekly-badge {
             background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
@@ -58,22 +59,22 @@
         .header-title-box {
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             border: 1px solid var(--border-gold);
-            border-radius: 16px;
-            padding: 25px 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 14px;
+            padding: 22px 28px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
         }
         .headline {
-            font-size: 38px;
+            font-size: 34px;
             font-weight: 800;
             text-transform: uppercase;
             margin: 0;
             color: #ffffff;
             letter-spacing: -0.5px;
-            line-height: 1.2;
+            line-height: 1.25;
         }
         .subheadline {
-            font-size: 16px;
+            font-size: 15px;
             color: var(--accent-gold);
             margin-top: 8px;
             font-weight: 600;
@@ -81,34 +82,34 @@
 
         /* TÍTULOS DE SECCIÓN */
         .sec-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--accent-blue);
-            margin-top: 30px;
-            margin-bottom: 18px;
+            margin-top: 25px;
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
             gap: 10px;
             border-bottom: 1px solid var(--card-border);
-            padding-bottom: 8px;
+            padding-bottom: 6px;
         }
 
         /* CLUSTER DE FOCOS DESTACADOS (3 COLUMNAS) */
         .focos-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 35px;
+            gap: 18px;
+            margin-bottom: 25px;
         }
         .foco-card {
             background-color: var(--card-bg);
             border: 1px solid var(--card-border);
             border-top: 4px solid var(--accent-gold);
-            border-radius: 14px;
-            padding: 22px;
-            box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.25);
         }
         .foco-card.card-blue { border-top-color: var(--accent-blue); }
         .foco-card.card-red { border-top-color: var(--accent-red); }
@@ -116,16 +117,16 @@
         .foco-header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            font-size: 16px;
+            gap: 8px;
+            font-size: 15px;
             font-weight: 800;
             color: #fff;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             text-transform: uppercase;
         }
         .foco-text {
-            font-size: 14px;
-            line-height: 1.6;
+            font-size: 13.5px;
+            line-height: 1.55;
             color: #cbd5e1;
             margin: 0;
             text-align: justify;
@@ -135,68 +136,67 @@
         .market-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            margin-bottom: 35px;
+            gap: 14px;
+            margin-bottom: 25px;
         }
         .stat-card {
             background-color: var(--card-bg);
             border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 16px;
+            border-radius: 10px;
+            padding: 14px;
             text-align: center;
         }
         .stat-name {
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             color: var(--text-muted);
             text-transform: uppercase;
-            margin-bottom: 6px;
-        }
-        .stat-val {
-            font-size: 20px;
-            font-weight: 800;
-            color: #fff;
             margin-bottom: 4px;
         }
+        .stat-val {
+            font-size: 19px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 3px;
+        }
         .stat-change {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: 700;
-            padding: 3px 8px;
-            border-radius: 6px;
+            padding: 2px 7px;
+            border-radius: 4px;
             display: inline-block;
         }
         .up { background: rgba(16, 185, 129, 0.15); color: var(--accent-green); }
         .down { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); }
-        .neutral { background: rgba(148, 163, 184, 0.15); color: var(--text-muted); }
 
         /* AGENDA CLAVE Y CATALIZADORES */
         .agenda-box {
             background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
             border: 1px solid #312e81;
-            border-radius: 14px;
-            padding: 24px;
-            margin-bottom: 35px;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
         }
         .agenda-title {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 800;
             color: #a5b4fc;
-            margin-bottom: 14px;
+            margin-bottom: 12px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         .agenda-items {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 12px 25px;
+            gap: 10px 22px;
         }
         .agenda-item {
-            font-size: 14px;
+            font-size: 13.5px;
             color: #e0e7ff;
-            line-height: 1.5;
+            line-height: 1.45;
             display: flex;
             align-items: flex-start;
-            gap: 8px;
+            gap: 6px;
         }
         .agenda-item strong { color: #ffffff; }
 
@@ -207,17 +207,17 @@
             align-items: center;
             background-color: var(--card-bg);
             border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 20px 25px;
+            border-radius: 12px;
+            padding: 16px 22px;
         }
         .footer-left {
-            font-size: 13px;
+            font-size: 12.5px;
             color: var(--text-muted);
-            line-height: 1.5;
+            line-height: 1.45;
         }
         .footer-right {
             text-align: right;
-            font-size: 13px;
+            font-size: 12.5px;
             color: var(--accent-gold);
             font-weight: 700;
         }
@@ -229,10 +229,10 @@
     <div class="top-bar">
         <div class="brand-box">
             {% if json_data.logo_fv_base64 %}
-                <img src="{{ json_data.logo_fv_base64 }}" class="logo-img" alt="FV Asesorías">
+                <img src="{{ json_data.logo_fv_base64 }}" class="logo-fv" alt="FV Asesorías">
             {% endif %}
             {% if json_data.logo_altus_base64 %}
-                <img src="{{ json_data.logo_altus_base64 }}" class="logo-img" alt="ALTUS AI">
+                <img src="{{ json_data.logo_altus_base64 }}" class="logo-altus" alt="ALTUS AI">
             {% endif %}
         </div>
         <div class="weekly-badge">
@@ -303,10 +303,10 @@
     <div class="agenda-box">
         <div class="agenda-title">🔍 AGENDA Y PRÓXIMOS DATOS IMPORTANTES DE LA SEMANA</div>
         <div class="agenda-items">
-            <div class="agenda-item">🔹 <strong>Martes:</strong> Reunión de Política Monetaria del Banco Central de Chile (BCCh).</div>
-            <div class="agenda-item">🔹 <strong>Miércoles:</strong> Decisión de Tasas de la Reserva Federal de EE.UU. (FED).</div>
-            <div class="agenda-item">🔹 <strong>Jueves:</strong> PIB trimestral preliminar en EE.UU. y Eurozona + Índice Inflación PCE.</div>
-            <div class="agenda-item">🔹 <strong>Viernes:</strong> Tasa de Desempleo en Chile e Inflación preliminar en la Eurozona.</div>
+            <div class="agenda-item">🔹 <strong>Martes {{ json_data.agenda_dates.tue if json_data.agenda_dates else '' }}:</strong> PMI preliminares de julio en EE.UU. + Reunión de Política Monetaria BCCh.</div>
+            <div class="agenda-item">🔹 <strong>Miércoles {{ json_data.agenda_dates.wed if json_data.agenda_dates else '' }}:</strong> Decisión de Política Monetaria de la Reserva Federal (FED).</div>
+            <div class="agenda-item">🔹 <strong>Jueves {{ json_data.agenda_dates.thu if json_data.agenda_dates else '' }}:</strong> PIB preliminar Q2 (EE.UU. / Eurozona) + Inflación PCE EE.UU.</div>
+            <div class="agenda-item">🔹 <strong>Viernes {{ json_data.agenda_dates.fri if json_data.agenda_dates else '' }}:</strong> Inflación preliminar Eurozona + Tasa de Desempleo en Chile.</div>
         </div>
     </div>
 
@@ -314,7 +314,7 @@
     <div class="footer-box">
         <div class="footer-left">
             <b>FV Asesorías e Inversiones SpA</b> | Inteligencia Financiera & Gestión de Patrimonio<br/>
-            Análisis generado en colaboración con <b>ALTUS AI Engine</b>.
+            Análisis elaborado por FV Asesorías e Inversiones con tecnología <b>ALTUS AI</b>.
         </div>
         <div class="footer-right">
             📲 WhatsApp Asesores: +56 9 6677 9662<br/>

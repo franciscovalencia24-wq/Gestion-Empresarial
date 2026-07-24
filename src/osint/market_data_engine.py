@@ -581,6 +581,8 @@ class MarketDataEngine:
         else:
             ai_data['news_img_b64'] = news_img_b64
         
+        ai_data['agenda_dates'] = self.get_agenda_dates()
+
         env = Environment(loader=FileSystemLoader('src/web/templates'))
         if mode in ["weekly", "audio"]:
             template = env.get_template('infografia_resumen_semanal.html')
@@ -596,11 +598,30 @@ class MarketDataEngine:
         hti = Html2Image(output_path=out_dir, custom_flags=['--virtual-time-budget=4000', '--allow-file-access-from-files'])
         img_name = f"infografia_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         
-        # Captura completa (3400 de altura para evitar cortes y mayor calidad)
-        hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 3400))
+        if mode in ["weekly", "audio"]:
+            # Captura compacta ajustada al contenido sin espacio negro sobrante
+            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 1180))
+        else:
+            # Captura completa para infografía diaria
+            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 3400))
         
         if os.path.exists(html_path): os.remove(html_path)
         return f"{date_folder}/{img_name}"
+
+    def get_agenda_dates(self):
+        today = datetime.date.today()
+        days_to_tue = (1 - today.weekday()) % 7
+        if days_to_tue == 0: days_to_tue = 7
+        next_tue = today + datetime.timedelta(days=days_to_tue)
+        next_wed = next_tue + datetime.timedelta(days=1)
+        next_thu = next_tue + datetime.timedelta(days=2)
+        next_fri = next_tue + datetime.timedelta(days=3)
+        return {
+            "tue": next_tue.strftime("%d.%m.%y"),
+            "wed": next_wed.strftime("%d.%m.%y"),
+            "thu": next_thu.strftime("%d.%m.%y"),
+            "fri": next_fri.strftime("%d.%m.%y")
+        }
 
     def render_carousel(self, global_stats, ai_data):
         logging.info("Renderizando carrusel PDF...")
@@ -733,7 +754,8 @@ class MarketDataEngine:
                 ai_data['imagen_noticia'] = self.cochilco_chart_b64
                 
             img_file = self.render_infographic(global_stats, ai_data, mode)
-            self.render_carousel(global_stats, ai_data)
+            if mode not in ["weekly", "audio"]:
+                self.render_carousel(global_stats, ai_data)
             
             date_folder = datetime.date.today().strftime('%Y-%m-%d')
             out_dir = f"linkedin_posts/{date_folder}"
