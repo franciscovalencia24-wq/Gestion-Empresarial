@@ -387,7 +387,22 @@ class MarketDataEngine:
             for idx in indices:
                 market_status_text += f"- {region} ({idx['nombre']}): {idx['efecto']}\n"
         
-        if mode == "auto_chile":
+        if mode == "audio":
+            focus_instruction = """
+            MODO REPORTE DE AUDIO DE MERCADO (ANÁLISIS PROFUNDO, EXTENSO Y EXHAUSTIVO):
+            El contenido proviene de un reporte de audio de mercado oficial enviado por una institución financiera (ej. audio semanal de Principal Financial Group / Banco / Corredora).
+            ES ESTRICTAMENTE OBLIGATORIO que el texto del post para LinkedIn ('post_linkedin') sea PROFUNDO, EXTENSO Y EXHAUSTIVO (entre 5 y 8 párrafos completos estructurados con subtítulos y emojis).
+            NO hagas un resumen corto ni superficial. Debes profundizar analíticamente en TODOS y cada uno de los temas tratados en el audio:
+            1. 📌 **TITULAR Y RESUMEN ESTRATÉGICO DE LA SEMANA/JORNADA**
+            2. 🌍 **COMPORTAMIENTO GLOBAL DE LOS MERCADOS**: Explica en detalle qué pasó en la bolsa de EE.UU. (S&P 500, NASDAQ), Europa, Asia y el IPSA local, citando los factores y catalizadores de los movimientos.
+            3. 🏦 **BANCOS CENTRALES, INFLACIÓN Y TASAS**: Analiza las decisiones o postura de la Reserva Federal (FED) y del Banco Central de Chile (BCCh), datos de inflación e impacto en la curva de tasas de Renta Fija.
+            4. 🛢️ **DÓLAR, COBRE Y COMMODITIES**: Analiza la trayectoria del tipo de cambio USD/CLP, el precio del cobre y del petróleo WTI.
+            5. 💼 **IMPLICANCIAS Y ESTRATEGIA PARA PORTAFOLIOS PATRIMONIALES**: Explica qué significan estos datos y qué decisiones tácticas se recomiendan para Renta Fija (depósitos, bonos), Renta Variable (acciones) y Ahorro Previsional Voluntario (APV/Multifondos).
+            6. 💡 **PERSPECTIVA Y PRÓXIMOS EVENTOS CLAVE**: Hitos o datos de la próxima semana que el inversionista debe monitorear.
+
+            Escribe con el tono analítico, sofisticado e institucional del Economista Jefe de FV Asesorías e Inversiones. Usa negritas en todos los datos duros, emojis temáticos profesionales y dobles saltos de línea (\\n\\n) entre párrafos.
+            """
+        elif mode == "auto_chile":
             focus_instruction = "Elige la noticia MÁS IMPORTANTE enfocada en CHILE (economía, mercados, empresas, política que afecte la economía).\nCRÍTICO: Como la noticia es LOCAL de Chile, el impacto en los índices de USA, EUROPA y ASIA debe ser evaluado lógicamente. Una noticia local NO mueve el S&P500. Por lo tanto, para los índices globales, asigna 'NEUTRAL' en efecto y 'LEVE' o '-' en relevancia, a menos que la noticia tenga repercusiones mundiales demostrables."
         else:
             focus_instruction = "Elige la noticia MÁS IMPORTANTE basándote en su potencial impacto en los mercados globales y locales."

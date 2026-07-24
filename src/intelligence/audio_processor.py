@@ -89,17 +89,18 @@ def process_market_audio(audio_bytes: bytes, filename: str = "reporte_mercado.mp
         prompt = f"""
         Eres el Economista Jefe y Estratega Senior de Inversiones de ALTUS AI y FV Asesorías e Inversiones.
         Has recibido el reporte oficial de audio enviado por la institución financiera (ej. Principal Financial Group / Corredora / Banco): '{filename}'.
+        Este audio dura varios minutos y contiene múltiples detalles macroeconómicos, porcentajes, tendencias y opiniones analíticas.
         
-        INSTRUCCIONES DE EXTRACCIÓN Y ANÁLISIS ESTRATÉGICO:
-        1. **Transcripción y Síntesis de Noticias de Mercado**: Extrae con máxima precisión los hechos clave mencionados sobre bolsas internacionales (S&P 500, NASDAQ, Nikkei, IPSA, Europa), tasa de interés de la FED/BCCh, inflación, dólar observador (USD/CLP) y materias primas (Cobre, Petróleo, Oro).
-        2. **Eventos y Causas Reales**: ¿Qué datos económicos o anuncios causaron estos movimientos? (ej: datos de empleo en EE.UU., IPC Chile, declaraciones de los bancos centrales).
-        3. **Implicancias Patrimoniales y Consejos de Inversión**: ¿Cómo debe actuar un cliente de banca privada o patrimonial? ¿Qué recomendaciones se desprenden para Renta Fija (depósitos, bonos), Renta Variable (acciones) y Ahorro Previsional Voluntario (APV)?
-        4. **Frases Clave del Audio**: Cita 2 o 3 reflexiones textuales de alto valor dictadas en el reporte.
+        INSTRUCCIONES DE EXTRACCIÓN Y ANÁLISIS ESTRATÉGICO EXHAUSTIVO:
+        1. **Transcripción Completa y Síntesis Detallada de Noticias de Mercado**: Extrae con MÁXIMO DETALLE y exhaustividad todos los hechos comentados sobre bolsas internacionales (S&P 500, NASDAQ, Nikkei, Europa, IPSA), decisiones o expectativas sobre la tasa de interés de la FED/BCCh, inflación, tipo de cambio (USD/CLP) y materias primas (Cobre, Petróleo, Oro). No resumas en 2 líneas; detalla cada tema.
+        2. **Eventos y Causas Reales**: Describe con precisión qué datos económicos o anuncios gatillaron estos movimientos (ej: reporte NFP de empleo en EE.UU., datos de actividad económica Imacec/IPC en Chile, resultados corporativos, discurso del Presidente de la FED).
+        3. **Implicancias Patrimoniales y Consejos de Inversión por Clase de Activo**: Explica en profundidad las recomendaciones para Renta Fija (depósitos a plazo, bonos soberanos/corporativos), Renta Variable (acciones chilenas vs internacionales) y Ahorro Previsional Voluntario (APV / Multifondos A, B, C, D, E).
+        4. **Frases Clave y Citas Textuales**: Incluye 3 a 5 frases textuales o reflexiones clave dictadas en la grabación.
         
-        Genera un informe completo, denso en datos duros y estructurado en Markdown para ser consumido por el motor de diseño de infografías.
+        Genera un informe altamente detallado, rico en datos numéricos y conceptos financieros, en formato Markdown extenso para que el generador de infografías y publicaciones disponga de todo el material necesario.
         """
         
-        llm = ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.2)
+        llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro", temperature=0.2)
         message = HumanMessage(
             content=[
                 {"type": "text", "text": prompt},
