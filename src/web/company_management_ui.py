@@ -132,8 +132,8 @@ def render_company_management_ui():
                             n_razon = n_razon_opt
                     with fc3:
                         n_concepto = st.text_input("Concepto / Detalle", value="Pago de Arriendo Oficina")
-                        n_neto = st.number_input("Monto Neto ($)", min_value=0.0, value=0.0, step=10000.0)
-                        n_iva = st.number_input("Monto IVA ($)", min_value=0.0, value=0.0, step=1000.0)
+                        n_neto = st.number_input("Monto Neto ($)", min_value=0, value=0, step=10000, format="%d", help="Sin decimales, ej: 200000 para $200.000")
+                        n_iva = st.number_input("Monto IVA ($)", min_value=0, value=0, step=1000, format="%d", help="Sin decimales, ej: 38000 para $38.000")
                         n_cuenta = st.selectbox("Cuenta Corriente Destino/Origen", [
                             "CTA. CTE. BCI: FV ASESORIAS",
                             "CTA. CTE. BANCO CHILE: FCO",
@@ -141,6 +141,7 @@ def render_company_management_ui():
                             "CTA. CTE. BANCO CHILE: NATALIA"
                         ])
 
+                    st.info(f"💵 **Neto:** {fmt_money(n_neto)} | 🏛️ **IVA:** {fmt_money(n_iva)} | 💰 **Total Movimiento:** {fmt_money(n_neto + n_iva)}")
                     submit_mov = st.form_submit_button("💾 Guardar Movimiento en BD")
                     if submit_mov:
                         n_total = n_neto + n_iva
@@ -310,11 +311,27 @@ def render_company_management_ui():
             )
 
             if st.button("💾 Guardar Cambios en Ingresos", key="btn_save_ing", type="primary"):
+                orig_ids_ing = set()
+                if not df_ing_view.empty and "ID" in df_ing_view.columns:
+                    orig_ids_ing = set(df_ing_view["ID"].dropna().astype(int))
+
+                current_ids_ing = set()
                 for idx, row in edited_ing.iterrows():
                     m_id = row.get("ID")
                     if pd.notna(m_id) and str(m_id).strip() != "" and str(m_id).strip() != "nan":
-                        mov_db = db.query(CompanyFinancialMovement).filter_by(id=int(m_id)).first()
+                        m_int = int(m_id)
+                        current_ids_ing.add(m_int)
+                        mov_db = db.query(CompanyFinancialMovement).filter_by(id=m_int).first()
                         if mov_db:
+                            f_val = row.get("Fecha")
+                            if f_val:
+                                try:
+                                    if isinstance(f_val, str): f_dt = datetime.strptime(f_val, "%Y-%m-%d").date()
+                                    elif hasattr(f_val, "date"): f_dt = f_val.date()
+                                    else: f_dt = f_val
+                                    mov_db.fecha = f_dt
+                                    mov_db.periodo = f_dt.strftime("%Y-%m")
+                                except: pass
                             mov_db.concepto = str(row.get("Concepto / Detalle", ""))
                             mov_db.folio_factura = str(row.get("Folio", ""))
                             mov_db.monto_neto = float(row.get("Monto Neto", 0.0) or 0.0)
@@ -355,13 +372,35 @@ def render_company_management_ui():
                                 observaciones=str(row.get("Observaciones", "Agregado en tabla editable"))
                             )
                             db.add(new_mov)
+
+                # Eliminar de BD filas borradas en la tabla por el usuario
+                for d_id in (orig_ids_ing - current_ids_ing):
+                    del_mov = db.query(CompanyFinancialMovement).filter_by(id=d_id).first()
+                    if del_mov: db.delete(del_mov)
+
                 db.commit()
                 st.success("✅ Cambios en Ingresos guardados en la Base de Datos.")
                 st.rerun()
 
+            with st.expander("🗑️ Eliminar un Ingreso Específico de la BD"):
+                db_ing_movs = db.query(CompanyFinancialMovement).filter_by(empresa=empresa_sel, tipo_movimiento="INGRESO").order_by(CompanyFinancialMovement.id.desc()).all()
+                if db_ing_movs:
+                    opts_del_ing = {f"ID {m.id} | {m.fecha} | {m.razon_social or 'S/P'} | {m.concepto or ''} | Total: {fmt_money(m.monto_total)}": m.id for m in db_ing_movs}
+                    sel_del_ing_str = st.selectbox("Seleccione el ingreso a eliminar:", list(opts_del_ing.keys()), key="sel_del_ing_opt")
+                    if st.button("🗑️ Confirmar y Eliminar Ingreso", key="btn_confirm_del_ing", type="primary"):
+                        target_id = opts_del_ing[sel_del_ing_str]
+                        mov_to_del = db.query(CompanyFinancialMovement).filter_by(id=target_id).first()
+                        if mov_to_del:
+                            db.delete(mov_to_del)
+                            db.commit()
+                            st.success(f"✅ Ingreso ID {target_id} eliminado exitosamente.")
+                            st.rerun()
+                else:
+                    st.info("No hay ingresos registrados para eliminar.")
+
         with tab2:
             st.markdown("##### 🔴 Registro de Facturas de Compra, Gastos y Arriendos")
-            st.caption("Puedes agregar nuevas filas al final de la tabla (ej: Arriendo) o editar los registros existentes. Presiona 'Guardar Cambios en Egresos' para persistir.")
+            st.caption("Puedes agregar nuevas filas al final de la tabla (ej: Arriendo), editar campos directamente o borrar filas. Presiona 'Guardar Cambios en Egresos' para persistir.")
 
             df_egr_view = df_egresos.copy()
             if not df_egr_view.empty:
@@ -419,11 +458,27 @@ def render_company_management_ui():
             )
 
             if st.button("💾 Guardar Cambios en Egresos (Incluye Arriendos/Gastos Nuevos)", key="btn_save_egr", type="primary"):
+                orig_ids_egr = set()
+                if not df_egr_view.empty and "ID" in df_egr_view.columns:
+                    orig_ids_egr = set(df_egr_view["ID"].dropna().astype(int))
+
+                current_ids_egr = set()
                 for idx, row in edited_egr.iterrows():
                     m_id = row.get("ID")
                     if pd.notna(m_id) and str(m_id).strip() != "" and str(m_id).strip() != "nan":
-                        mov_db = db.query(CompanyFinancialMovement).filter_by(id=int(m_id)).first()
+                        m_int = int(m_id)
+                        current_ids_egr.add(m_int)
+                        mov_db = db.query(CompanyFinancialMovement).filter_by(id=m_int).first()
                         if mov_db:
+                            f_val = row.get("Fecha")
+                            if f_val:
+                                try:
+                                    if isinstance(f_val, str): f_dt = datetime.strptime(f_val, "%Y-%m-%d").date()
+                                    elif hasattr(f_val, "date"): f_dt = f_val.date()
+                                    else: f_dt = f_val
+                                    mov_db.fecha = f_dt
+                                    mov_db.periodo = f_dt.strftime("%Y-%m")
+                                except: pass
                             mov_db.razon_social = str(row.get("Razón Social / Proveedor", ""))
                             mov_db.concepto = str(row.get("Concepto / Detalle", ""))
                             mov_db.categoria = str(row.get("Categoría", "ARRIENDO"))
@@ -468,9 +523,31 @@ def render_company_management_ui():
                                 observaciones=str(row.get("Observaciones", "Registrado en tabla editable"))
                             )
                             db.add(new_mov)
+
+                # Eliminar de BD filas borradas en la tabla por el usuario
+                for d_id in (orig_ids_egr - current_ids_egr):
+                    del_mov = db.query(CompanyFinancialMovement).filter_by(id=d_id).first()
+                    if del_mov: db.delete(del_mov)
+
                 db.commit()
                 st.success("✅ Egresos y nuevos pagos (Arriendo/Gastos) guardados exitosamente.")
                 st.rerun()
+
+            with st.expander("🗑️ Eliminar un Egreso / Arriendo Específico de la BD"):
+                db_egr_movs = db.query(CompanyFinancialMovement).filter_by(empresa=empresa_sel, tipo_movimiento="EGRESO").order_by(CompanyFinancialMovement.id.desc()).all()
+                if db_egr_movs:
+                    opts_del_egr = {f"ID {m.id} | {m.fecha} | {m.razon_social or 'S/P'} | {m.concepto or ''} | Total: {fmt_money(m.monto_total)}": m.id for m in db_egr_movs}
+                    sel_del_egr_str = st.selectbox("Seleccione el egreso a eliminar:", list(opts_del_egr.keys()), key="sel_del_egr_opt")
+                    if st.button("🗑️ Confirmar y Eliminar Egreso", key="btn_confirm_del_egr", type="primary"):
+                        target_id = opts_del_egr[sel_del_egr_str]
+                        mov_to_del = db.query(CompanyFinancialMovement).filter_by(id=target_id).first()
+                        if mov_to_del:
+                            db.delete(mov_to_del)
+                            db.commit()
+                            st.success(f"✅ Egreso ID {target_id} eliminado exitosamente.")
+                            st.rerun()
+                else:
+                    st.info("No hay egresos registrados para eliminar.")
 
         with tab3:
             st.markdown("##### 🤝 Registro de Cuentas Corrientes y Movimientos de Socios")
