@@ -57,6 +57,8 @@ def render_company_management_ui():
 
     with col_btn2:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+        show_new_form = st.checkbox("➕ Nuevo Movimiento", key="toggle_new_mov")
+
     # 2. CARGA DE DATOS DESDE BASE DE DATOS Y AUTO-MIGRACIÓN DE COLUMNAS SQLITE
     from sqlalchemy import text
     db = SessionLocal()
