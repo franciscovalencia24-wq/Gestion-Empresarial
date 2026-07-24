@@ -596,15 +596,15 @@ class MarketDataEngine:
         with open(html_path, "w", encoding="utf-8") as f:
             f.write(html_out)
             
-        hti = Html2Image(output_path=out_dir, custom_flags=['--virtual-time-budget=4000', '--allow-file-access-from-files'])
+        hti = Html2Image(output_path=out_dir, custom_flags=['--virtual-time-budget=4000', '--allow-file-access-from-files', '--force-device-scale-factor=2'])
         img_name = f"infografia_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         
         if mode in ["weekly", "audio"]:
-            # Captura 4K a doble resolución (cumpliendo Regla #3 de AGENTS.md: zoom: 2 + 2400x3900 px)
-            hti.screenshot(html_file=html_path, save_as=img_name, size=(2400, 3900))
+            # Captura 4K completa sin recorte (1200x1950 px con escala de dispositivo 2x = 2400x3900 px 4K Ultra HD)
+            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 1950))
         else:
             # Captura completa 4K para infografía diaria
-            hti.screenshot(html_file=html_path, save_as=img_name, size=(2400, 6800))
+            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 3400))
         
         if os.path.exists(html_path): os.remove(html_path)
         return f"{date_folder}/{img_name}"
