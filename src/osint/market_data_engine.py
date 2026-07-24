@@ -528,9 +528,9 @@ class MarketDataEngine:
     def render_infographic(self, global_stats, ai_data, mode="auto"):
         logging.info("Renderizando infografía completa a PNG...")
         
-        # Cargar logos SVG vectoriales para máxima nitidez (cumpliendo AGENTS.md)
-        logo_fv = self.get_base64_image("assets/Logo_FV_Negativo.svg")
-        logo_altus = self.get_base64_image("assets/Logo_ALTUS AI_Negativo.svg")
+        # Cargar logos PNG oficiales en alta definición
+        logo_fv = self.get_base64_image("assets/Logo_FV_Negativo.png")
+        logo_altus = self.get_base64_image("assets/Logo_ALTUS AI_Negativo.png")
         
         # Descargar la imagen generada y el mapa para inyectarlos nativamente y evitar demoras de red
         if ai_data['imagen_noticia'].startswith('data:image'):
@@ -616,8 +616,8 @@ class MarketDataEngine:
         img_name = f"infografia_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         
         if mode in ["weekly", "audio"]:
-            # Captura ajustada al resumen semanal con grafico visual (1950px alto)
-            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 1950))
+            # Captura ajustada al resumen semanal con grafico visual HTML/CSS (2050px alto)
+            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 2050))
         else:
             # Captura completa para infografía diaria
             hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 3400))
