@@ -4,12 +4,16 @@ from io import BytesIO
 from xhtml2pdf import pisa
 import base64
 
-def _get_logo_base64():
-    logo_path = r"c:\Users\franc\OneDrive\Documentos\PROYECTOS\BD SENIOR\logo_flat.jpg"
+def _get_logo_base64(filename="Logo_FV_Negativo.png"):
+    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    logo_path = os.path.join(root_dir, "assets", filename)
+    if not os.path.exists(logo_path):
+        logo_path = os.path.join(root_dir, "logo_flat.jpg")
     if os.path.exists(logo_path):
         with open(logo_path, "rb") as image_file:
             encoded = base64.b64encode(image_file.read()).decode('utf-8')
-            return f"data:image/jpeg;base64,{encoded}"
+            ext = "svg+xml" if filename.endswith(".svg") else "png"
+            return f"data:image/{ext};base64,{encoded}"
     return ""
 
 def generate_kyc_manual(cliente_nombre: str) -> bytes:
@@ -17,9 +21,8 @@ def generate_kyc_manual(cliente_nombre: str) -> bytes:
     Genera el Manual de Onboarding (KYC) en PDF con instrucciones 
     para obtener Carpeta Tributaria, CMF Seguros y CMF Deudas.
     """
-    logo_src = _get_logo_base64()
-    
-    img_tag = f'<img src="{logo_src}" width="150" style="margin-bottom: 20px;"/>' if logo_src else '<h2>FV Asesorías</h2>'
+    logo_src = _get_logo_base64("Logo_FV_Negativo.png")
+    img_tag = f'<img src="{logo_src}" width="160" style="margin-bottom: 20px;"/>' if logo_src else '<h2>FV Asesorías</h2>'
 
     html_content = f"""
     <html>
@@ -53,35 +56,26 @@ def generate_kyc_manual(cliente_nombre: str) -> bytes:
         Este manual le guiará paso a paso para descargar los documentos requeridos desde los portales oficiales del Estado (SII y CMF).</p>
         
         <h2>1. Carpeta Tributaria Regular (Servicio de Impuestos Internos - SII)</h2>
-        <p>Este documento nos permite conocer su estructura de ingresos y participación en sociedades.</p>
         <div class="step">
-            <b>Paso 1:</b> Ingrese a la página web del SII en <a href="https://homer.sii.cl/">www.sii.cl</a> y haga clic en "Mi SII" (arriba a la derecha).<br>
+            <b>Paso 1:</b> Ingrese a la página web del SII en <a href="https://homer.sii.cl/">www.sii.cl</a> y haga clic en "Mi SII".<br>
             <b>Paso 2:</b> Ingrese con su RUT y Clave Tributaria o Clave Única.<br>
-            <b>Paso 3:</b> En el menú superior, vaya a <b>"Situación Tributaria"</b> > <b>"Carpeta Tributaria Electrónica"</b> > <b>"Generar Carpeta Tributaria"</b>.<br>
+            <b>Paso 3:</b> Vaya a <b>"Situación Tributaria"</b> > <b>"Carpeta Tributaria Electrónica"</b> > <b>"Generar Carpeta Tributaria"</b>.<br>
             <b>Paso 4:</b> Seleccione la opción <b>"Regular para Solicitar Créditos"</b>.<br>
             <b>Paso 5:</b> Haga clic en <b>"Generar PDF"</b>. Guarde el archivo descargado.
         </div>
         
         <h2>2. Informe de Deudas (Comisión para el Mercado Financiero - CMF)</h2>
-        <p>Este informe detalla sus compromisos financieros actuales, permitiéndonos calcular su flujo de caja y evaluar oportunidades de refinanciamiento.</p>
         <div class="step">
-            <b>Paso 1:</b> Ingrese al portal "Conoce tu Deuda" de la CMF en <a href="https://conocetudeuda.cmfchile.cl/">https://conocetudeuda.cmfchile.cl/</a>.<br>
+            <b>Paso 1:</b> Ingrese al portal de la CMF en <a href="https://conocetudeuda.cmfchile.cl/">https://conocetudeuda.cmfchile.cl/</a>.<br>
             <b>Paso 2:</b> Ingrese con su RUT y Clave Única.<br>
-            <b>Paso 3:</b> En la pantalla principal, busque el botón que dice <b>"Descargar CSV"</b> o "Exportar a Excel" (generalmente ubicado en la sección superior derecha de la tabla).<br>
-            <b>Paso 4:</b> Descargue y guarde el archivo en formato CSV o Excel.
+            <b>Paso 3:</b> Presione <b>"Descargar CSV"</b> o "Exportar a Excel".
         </div>
         
         <h2>3. Certificado de Seguros (Comisión para el Mercado Financiero - CMF)</h2>
-        <p>Este certificado nos indica qué seguros tiene contratados, vital para evaluar coberturas y evitar pagos duplicados o "seguros zombis".</p>
         <div class="step">
-            <b>Paso 1:</b> Ingrese al portal "Conoce tu Seguro" de la CMF en <a href="https://www.conocetuseguro.cl/">www.conocetuseguro.cl</a>.<br>
-            <b>Paso 2:</b> Inicie sesión utilizando su Clave Única.<br>
-            <b>Paso 3:</b> Una vez dentro de su perfil, presione el botón <b>"Descargar Certificado (PDF)"</b>.<br>
-            <b>Paso 4:</b> Guarde el documento PDF descargado.
+            <b>Paso 1:</b> Ingrese a <a href="https://www.conocetuseguro.cl/">www.conocetuseguro.cl</a>.<br>
+            <b>Paso 2:</b> Inicie sesión con su Clave Única y presione <b>"Descargar Certificado (PDF)"</b>.
         </div>
-        
-        <br>
-        <p>Una vez que haya descargado estos tres documentos (1 PDF del SII, 1 CSV de Deudas CMF y 1 PDF de Seguros CMF), por favor envíelos por correo o Whatsapp a su asesor asignado. Su información será tratada con estricta confidencialidad bajo nuestros protocolos de seguridad.</p>
         
         <div class="footer">
             Generado automáticamente por FV Asesorías e Inversiones - Sistema Integral de Asesoría Patrimonial
@@ -92,123 +86,136 @@ def generate_kyc_manual(cliente_nombre: str) -> bytes:
     
     result = BytesIO()
     pisa_status = pisa.CreatePDF(html_content, dest=result)
-    
-    if pisa_status.err:
-        print("Error generating PDF KYC")
-        return b""
-        
-    return result.getvalue()
-    return result.getvalue()
+    return result.getvalue() if not pisa_status.err else b""
 
 
 def generate_succession_report_pdf(prospect_id: int) -> bytes:
     """
-    Genera el Informe Ejecutivo de Planificación Sucesoria, Distribución Patrimonial
-    y Sustento Legal en PDF para el cliente.
+    Genera el Informe Ejecutivo Consolidado 360° & Planificación Sucesoria
+    con doble columna UF/$ CLP, segregación previsional y estética corporativa.
     """
     from src.osint.herencia import calculate_advanced_succession
     data = calculate_advanced_succession(prospect_id)
     if not data:
         return b""
 
-    logo_src = _get_logo_base64()
-    img_tag = f'<img src="{logo_src}" width="160" style="margin-bottom: 15px;"/>' if logo_src else '<h2>FV ASESORÍAS</h2>'
+    logo_fv = _get_logo_base64("Logo_FV_Negativo.png")
+    logo_altus = _get_logo_base64("Logo_ALTUS AI_Negativo.png")
+
+    img_fv_tag = f'<img src="{logo_fv}" height="45" style="vertical-align: middle;"/>' if logo_fv else '<strong style="color:#fff; font-size:16pt;">FV ASESORÍAS</strong>'
+    img_altus_tag = f'<img src="{logo_altus}" height="32" style="vertical-align: middle; margin-left: 20px;"/>' if logo_altus else ''
 
     tot = data["totales"]
     nombre_cliente = data["nombre"]
     rut_cliente = data["rut"]
     estado_prev = data["estado_previsional"]
+    uf_val = tot.get("uf_actual", 38800.0)
 
-    # Generar tabla de herederos y beneficiarios en HTML
+    # 1. HEREDEROS LEGALES Y DERECHOS PROPORCIONALES
     herederos_rows = ""
     for h in data["herederos_legales"]:
         est_txt = "Sí (Estudiante 18-24)" if h["es_estudiante"] else "No"
         herederos_rows += f"""
         <tr>
-            <td>{h['nombre']}</td>
+            <td><b>{h['nombre']}</b></td>
             <td>{h['relacion']}</td>
             <td>{h['edad']} años</td>
             <td>{est_txt}</td>
-            <td>{h['asignacion_pct']}%</td>
+            <td><b style="color: #2b6cb0;">{h['asignacion_pct']}%</b></td>
+            <td><b>{h['monto_uf']:,.2f} UF</b></td>
+            <td><b>${h['monto_clp']:,.0f} CLP</b></td>
+            <td style="color: #c53030;">{h['impuesto_uf']:,.2f} UF (${h['impuesto_clp']:,.0f})</td>
+            <td style="color: #276749; font-weight: bold;">{h['liquido_uf']:,.2f} UF (${h['liquido_clp']:,.0f})</td>
         </tr>
         """
+    if not herederos_rows:
+        herederos_rows = "<tr><td colspan='9' style='text-align:center;'>Sin herederos registrados</td></tr>"
 
-    beneficiarios_rows = ""
-    for b in data["beneficiarios_sobrevivencia"]:
-        est_txt = "Sí (Estudiante DL 3500 Art. 5)" if b["es_estudiante"] else "No"
-        beneficiarios_rows += f"""
-        <tr>
-            <td>{b['nombre']}</td>
-            <td>{b['relacion']}</td>
-            <td>{b['edad']} años</td>
-            <td>{b['fundamento']}</td>
-        </tr>
-        """
-
-    # Generar tablas de detalles patrimoniales
+    # 2. PROPIEDADES DETALLADAS
     detalles = data.get("detalles", {})
-    
     prop_rows = ""
     for p in detalles.get("propiedades", []):
         prop_rows += f"""
         <tr>
-            <td>{p['alias']}</td>
+            <td><b>{p['alias']}</b></td>
             <td>{p['comuna']} (ROL {p['rol']})</td>
-            <td>{p['valor_uf']:,.2f} UF</td>
-            <td>{p['deuda_uf']:,.2f} UF</td>
-            <td><span style="color: green; font-weight: bold;">0.00 UF (Desgravamen Ley 20.449)</span></td>
+            <td>{p['valor_uf']:,.2f} UF<br><small style="color:#718096;">(${p['valor_clp']:,.0f} CLP)</small></td>
+            <td>{p['deuda_uf']:,.2f} UF<br><small style="color:#718096;">(${p['deuda_clp']:,.0f} CLP)</small></td>
+            <td><span style="color: #276749; font-weight: bold;">0.00 UF (Extinguida por Seguro de Desgravamen Ley 20.449)</span></td>
         </tr>
         """
     if not prop_rows:
-        prop_rows = "<tr><td colspan='5' style='text-align:center;'>No hay propiedades registradas</td></tr>"
+        prop_rows = "<tr><td colspan='5' style='text-align:center;'>No hay bienes raíces registrados</td></tr>"
 
-    inv_rows = ""
-    for inv in detalles.get("inversiones", []):
-        inv_rows += f"""
+    # 3. INVERSIONES SEPARADAS: PREVISIONALES V/S NO PREVISIONALES
+    inv_prev_rows = ""
+    for inv in detalles.get("inversiones_previsionales", []):
+        inv_prev_rows += f"""
         <tr>
-            <td>{inv['institucion']}</td>
+            <td><b>{inv['institucion']}</b></td>
             <td>{inv['activo']}</td>
-            <td>{inv['tipo']}</td>
-            <td>${inv['monto_clp']:,.0f} CLP</td>
+            <td><span style="background-color:#ebf8ff; color:#2b6cb0; padding:2px 6px; border-radius:4px; font-weight:bold;">{inv['tipo']}</span></td>
+            <td>{inv['monto_uf']:,.2f} UF</td>
+            <td><b>${inv['monto_clp']:,.0f} CLP</b></td>
         </tr>
         """
-    if not inv_rows:
-        inv_rows = "<tr><td colspan='4' style='text-align:center;'>No hay inversiones registradas</td></tr>"
+    if not inv_prev_rows:
+        inv_prev_rows = "<tr><td colspan='5' style='text-align:center;'>No se registran inversiones previsionales (APV, Cuenta 2, AFP)</td></tr>"
 
+    inv_noprev_rows = ""
+    for inv in detalles.get("inversiones_no_previsionales", []):
+        inv_noprev_rows += f"""
+        <tr>
+            <td><b>{inv['institucion']}</b></td>
+            <td>{inv['activo']}</td>
+            <td><span style="background-color:#edf2f7; color:#4a5568; padding:2px 6px; border-radius:4px;">{inv['tipo']}</span></td>
+            <td>{inv['monto_uf']:,.2f} UF</td>
+            <td><b>${inv['monto_clp']:,.0f} CLP</b></td>
+        </tr>
+        """
+    if not inv_noprev_rows:
+        inv_noprev_rows = "<tr><td colspan='5' style='text-align:center;'>No se registran inversiones no previsionales generales</td></tr>"
+
+    # 4. PÓLIZAS
     pol_rows = ""
     for pol in detalles.get("polizas", []):
         apv_txt = "Sí (Art. 42 bis LIR)" if pol['es_apv'] else "No"
         pol_rows += f"""
         <tr>
-            <td>{pol['aseguradora']}</td>
+            <td><b>{pol['aseguradora']}</b></td>
             <td>{pol['tipo']}</td>
             <td>{pol['monto_uf']:,.2f} UF</td>
+            <td>${pol['monto_clp']:,.0f} CLP</td>
             <td>{pol['fecha'] or 'Pre-2022'}</td>
-            <td>{apv_txt}</td>
+            <td><b>{apv_txt}</b></td>
         </tr>
         """
     if not pol_rows:
-        pol_rows = "<tr><td colspan='5' style='text-align:center;'>No hay pólizas registradas</td></tr>"
+        pol_rows = "<tr><td colspan='6' style='text-align:center;'>No hay pólizas registradas</td></tr>"
 
+    # 5. DEUDAS CMF
     debt_rows = ""
     for d in detalles.get("deudas", []):
+        d_uf = d['monto_actual'] / uf_val if uf_val > 0 else 0
         debt_rows += f"""
         <tr>
-            <td>{d['institucion']}</td>
+            <td><b>{d['institucion']}</b></td>
             <td>{d['tipo']}</td>
             <td>${d['monto_actual']:,.0f} CLP</td>
-            <td>${d['mora']:,.0f} CLP</td>
+            <td>{d_uf:,.2f} UF</td>
+            <td style="color:#c53030;">${d['mora']:,.0f} CLP</td>
         </tr>
         """
     if not debt_rows:
-        debt_rows = "<tr><td colspan='4' style='text-align:center;'>Sin deudas vigentes registradas en CMF</td></tr>"
+        debt_rows = "<tr><td colspan='5' style='text-align:center;'>Sin deudas vigentes registradas en CMF</td></tr>"
 
+    # SUSTENTO LEGAL
     sustento_rows = ""
     for s in data["sustento_legal"]:
         sustento_rows += f"""
         <tr>
-            <td><b>{s['norma']}</b></td>
-            <td>{s['detalle']}</td>
+            <td style="width: 32%;"><b>{s['norma']}</b></td>
+            <td style="width: 68%;">{s['detalle']}</td>
         </tr>
         """
 
@@ -218,148 +225,241 @@ def generate_succession_report_pdf(prospect_id: int) -> bytes:
         <style>
             @page {{
                 size: a4 portrait;
-                margin: 1.5cm;
+                margin: 1.2cm;
             }}
             body {{
                 font-family: Helvetica, Arial, sans-serif;
-                font-size: 9.5pt;
+                font-size: 9pt;
                 color: #2d3748;
                 line-height: 1.4;
             }}
-            h1 {{ color: #1a365d; font-size: 16pt; text-align: center; border-bottom: 2px solid #1a365d; padding-bottom: 6px; margin-top: 0; }}
-            h2 {{ color: #2b6cb0; font-size: 11.5pt; border-bottom: 1px solid #cbd5e0; padding-bottom: 4px; margin-top: 14px; }}
-            .card {{ background-color: #f7fafc; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; margin-bottom: 12px; }}
-            table {{ width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 12px; font-size: 9pt; }}
-            th {{ background-color: #2b6cb0; color: white; padding: 5px; text-align: left; }}
-            td {{ padding: 5px; border-bottom: 1px solid #e2e8f0; }}
-            .highlight {{ color: #2b6cb0; font-weight: bold; }}
-            .legal-box {{ background-color: #ebf8ff; border-left: 4px solid #3182ce; padding: 10px; margin-top: 10px; font-size: 9pt; }}
-            .footer {{ text-align: center; font-size: 8pt; color: #a0aec0; margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 6px; }}
+            
+            /* HEADER CORPORATIVO OFICIAL CON LOGOS */
+            .header-bar {{
+                background-color: #0f172a;
+                padding: 16px 20px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+            }}
+            .header-table {{
+                width: 100%;
+                border-collapse: collapse;
+            }}
+            .header-title-text {{
+                color: #ffffff;
+                font-size: 15pt;
+                font-weight: bold;
+                text-transform: uppercase;
+                margin: 0;
+                letter-spacing: 0.5px;
+            }}
+            .header-subtitle-text {{
+                color: #f59e0b;
+                font-size: 9.5pt;
+                margin-top: 4px;
+            }}
+
+            /* PERFIL Y FICHA DE CLIENTE */
+            .profile-card {{
+                background-color: #f8fafc;
+                border: 1px solid #cbd5e1;
+                border-left: 5px solid #2b6cb0;
+                padding: 12px 16px;
+                border-radius: 6px;
+                margin-bottom: 16px;
+            }}
+            
+            h2 {{ color: #1a365d; font-size: 11pt; border-bottom: 2px solid #2b6cb0; padding-bottom: 4px; margin-top: 18px; margin-bottom: 8px; text-transform: uppercase; }}
+            
+            table {{ width: 100%; border-collapse: collapse; margin-top: 6px; margin-bottom: 14px; font-size: 8.5pt; }}
+            th {{ background-color: #1e293b; color: white; padding: 6px 8px; text-align: left; font-size: 8.5pt; }}
+            td {{ padding: 6px 8px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }}
+            
+            .badge-gold {{ background-color: #fffbeb; color: #b45309; border: 1px solid #fef3c7; font-weight: bold; padding: 2px 6px; border-radius: 4px; }}
+            .highlight-total {{ background-color: #ebf8ff; font-weight: bold; color: #2b6cb0; }}
+            
+            .legal-box {{ background-color: #f0f9ff; border-left: 4px solid #0369a1; padding: 12px; margin-top: 14px; font-size: 8.5pt; line-height: 1.45; }}
+            .footer {{ text-align: center; font-size: 8pt; color: #718096; margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 8px; }}
         </style>
     </head>
     <body>
-        <div style="text-align: center;">
-            {img_tag}
-        </div>
-        
-        <h1>Informe Executive Consolidated 360° & Planificación Sucesoria</h1>
-        
-        <div class="card">
-            <b>Cliente:</b> {nombre_cliente} &nbsp;&nbsp;|&nbsp;&nbsp; <b>RUT:</b> {rut_cliente}<br>
-            <b>Estado Previsional:</b> {estado_prev} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Fecha Emisión:</b> {datetime.date.today().strftime('%d/%m/%Y')}
+
+        <!-- ENCABEZADO CORPORATIVO OFICIAL FV ASESORÍAS & ALTUS AI -->
+        <div class="header-bar">
+            <table class="header-table">
+                <tr>
+                    <td style="border:none; padding:0;">
+                        {img_fv_tag}
+                        {img_altus_tag}
+                    </td>
+                    <td style="border:none; padding:0; text-align:right;">
+                        <div class="header-title-text">INFORME EXECUTIVE CONSOLIDADO 360°</div>
+                        <div class="header-subtitle-text">Planificación Patrimonial, Sucesoria y Sustento Legal</div>
+                    </td>
+                </tr>
+            </table>
         </div>
 
-        <h2>1. Balance Consolidado: Masa Hereditaria v/s Activos Excluidos</h2>
+        <!-- FICHA DE DATOS PERSONALES DEL CLIENTE -->
+        <div class="profile-card">
+            <table style="margin:0; border:none;">
+                <tr>
+                    <td style="border:none; width:50%; padding:2px 0;"><b>Titular Patrimonial:</b> {nombre_cliente}</td>
+                    <td style="border:none; width:50%; padding:2px 0;"><b>RUT:</b> {rut_cliente}</td>
+                </tr>
+                <tr>
+                    <td style="border:none; padding:2px 0;"><b>Situación Laboral / Ocupación:</b> <span class="badge-gold">{estado_prev}</span></td>
+                    <td style="border:none; padding:2px 0;"><b>Valor UF Referencial:</b> ${uf_val:,.2f} CLP &nbsp;|&nbsp; <b>Emisión:</b> {datetime.date.today().strftime('%d/%m/%Y')}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- SECCIÓN 1: BALANCE CONSOLIDADO -->
+        <h2>1. Balance Consolidado: Masa Hereditaria Imponible v/s Activos Excluidos</h2>
         <table>
             <tr>
                 <th>Categoría de Activo / Pasivo</th>
                 <th>Monto (UF)</th>
+                <th>Monto Estimado ($ CLP)</th>
                 <th>Tratamiento Legal y Tributario</th>
             </tr>
             <tr>
-                <td><b>Patrimonio Inmobiliario</b></td>
+                <td><b>Patrimonio Inmobiliario (Bienes Raíces)</b></td>
                 <td>{tot['propiedades_uf']:,.2f} UF</td>
-                <td>Ingresa a la Masa Hereditaria. Impuesto a la Herencia (Ley 16.271).</td>
+                <td><b>${tot['propiedades_clp']:,.0f} CLP</b></td>
+                <td>Ingresa a Masa Hereditaria. Impuesto a la Herencia (Ley 16.271). Deuda extinta 100% por desgravamen.</td>
             </tr>
             <tr>
-                <td><b>Deuda Hipotecaria / Consumo</b></td>
-                <td><span style="color: green; font-weight: bold;">0.00 UF (Extinguida)</span></td>
-                <td><b>Extinción 100% por Seguro de Desgravamen</b> (Ley 20.449 & DFL 251). Los inmuebles pasan libres de deuda.</td>
+                <td><b>Inversiones Previsionales (APV, Cuenta 2, AFP)</b></td>
+                <td>{tot['inversiones_previsionales_uf']:,.2f} UF</td>
+                <td><b>${tot['inversiones_previsionales_clp']:,.0f} CLP</b></td>
+                <td>Masa Hereditaria. Beneficio especial de <b>exención de 4.000 UF</b> para Cuenta 2 AFP (Art. 72 DL 3500).</td>
             </tr>
             <tr>
-                <td><b>Portafolio de Inversiones</b></td>
-                <td>{tot['inversiones_uf']:,.2f} UF</td>
-                <td>Masa Hereditaria. Exención especial de <b>4.000 UF</b> para Cuenta 2 AFP (Art. 72 DL 3500).</td>
+                <td><b>Inversiones No Previsionales (Generales)</b></td>
+                <td>{tot['inversiones_no_previsionales_uf']:,.2f} UF</td>
+                <td><b>${tot['inversiones_no_previsionales_clp']:,.0f} CLP</b></td>
+                <td>Masa Hereditaria General Afecta a Ley 16.271 tras exenciones generales.</td>
             </tr>
             <tr>
-                <td><b>Seguros de Vida</b></td>
+                <td><b>Seguros de Vida (Exentos Circular 20 SII)</b></td>
                 <td>{tot['seguros_exentos_uf']:,.2f} UF</td>
-                <td>Fuera de Masa Hereditaria / Exentos (Circular N° 20 de 2022 SII & Art. 20 Ley 16.271).</td>
+                <td><b>${(tot['seguros_exentos_uf'] * uf_val):,.0f} CLP</b></td>
+                <td>Fuera de Masa Hereditaria / Exentos de impuesto (Art. 20 Ley 16.271 & Circular 20 SII).</td>
             </tr>
-            <tr style="background-color: #edf2f7;">
+            <tr class="highlight-total">
                 <td><b>MASA HEREDITARIA IMPONIBLE NETO</b></td>
-                <td><b class="highlight">{tot['masa_hereditaria_imponible_uf']:,.2f} UF</b></td>
-                <td>Base neta imponible para cálculo del Impuesto a las Herencias tras exenciones.</td>
+                <td><b>{tot['masa_hereditaria_imponible_uf']:,.2f} UF</b></td>
+                <td><b>${tot['masa_hereditaria_imponible_clp']:,.0f} CLP</b></td>
+                <td>Base imponible neta tras exención de 4.000 UF Cuenta 2 para cálculo de herencia legal.</td>
             </tr>
         </table>
 
+        <!-- SECCIÓN 2: CARTERA INMOBILIARIA -->
         <h2>2. Cartera Inmobiliaria y Extinción por Desgravamen</h2>
         <table>
             <tr>
                 <th>Propiedad / Alias</th>
                 <th>Ubicación / ROL</th>
                 <th>Valor Comercial</th>
-                <th>Deuda Bruta</th>
-                <th>Estado Tras Desgravamen</th>
+                <th>Deuda Bruta Original</th>
+                <th>Estado Tras Fallecimiento (Desgravamen)</th>
             </tr>
             {prop_rows}
         </table>
 
+        <!-- SECCIÓN 3: PORTAFOLIO DE INVERSIONES -->
         <h2>3. Portafolio de Inversiones Consolidadas</h2>
+        <div style="font-weight:bold; color:#2b6cb0; margin-top:6px; font-size:8.5pt;">3.1 Inversiones Previsionales (APV, Cuenta 2 AFP, Fondos Previsionales)</div>
         <table>
             <tr>
                 <th>Institución</th>
                 <th>Activo / Fondo</th>
-                <th>Tipo Instrumento</th>
-                <th>Monto Estimado</th>
+                <th>Clasificación</th>
+                <th>Monto (UF)</th>
+                <th>Monto ($ CLP)</th>
             </tr>
-            {inv_rows}
+            {inv_prev_rows}
         </table>
 
+        <div style="font-weight:bold; color:#4a5568; margin-top:8px; font-size:8.5pt;">3.2 Inversiones No Previsionales (Acciones, DPF, Fondos Generales, Cripto)</div>
+        <table>
+            <tr>
+                <th>Institución</th>
+                <th>Activo / Fondo</th>
+                <th>Clasificación</th>
+                <th>Monto (UF)</th>
+                <th>Monto ($ CLP)</th>
+            </tr>
+            {inv_noprev_rows}
+        </table>
+
+        <!-- SECCIÓN 4: SEGUROS DE VIDA -->
         <h2>4. Cobertura de Seguros de Vida y Evaluación Ley 21.420</h2>
         <table>
             <tr>
                 <th>Aseguradora</th>
                 <th>Tipo Cobertura</th>
-                <th>Capital Asegurado</th>
+                <th>Capital Asegurado (UF)</th>
+                <th>Capital ($ CLP)</th>
                 <th>Fecha Contratación</th>
                 <th>APV Póliza</th>
             </tr>
             {pol_rows}
         </table>
 
+        <!-- SECCIÓN 5: COMPROMISOS FINANCIEROS -->
         <h2>5. Compromisos Financieros CMF</h2>
         <table>
             <tr>
                 <th>Institución Financiera</th>
                 <th>Tipo Crédito</th>
-                <th>Monto Actual</th>
-                <th>Mora</th>
+                <th>Monto Actual ($ CLP)</th>
+                <th>Monto (UF)</th>
+                <th>Mora ($ CLP)</th>
             </tr>
             {debt_rows}
         </table>
 
-        <h2>6. Herederos Forzosos y Cobertura de Pensión de Sobrevivencia</h2>
-        <p>Conforme al <b>DL 3500 Art. 5 y 58</b>, los hijos estudiantes de 18 a 24 años mantienen su pensión de sobrevivencia:</p>
+        <!-- SECCIÓN 6: DISTRIBUCIÓN LEGAL DE MASA HEREDITARIA CON MONTOS PROPORCIONALES -->
+        <h2>6. Distribución Legal de la Masa Hereditaria y Derechos Proporcionales</h2>
+        <p style="font-size:8.5pt; color:#4a5568; margin-bottom:6px;">
+            Conforme a las reglas del Código Civil y DL 3500, la masa imponible neta de <b>{tot['masa_hereditaria_imponible_uf']:,.2f} UF (${tot['masa_hereditaria_imponible_clp']:,.0f} CLP)</b> se asigna como sigue:
+        </p>
         <table>
             <tr>
-                <th>Heredero / Beneficiario</th>
-                <th>Relación</th>
+                <th>Heredero</th>
+                <th>Parentesco</th>
                 <th>Edad</th>
-                <th>Estudiante 18-24</th>
-                <th>% Asignación Legal</th>
+                <th>Estudiante</th>
+                <th>% Asignación</th>
+                <th>Asignación (UF)</th>
+                <th>Asignación ($ CLP)</th>
+                <th>Impuesto Est.</th>
+                <th>Líquido a Recibir</th>
             </tr>
             {herederos_rows}
         </table>
 
+        <!-- SECCIÓN 7: SUSTENTO LEGAL -->
         <h2>7. Matriz de Citas y Sustento Legal por Artículo</h2>
         <table>
             <tr>
-                <th style="width: 35%;">Norma / Artículo</th>
-                <th style="width: 65%;">Aplicación al Caso</th>
+                <th>Norma / Artículo</th>
+                <th>Aplicación Específica al Caso</th>
             </tr>
             {sustento_rows}
         </table>
 
         <div class="legal-box">
             <b>💡 Opción EXCLUSIVA del Cónyuge en Póliza de APV (Régimen B):</b> Al fallecer el titular, <u>únicamente el cónyuge sobreviviente</u> cuenta con la facultad legal de elegir entre:<br>
-            • <b>1. Traspasar / Sumar Ahorros a su propio APV</b>: Integrar los saldos previsionales a sus propios fondos de pensiones manteniendo el diferimiento tributario (Art. 42 bis LIR).<br>
-            • <b>2. Retirar el dinero en efectivo (85% Líquido)</b>: Pagar un <b>Impuesto Único del 15%</b> (retenido por la Aseguradora/AFP según Art. 42 bis N° 4 LIR), quedando el capital <b>100% exento del Impuesto a la Herencia (Ley 16.271)</b>.<br>
-            <i>(Esta opción tributaria de rescate directo con tasa del 15% es un derecho reservado exclusivamente para el cónyuge en pólizas APV, no aplicando a otros herederos)</i>.
+            • <b>1. Traspasar / Sumar Ahorros a su propio APV</b>: Integrar los saldos previsionales a sus propios fondos manteniendo el diferimiento tributario (Art. 42 bis LIR).<br>
+            • <b>2. Retirar el dinero en efectivo (85% Líquido)</b>: Pagar un <b>Impuesto Único del 15%</b> (retenido por la Aseguradora/AFP), quedando el capital <b>100% exento del Impuesto a la Herencia (Ley 16.271)</b>.<br>
+            <i>(Derecho reservado exclusivamente para el cónyuge en pólizas APV, no aplicando a otros herederos)</i>.
         </div>
 
         <div class="footer">
-            Documento confidencial generado por FV Asesorías e Inversiones - Sistema Senior de Asesoría Patrimonial
+            Documento confidencial generado por <b>FV Asesorías e Inversiones SpA</b> con tecnología <b>ALTUS AI</b>.
         </div>
     </body>
     </html>
@@ -367,9 +467,4 @@ def generate_succession_report_pdf(prospect_id: int) -> bytes:
 
     result = BytesIO()
     pisa_status = pisa.CreatePDF(html_content, dest=result)
-    
-    if pisa_status.err:
-        print("Error generating Succession PDF")
-        return b""
-        
-    return result.getvalue()
+    return result.getvalue() if not pisa_status.err else b""
