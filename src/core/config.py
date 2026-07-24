@@ -1,8 +1,13 @@
 import os
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
 
-# Carga variables desde `.env`
-load_dotenv()
+# Configuración Base de Datos. Por defecto SQLite local (crm_database.db o prospectos.db).
+DATABASE_PATH = "data/crm_database.db"
+if not os.path.exists("data"):
+    os.makedirs("data", exist_ok=True)
 
-# Configuración Base de Datos. Por defecto SQLite local.
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///data/processed/prospectos.db")
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATABASE_PATH}")
