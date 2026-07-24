@@ -582,7 +582,10 @@ class MarketDataEngine:
             ai_data['news_img_b64'] = news_img_b64
         
         env = Environment(loader=FileSystemLoader('src/web/templates'))
-        template = env.get_template('infografia_diaria.html')
+        if mode in ["weekly", "audio"]:
+            template = env.get_template('infografia_resumen_semanal.html')
+        else:
+            template = env.get_template('infografia_diaria.html')
         html_out = template.render(json_data=ai_data)
         
         html_path = f"{out_dir}/temp_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
@@ -714,8 +717,8 @@ class MarketDataEngine:
             df = ode.get_cochilco_production_data()
             custom_news_text = ode.generate_llm_context(df)
             self.cochilco_chart_b64 = ode.generate_production_chart_base64(df)
-        elif mode == "audio" and custom_input:
-            logging.info("Iniciando procesamiento de Infografía desde Reporte de Audio de Mercado")
+        elif mode in ["weekly", "audio"] and custom_input:
+            logging.info("Iniciando procesamiento de Infografía desde Reporte Resumen Semanal de Mercado (Audio/WhatsApp)")
             custom_news_text = custom_input
             
         if mode == "auto":
