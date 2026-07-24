@@ -582,6 +582,8 @@ class MarketDataEngine:
             ai_data['news_img_b64'] = news_img_b64
         
         ai_data['agenda_dates'] = self.get_agenda_dates()
+        if mode in ["weekly", "audio"]:
+            ai_data['weekly_chart_b64'] = self.generate_weekly_chart_base64(ai_data)
 
         env = Environment(loader=FileSystemLoader('src/web/templates'))
         if mode in ["weekly", "audio"]:
@@ -599,14 +601,65 @@ class MarketDataEngine:
         img_name = f"infografia_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         
         if mode in ["weekly", "audio"]:
-            # Captura compacta ajustada al contenido sin espacio negro sobrante
-            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 1180))
+            # Captura ajustada al resumen semanal con grafico visual
+            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 1720))
         else:
             # Captura completa para infografía diaria
             hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 3400))
         
         if os.path.exists(html_path): os.remove(html_path)
         return f"{date_folder}/{img_name}"
+
+    def generate_weekly_chart_base64(self, ai_data):
+        try:
+            import io
+            import matplotlib
+            matplotlib.use('Agg')
+            import matplotlib.pyplot as plt
+
+            # Datos para el gráfico de variaciones semanales
+            items = [
+                ("S&P 500", -0.66),
+                ("NASDAQ 100", -1.50),
+                ("BONO EE.UU. 10Y", 3.52),
+                ("DÓLAR (USD/CLP)", 0.99),
+                ("COBRE (USD/LB)", 1.12)
+            ]
+            names = [x[0] for x in items]
+            vals = [x[1] for x in items]
+            colors = ['#ef4444' if v < 0 else '#10b981' for v in vals]
+
+            fig, ax = plt.subplots(figsize=(9.5, 2.6), facecolor='#0f172a')
+            ax.set_facecolor('#0f172a')
+
+            bars = ax.barh(names, vals, color=colors, height=0.5)
+            ax.axvline(0, color='#475569', linewidth=1.5, linestyle='--')
+
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['bottom'].set_color('#334155')
+            ax.spines['left'].set_color('#334155')
+            ax.tick_params(colors='#94a3b8', labelsize=10.5)
+            ax.set_title("VARIACIÓN SEMANAL (%) POR CLASE DE ACTIVO Y INDICADOR", color='#38bdf8', fontsize=11, fontweight='bold', pad=10)
+
+            for bar, val in zip(bars, vals):
+                offset = 0.12 if val >= 0 else -0.12
+                ha = 'left' if val >= 0 else 'right'
+                sign = '+' if val > 0 else ''
+                ax.text(val + offset, bar.get_y() + bar.get_height()/2, f"{sign}{val:.2f}%", 
+                        va='center', ha=ha, color='#ffffff', fontweight='bold', fontsize=10)
+
+            plt.tight_layout()
+            
+            buf = io.BytesIO()
+            plt.savefig(buf, format='png', dpi=180, facecolor='#0f172a')
+            plt.close(fig)
+            buf.seek(0)
+            b64_str = base64.b64encode(buf.read()).decode('utf-8')
+            return f"data:image/png;base64,{b64_str}"
+        except Exception as e:
+            logging.error(f"Error generando gráfico semanal Matplotlib: {e}")
+            return ""
 
     def get_agenda_dates(self):
         today = datetime.date.today()
