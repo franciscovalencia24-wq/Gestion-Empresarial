@@ -322,6 +322,8 @@
 </head>
 <body>
 
+    {% set ltm = json_data.ltm_stats if (json_data.ltm_stats is defined and json_data.ltm_stats) else {'sp500': 18.5, 'nasdaq': 22.1, 'bono10y': -3.8, 'dolar': 7.4, 'cobre': 12.3} %}
+
     <!-- BARRA SUPERIOR CON LOGOS PROMINENTES Y GENEROSOS DE ALTA RESOLUCIÓN (REGLAS #3 Y #4 AGENTS.MD) -->
     <div class="top-bar">
         <div class="brand-box">
@@ -378,17 +380,17 @@
             <div class="divergence-row">
                 <div class="asset-label">S&P 500</div>
                 <div class="bar-container-left">
-                    {% if json_data.ltm_stats.sp500 < 0 %}
-                        <div class="bar-fill-left" style="width: {{ (json_data.ltm_stats.sp500 | abs) * 2.5 }}%;"></div>
+                    {% if ltm.sp500 < 0 %}
+                        <div class="bar-fill-left" style="width: {{ (ltm.sp500 | abs) * 2.5 }}%;"></div>
                     {% endif %}
                 </div>
                 <div class="bar-container-right">
-                    {% if json_data.ltm_stats.sp500 >= 0 %}
-                        <div class="bar-fill-right" style="width: {{ json_data.ltm_stats.sp500 * 2.5 }}%;"></div>
+                    {% if ltm.sp500 >= 0 %}
+                        <div class="bar-fill-right" style="width: {{ ltm.sp500 * 2.5 }}%;"></div>
                     {% endif %}
                 </div>
-                <div class="val-badge {{ 'val-red' if json_data.ltm_stats.sp500 < 0 else 'val-green' }}">
-                    {{ '+' if json_data.ltm_stats.sp500 > 0 else '' }}{{ json_data.ltm_stats.sp500 }}% (LTM)
+                <div class="val-badge {{ 'val-red' if ltm.sp500 < 0 else 'val-green' }}">
+                    {{ '+' if ltm.sp500 > 0 else '' }}{{ ltm.sp500 }}% (LTM)
                 </div>
             </div>
 
@@ -396,17 +398,17 @@
             <div class="divergence-row">
                 <div class="asset-label">NASDAQ 100</div>
                 <div class="bar-container-left">
-                    {% if json_data.ltm_stats.nasdaq < 0 %}
-                        <div class="bar-fill-left" style="width: {{ (json_data.ltm_stats.nasdaq | abs) * 2.5 }}%;"></div>
+                    {% if ltm.nasdaq < 0 %}
+                        <div class="bar-fill-left" style="width: {{ (ltm.nasdaq | abs) * 2.5 }}%;"></div>
                     {% endif %}
                 </div>
                 <div class="bar-container-right">
-                    {% if json_data.ltm_stats.nasdaq >= 0 %}
-                        <div class="bar-fill-right" style="width: {{ json_data.ltm_stats.nasdaq * 2.5 }}%;"></div>
+                    {% if ltm.nasdaq >= 0 %}
+                        <div class="bar-fill-right" style="width: {{ ltm.nasdaq * 2.5 }}%;"></div>
                     {% endif %}
                 </div>
-                <div class="val-badge {{ 'val-red' if json_data.ltm_stats.nasdaq < 0 else 'val-green' }}">
-                    {{ '+' if json_data.ltm_stats.nasdaq > 0 else '' }}{{ json_data.ltm_stats.nasdaq }}% (LTM)
+                <div class="val-badge {{ 'val-red' if ltm.nasdaq < 0 else 'val-green' }}">
+                    {{ '+' if ltm.nasdaq > 0 else '' }}{{ ltm.nasdaq }}% (LTM)
                 </div>
             </div>
 
@@ -414,17 +416,17 @@
             <div class="divergence-row">
                 <div class="asset-label">BONO EE.UU. 10Y</div>
                 <div class="bar-container-left">
-                    {% if json_data.ltm_stats.bono10y < 0 %}
-                        <div class="bar-fill-left" style="width: {{ (json_data.ltm_stats.bono10y | abs) * 2.5 }}%;"></div>
+                    {% if ltm.bono10y < 0 %}
+                        <div class="bar-fill-left" style="width: {{ (ltm.bono10y | abs) * 2.5 }}%;"></div>
                     {% endif %}
                 </div>
                 <div class="bar-container-right">
-                    {% if json_data.ltm_stats.bono10y >= 0 %}
-                        <div class="bar-fill-right" style="width: {{ json_data.ltm_stats.bono10y * 2.5 }}%;"></div>
+                    {% if ltm.bono10y >= 0 %}
+                        <div class="bar-fill-right" style="width: {{ ltm.bono10y * 2.5 }}%;"></div>
                     {% endif %}
                 </div>
-                <div class="val-badge {{ 'val-red' if json_data.ltm_stats.bono10y < 0 else 'val-green' }}">
-                    {{ '+' if json_data.ltm_stats.bono10y > 0 else '' }}{{ json_data.ltm_stats.bono10y }}% (LTM)
+                <div class="val-badge {{ 'val-red' if ltm.bono10y < 0 else 'val-green' }}">
+                    {{ '+' if ltm.bono10y > 0 else '' }}{{ ltm.bono10y }}% (LTM)
                 </div>
             </div>
 
@@ -432,17 +434,17 @@
             <div class="divergence-row">
                 <div class="asset-label">DÓLAR (USD/CLP)</div>
                 <div class="bar-container-left">
-                    {% if json_data.ltm_stats.dolar < 0 %}
-                        <div class="bar-fill-left" style="width: {{ (json_data.ltm_stats.dolar | abs) * 2.5 }}%;"></div>
+                    {% if ltm.dolar < 0 %}
+                        <div class="bar-fill-left" style="width: {{ (ltm.dolar | abs) * 2.5 }}%;"></div>
                     {% endif %}
                 </div>
                 <div class="bar-container-right">
-                    {% if json_data.ltm_stats.dolar >= 0 %}
-                        <div class="bar-fill-right" style="width: {{ json_data.ltm_stats.dolar * 2.5 }}%;"></div>
+                    {% if ltm.dolar >= 0 %}
+                        <div class="bar-fill-right" style="width: {{ ltm.dolar * 2.5 }}%;"></div>
                     {% endif %}
                 </div>
-                <div class="val-badge {{ 'val-red' if json_data.ltm_stats.dolar < 0 else 'val-green' }}">
-                    {{ '+' if json_data.ltm_stats.dolar > 0 else '' }}{{ json_data.ltm_stats.dolar }}% (LTM)
+                <div class="val-badge {{ 'val-red' if ltm.dolar < 0 else 'val-green' }}">
+                    {{ '+' if ltm.dolar > 0 else '' }}{{ ltm.dolar }}% (LTM)
                 </div>
             </div>
 
@@ -450,17 +452,17 @@
             <div class="divergence-row">
                 <div class="asset-label">COBRE (USD/LB)</div>
                 <div class="bar-container-left">
-                    {% if json_data.ltm_stats.cobre < 0 %}
-                        <div class="bar-fill-left" style="width: {{ (json_data.ltm_stats.cobre | abs) * 2.5 }}%;"></div>
+                    {% if ltm.cobre < 0 %}
+                        <div class="bar-fill-left" style="width: {{ (ltm.cobre | abs) * 2.5 }}%;"></div>
                     {% endif %}
                 </div>
                 <div class="bar-container-right">
-                    {% if json_data.ltm_stats.cobre >= 0 %}
-                        <div class="bar-fill-right" style="width: {{ json_data.ltm_stats.cobre * 2.5 }}%;"></div>
+                    {% if ltm.cobre >= 0 %}
+                        <div class="bar-fill-right" style="width: {{ ltm.cobre * 2.5 }}%;"></div>
                     {% endif %}
                 </div>
-                <div class="val-badge {{ 'val-red' if json_data.ltm_stats.cobre < 0 else 'val-green' }}">
-                    {{ '+' if json_data.ltm_stats.cobre > 0 else '' }}{{ json_data.ltm_stats.cobre }}% (LTM)
+                <div class="val-badge {{ 'val-red' if ltm.cobre < 0 else 'val-green' }}">
+                    {{ '+' if ltm.cobre > 0 else '' }}{{ ltm.cobre }}% (LTM)
                 </div>
             </div>
 

@@ -500,6 +500,8 @@ class MarketDataEngine:
             encoded_prompt = urllib.parse.quote(data.get("prompt_imagen", "global financial markets abstract dark"))
             data['imagen_noticia'] = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=800&height=400&nologo=true"
             
+            data['ltm_stats'] = self.fetch_ltm_variations()
+
             if not custom_news_text:
                 news = self.db.query(MarketNews).filter(MarketNews.usado_para_linkedin == 0).limit(10).all()
                 for n in news: n.usado_para_linkedin = 1
