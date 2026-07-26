@@ -17,7 +17,7 @@
             --accent-green: #10b981;
             --border-gold: rgba(245, 158, 11, 0.4);
         }
-        body {
+        html, body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
@@ -25,6 +25,12 @@
             margin: 0;
             padding: 40px;
             box-sizing: border-box;
+            overflow: hidden !important;
+        }
+        ::-webkit-scrollbar {
+            display: none !important;
+            width: 0px !important;
+            height: 0px !important;
         }
         
         /* HEADER PRINCIPAL CON LOGOS PROMINENTES Y GENEROSOS (REGLA #4 AGENTS.MD) */

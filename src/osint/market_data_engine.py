@@ -596,12 +596,17 @@ class MarketDataEngine:
         with open(html_path, "w", encoding="utf-8") as f:
             f.write(html_out)
             
-        hti = Html2Image(output_path=out_dir, custom_flags=['--virtual-time-budget=4000', '--allow-file-access-from-files', '--force-device-scale-factor=2'])
+        hti = Html2Image(output_path=out_dir, custom_flags=[
+            '--virtual-time-budget=4000', 
+            '--allow-file-access-from-files', 
+            '--force-device-scale-factor=2',
+            '--hide-scrollbars'
+        ])
         img_name = f"infografia_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
         
         if mode in ["weekly", "audio"]:
-            # Captura 4K completa sin recorte (1200x1950 px con escala de dispositivo 2x = 2400x3900 px 4K Ultra HD)
-            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 1950))
+            # Captura 4K limpia sin barras de desplazamiento (1200x1840 px a 2x = 2400x3680 px 4K Ultra HD)
+            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 1840))
         else:
             # Captura completa 4K para infografía diaria
             hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 3400))
