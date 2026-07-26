@@ -789,6 +789,28 @@ def render_client_management_ui():
                 else:
                     st.info("ℹ️ Detalle de bienes raíces, avalúos, créditos hipotecarios y cálculos de rentabilidad inmobiliaria.")
         
+                    # BOTÓN DE AUDITORÍA Y BÚSQUEDA AUTOMÁTICA POR RUT / CATASTRO NACIONAL (dequienes.cl / SII)
+                    if st.button("🏢 Auditar / Consultar Propiedades por RUT (Catastro Nacional)", key=f"btn_lookup_prop_{rut}", use_container_width=True):
+                        try:
+                            from src.osint.property_lookup_engine import PropertyLookupEngine
+                            engine_prop = PropertyLookupEngine()
+                            propiedades_encontradas = engine_prop.lookup_properties_by_rut(rut, prospect.nombre if 'prospect' in locals() and prospect else "")
+                            if propiedades_encontradas:
+                                existing_rols = [str(r).strip() for r in st.session_state[k_prop]["ROL"].tolist() if str(r).strip() not in ["", "nan", "None"]] if ("ROL" in st.session_state[k_prop].columns and not st.session_state[k_prop].empty) else []
+                                nuevas = [p for p in propiedades_encontradas if p.get("ROL") not in existing_rols]
+                                if nuevas:
+                                    st.session_state[k_prop] = pd.concat([st.session_state[k_prop], pd.DataFrame(nuevas)], ignore_index=True)
+                                    if f"editor_propiedades_{rut}" in st.session_state:
+                                        del st.session_state[f"editor_propiedades_{rut}"]
+                                    st.success(f"✅ Se auditaron e importaron {len(nuevas)} propiedades desde el Catastro Nacional SII para el RUT {rut}.")
+                                    st.rerun()
+                                else:
+                                    st.info("ℹ️ Las propiedades catastradas para este RUT ya se encuentran registradas en la tabla.")
+                            else:
+                                st.warning("⚠️ No se encontraron registros de bienes raíces asociados a este RUT.")
+                        except Exception as e:
+                            st.error(f"Error consultando catastro inmobiliario: {e}")
+        
                     with st.expander("📥 Importar desde Excel de Bienes Raíces (SII)", expanded=False):
                         st.info("Sube el archivo Excel descargado desde la página del SII ('Consultar mis bienes raíces').")
                         render_manual_button("manual_sii_bienes_raices.pdf", "📄 Descargar Manual SII (Bienes Raíces)")
