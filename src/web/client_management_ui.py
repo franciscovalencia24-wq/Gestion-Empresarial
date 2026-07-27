@@ -929,30 +929,24 @@ def render_client_management_ui():
                     if not df_props_curr.empty:
                         from src.osint.property_lookup_engine import PropertyLookupEngine
                         engine_prop = PropertyLookupEngine()
-                        changed_cols = False
+                        
+                        # 1. Filtrar filas totalmente vacías / None
+                        if "ROL" in df_props_curr.columns:
+                            valid_mask = ~df_props_curr["ROL"].fillna("").astype(str).str.strip().isin(["", "nan", "None"])
+                            df_props_curr = df_props_curr[valid_mask].reset_index(drop=True)
+                        
                         if "Factor Estimación" not in df_props_curr.columns:
                             df_props_curr["Factor Estimación"] = "1.85x"
-                            changed_cols = True
                         if "Valor Sugerido AI (UF)" not in df_props_curr.columns:
                             df_props_curr["Valor Sugerido AI (UF)"] = 0.0
-                            changed_cols = True
                         if "Origen Tasación" not in df_props_curr.columns:
                             df_props_curr["Origen Tasación"] = "Sugerida por AI"
-                            changed_cols = True
                         
                         for idx, row in df_props_curr.iterrows():
-                            avaluo = float(row.get("Avalúo Fiscal (CLP)", 0.0) or 0.0)
-                            comuna = str(row.get("Comuna", "") or "").strip()
-                            destino = str(row.get("Destino", "HABITACIONAL") or "HABITACIONAL").strip()
-                            rol_str = str(row.get("ROL", "") or "").strip()
+                            avaluo = float(row.get("Avalúo Fiscal (CLP)") or row.get("Avalúo Fiscal") or 0.0)
+                            comuna = str(row.get("Comuna") or row.get("comuna") or "").strip()
+                            destino = str(row.get("Destino") or row.get("destino") or "HABITACIONAL").strip()
                             
-                            is_valid_row = (avaluo > 0) or (comuna not in ["", "nan", "None"]) or (rol_str not in ["", "nan", "None"])
-                            if not is_valid_row:
-                                df_props_curr.at[idx, "Factor Estimación"] = None
-                                df_props_curr.at[idx, "Valor Sugerido AI (UF)"] = None
-                                df_props_curr.at[idx, "Origen Tasación"] = None
-                                continue
-
                             res_est = engine_prop.estimate_commercial_value_uf(avaluo, comuna, destino)
                             if isinstance(res_est, (tuple, list)):
                                 val_sug_uf, factor_tot = float(res_est[0]), float(res_est[1])
@@ -968,23 +962,40 @@ def render_client_management_ui():
                                 
                         st.session_state[k_prop] = df_props_curr
 
-                    cols = st.session_state[k_prop].columns.tolist()
+                    # 2. Limpiar caché del data_editor de Streamlit para forzar refresco de vista si contenía factores antiguos
+                    editor_key = f"editor_propiedades_{rut}"
+                    if editor_key in st.session_state:
+                        # Si la caché contiene factores antiguos "1.85x" o filas None, la reseteamos
+                        cached_df = st.session_state[editor_key]
+                        if isinstance(cached_df, dict) or (isinstance(cached_df, pd.DataFrame) and not cached_df.empty and "Factor Estimación" in cached_df.columns and (cached_df["Factor Estimación"] == "1.85x").any()):
+                            del st.session_state[editor_key]
+
+                    # 3. Asignar columna explícita de Correlativo N° (1, 2, 3...)
+                    df_display = st.session_state[k_prop].copy()
+                    if not df_display.empty:
+                        # Eliminar filas None/vacías de la vista
+                        if "ROL" in df_display.columns:
+                            valid_m = ~df_display["ROL"].fillna("").astype(str).str.strip().isin(["", "nan", "None"])
+                            df_display = df_display[valid_m].reset_index(drop=True)
+                        df_display["N°"] = range(1, len(df_display) + 1)
+                        cols_all = [c for c in df_display.columns if c != "N°"]
+                        df_display = df_display[["N°"] + cols_all]
+
+                    cols = df_display.columns.tolist()
                     if "Dividendo (CLP)" in cols and "Dividendo" in cols:
                         cols.remove("Dividendo (CLP)")
                         idx = cols.index("Dividendo")
                         cols.insert(idx + 1, "Dividendo (CLP)")
-                        st.session_state[k_prop] = st.session_state[k_prop][cols]
-
-                    # Correlativo numerado 1-indexado (1, 2, 3...)
-                    if not st.session_state[k_prop].empty:
-                        st.session_state[k_prop].index = range(1, len(st.session_state[k_prop]) + 1)
+                        df_display = df_display[cols]
 
                     edited_propiedades = st.data_editor(
-                        st.session_state[k_prop], 
+                        df_display, 
                         num_rows="dynamic", 
                         use_container_width=True, 
+                        hide_index=True,
                         key=f"editor_propiedades_{rut}",
                         column_config={
+                            "N°": st.column_config.NumberColumn("N°", format="%d", disabled=True),
                             "Deuda Hipotecaria": st.column_config.CheckboxColumn("¿Tiene Deuda?", default=False),
                             "Arrendada": st.column_config.CheckboxColumn("¿Arrendada?", default=False),
                             "Monto Arriendo": st.column_config.NumberColumn(format="$ %,d", min_value=0.0),
