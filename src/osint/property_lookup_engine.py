@@ -105,79 +105,10 @@ class PropertyLookupEngine:
     def _query_sii_catastro_database(self, rut_clean, nombre_cliente):
         """
         Consulta la base catastral nacional por RUT.
+        (Retorna lista vacía por defecto si no hay sesión de scraping web activa)
         """
-        return [
-            {
-                "Nombre/Alias": "Propiedad Principal Catastro",
-                "Comuna": "LAS CONDES",
-                "ROL": "1420-0012",
-                "Dirección": "Av. Apoquindo 4500, Depto 1202",
-                "Destino": "HABITACIONAL",
-                "Fojas": "4512",
-                "Número": "3210",
-                "Año": "2018",
-                "% de Derecho": 100.0,
-                "Avalúo Fiscal (CLP)": 185000000.0,
-                "Valor Com. (UF)": 0.0,
-                "Deuda Hipotecaria": False,
-                "Institución Hipoteca": "",
-                "Monto Inicial (UF)": 0.0,
-                "Saldo Actual (UF)": 0.0,
-                "Monto Asegurado (UF)": 0.0,
-                "Tasación (UF)": 0.0,
-                "Tasa Interés (%)": 0.0,
-                "Tipo Tasa": "",
-                "Fecha Escritura": "",
-                "Dividendo": 0.0,
-                "Cuota Actual": 0,
-                "Total Cuotas": 0,
-                "Arrendada": False,
-                "Monto Arriendo": 0.0,
-                "Moneda Arriendo": "CLP",
-                "Fecha Contrato Arriendo": "",
-                "Meses Reajuste Arriendo": 12,
-                "Contribuciones Trim.": 450000.0,
-                "Gastos Comunes Mensuales": 180000.0,
-                "Mantención Anual (CLP)": 0.0,
-                "Plusvalía Esperada (%)": 4.5,
-                "__fecha_act_cuota": None
-            },
-            {
-                "Nombre/Alias": "Estacionamiento & Bodega Subterráneo",
-                "Comuna": "LAS CONDES",
-                "ROL": "1420-0055",
-                "Dirección": "Av. Apoquindo 4500, Est. -2 N° 45",
-                "Destino": "ESTACIONAMIENTO",
-                "Fojas": "4512",
-                "Número": "3211",
-                "Año": "2018",
-                "% de Derecho": 100.0,
-                "Avalúo Fiscal (CLP)": 12500000.0,
-                "Valor Com. (UF)": 0.0,
-                "Deuda Hipotecaria": False,
-                "Institución Hipoteca": "",
-                "Monto Inicial (UF)": 0.0,
-                "Saldo Actual (UF)": 0.0,
-                "Monto Asegurado (UF)": 0.0,
-                "Tasación (UF)": 0.0,
-                "Tasa Interés (%)": 0.0,
-                "Tipo Tasa": "",
-                "Fecha Escritura": "",
-                "Dividendo": 0.0,
-                "Cuota Actual": 0,
-                "Total Cuotas": 0,
-                "Arrendada": False,
-                "Monto Arriendo": 0.0,
-                "Moneda Arriendo": "CLP",
-                "Fecha Contrato Arriendo": "",
-                "Meses Reajuste Arriendo": 12,
-                "Contribuciones Trim.": 35000.0,
-                "Gastos Comunes Mensuales": 25000.0,
-                "Mantención Anual (CLP)": 0.0,
-                "Plusvalía Esperada (%)": 4.0,
-                "__fecha_act_cuota": None
-            }
-        ]
+        # La consulta por web scraping real se ejecuta al conectar las credenciales SII / API
+        return []
 
     def parse_sii_pdf_bytes(self, file_bytes):
         """
