@@ -794,20 +794,33 @@ def render_client_management_ui():
                         try:
                             from src.osint.property_lookup_engine import PropertyLookupEngine
                             engine_prop = PropertyLookupEngine()
-                            propiedades_encontradas = engine_prop.lookup_properties_by_rut(rut, prospect.nombre if 'prospect' in locals() and prospect else "")
-                            if propiedades_encontradas:
-                                existing_rols = [str(r).strip() for r in st.session_state[k_prop]["ROL"].tolist() if str(r).strip() not in ["", "nan", "None"]] if ("ROL" in st.session_state[k_prop].columns and not st.session_state[k_prop].empty) else []
-                                nuevas = [p for p in propiedades_encontradas if p.get("ROL") not in existing_rols]
-                                if nuevas:
-                                    st.session_state[k_prop] = pd.concat([st.session_state[k_prop], pd.DataFrame(nuevas)], ignore_index=True)
-                                    if f"editor_propiedades_{rut}" in st.session_state:
-                                        del st.session_state[f"editor_propiedades_{rut}"]
-                                    st.success(f"✅ Se auditaron e importaron {len(nuevas)} propiedades desde el Catastro Nacional SII para el RUT {rut}.")
-                                    st.rerun()
-                                else:
-                                    st.info("ℹ️ Las propiedades catastradas para este RUT ya se encuentran registradas en la tabla.")
-                            else:
-                                st.warning("⚠️ No se encontraron registros de bienes raíces asociados a este RUT.")
+                            df_p = st.session_state[k_prop].copy()
+                            
+                            # 1. Eliminar filas ficticias de prueba previo (ROL 1420-0012, 1420-0055 o alias Catastro)
+                            if not df_p.empty and "ROL" in df_p.columns:
+                                df_p = df_p[~df_p["ROL"].astype(str).str.strip().isin(["1420-0012", "1420-0055"])]
+                            if not df_p.empty and "Nombre/Alias" in df_p.columns:
+                                df_p = df_p[~df_p["Nombre/Alias"].astype(str).str.contains("Catastro", case=False, na=False)]
+                            
+                            # 2. Recalcular e inyectar el Valor Comercial Estimado (UF) para todas las propiedades reales existentes
+                            updated_count = 0
+                            if not df_p.empty:
+                                for idx, row in df_p.iterrows():
+                                    avaluo = float(row.get("Avalúo Fiscal (CLP)", 0.0) or 0.0)
+                                    comuna = str(row.get("Comuna", "")).strip()
+                                    destino = str(row.get("Destino", "HABITACIONAL")).strip()
+                                    
+                                    val_uf = engine_prop.estimate_commercial_value_uf(avaluo, comuna, destino)
+                                    if val_uf > 0:
+                                        df_p.at[idx, "Valor Com. (UF)"] = val_uf
+                                        updated_count += 1
+                                        
+                            st.session_state[k_prop] = df_p
+                            if f"editor_propiedades_{rut}" in st.session_state:
+                                del st.session_state[f"editor_propiedades_{rut}"]
+                                
+                            st.success(f"✅ Auditoría completada: Se eliminaron registros de prueba y se calcularon automáticamente los Valores Comerciales en UF para {updated_count} propiedades reales.")
+                            st.rerun()
                         except Exception as e:
                             st.error(f"Error consultando catastro inmobiliario: {e}")
         
