@@ -54,11 +54,11 @@ class PropertyLookupEngine:
 
     def estimate_commercial_value_uf(self, avaluo_fiscal_clp, comuna, destino="HABITACIONAL"):
         """
-        Calcula el Valor Comercial Estimado en UF a partir del Avalúo Fiscal en CLP,
-        la Comuna y el Destino del inmueble.
+        Calcula el Valor Comercial Estimado en UF y el Factor de Multiplicación Total.
+        Retorna (val_comercial_uf, factor_total)
         """
         if not avaluo_fiscal_clp or avaluo_fiscal_clp <= 0:
-            return 0.0
+            return 0.0, 1.85
 
         comuna_upper = str(comuna or "").upper().strip()
         destino_upper = str(destino or "").upper().strip()
@@ -73,9 +73,10 @@ class PropertyLookupEngine:
                 mult_destino = v
                 break
 
-        val_comercial_clp = avaluo_fiscal_clp * mult_comuna * mult_destino
+        factor_total = round(mult_comuna * mult_destino, 2)
+        val_comercial_clp = avaluo_fiscal_clp * factor_total
         val_comercial_uf = val_comercial_clp / self.uf_today if self.uf_today > 0 else 0.0
-        return round(val_comercial_uf, 2)
+        return round(val_comercial_uf, 2), factor_total
 
     def lookup_properties_by_rut(self, rut_cliente, nombre_cliente=""):
         """
@@ -126,7 +127,7 @@ class PropertyLookupEngine:
                     avaluo = float(row.get("Avalúo Fiscal (CLP)", 0.0))
                     comuna = str(row.get("Comuna", "SANTIAGO"))
                     destino = str(row.get("Destino", "HABITACIONAL"))
-                    val_com_uf = self.estimate_commercial_value_uf(avaluo, comuna, destino)
+                    val_com_uf, factor_total = self.estimate_commercial_value_uf(avaluo, comuna, destino)
                     
                     item = {
                         "Nombre/Alias": row.get("Nombre/Alias", "Propiedad SII (Carpeta)"),
@@ -139,7 +140,10 @@ class PropertyLookupEngine:
                         "Año": "",
                         "% de Derecho": 100.0,
                         "Avalúo Fiscal (CLP)": avaluo,
+                        "Factor Estimación": f"{factor_total:.2f}x",
+                        "Valor Sugerido AI (UF)": val_com_uf,
                         "Valor Com. (UF)": val_com_uf,
+                        "Origen Tasación": "Sugerida por AI",
                         "Deuda Hipotecaria": False,
                         "Institución Hipoteca": "",
                         "Monto Inicial (UF)": 0.0,

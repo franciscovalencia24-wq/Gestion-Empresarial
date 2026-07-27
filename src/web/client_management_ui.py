@@ -802,7 +802,7 @@ def render_client_management_ui():
                             if not df_p.empty and "Nombre/Alias" in df_p.columns:
                                 df_p = df_p[~df_p["Nombre/Alias"].astype(str).str.contains("Catastro", case=False, na=False)]
                             
-                            # 2. Recalcular e inyectar el Valor Comercial Estimado (UF) para todas las propiedades reales existentes
+                            # 2. Recalcular Factor AI y Valor Sugerido AI (UF), preservando tasaciones reales ingresadas por el cliente
                             updated_count = 0
                             if not df_p.empty:
                                 for idx, row in df_p.iterrows():
@@ -810,16 +810,29 @@ def render_client_management_ui():
                                     comuna = str(row.get("Comuna", "")).strip()
                                     destino = str(row.get("Destino", "HABITACIONAL")).strip()
                                     
-                                    val_uf = engine_prop.estimate_commercial_value_uf(avaluo, comuna, destino)
-                                    if val_uf > 0:
-                                        df_p.at[idx, "Valor Com. (UF)"] = val_uf
-                                        updated_count += 1
+                                    val_sugerido_uf, factor_total = engine_prop.estimate_commercial_value_uf(avaluo, comuna, destino)
+                                    df_p.at[idx, "Factor Estimación"] = f"{factor_total:.2f}x"
+                                    df_p.at[idx, "Valor Sugerido AI (UF)"] = val_sugerido_uf
+                                    
+                                    # Verificar si el cliente ingresó una tasación personalizada (ej: 10.000 UF / 5.500 UF)
+                                    val_actual_uf = float(row.get("Valor Com. (UF)", 0.0) or 0.0)
+                                    origen_prev = str(row.get("Origen Tasación", "")).strip()
+                                    
+                                    if origen_prev == "Tasación Real / Cliente" or (val_actual_uf > 0 and abs(val_actual_uf - val_sugerido_uf) > 1.0):
+                                        # PRESERVAR VALORACIÓN PROPIA DEL CLIENTE
+                                        df_p.at[idx, "Origen Tasación"] = "Tasación Real / Cliente"
+                                    else:
+                                        # Asignar sugerido por AI por defecto
+                                        df_p.at[idx, "Valor Com. (UF)"] = val_sugerido_uf
+                                        df_p.at[idx, "Origen Tasación"] = "Sugerida por AI"
+                                        
+                                    updated_count += 1
                                         
                             st.session_state[k_prop] = df_p
                             if f"editor_propiedades_{rut}" in st.session_state:
                                 del st.session_state[f"editor_propiedades_{rut}"]
                                 
-                            st.success(f"✅ Auditoría completada: Se eliminaron registros de prueba y se calcularon automáticamente los Valores Comerciales en UF para {updated_count} propiedades reales.")
+                            st.success(f"✅ Auditoría completada: Se actualizaron los factores de estimación AI para {updated_count} propiedades y se preservaron tus tasaciones reales del cliente.")
                             st.rerun()
                         except Exception as e:
                             st.error(f"Error consultando catastro inmobiliario: {e}")
@@ -898,6 +911,37 @@ def render_client_management_ui():
                                 except Exception as e:
                                     st.error(f"Error procesando Excel: {e}")
 
+                    # Asegurar columnas de auditoría AI y tasación cliente
+                    df_props_curr = st.session_state[k_prop].copy()
+                    if not df_props_curr.empty:
+                        from src.osint.property_lookup_engine import PropertyLookupEngine
+                        engine_prop = PropertyLookupEngine()
+                        changed_cols = False
+                        if "Factor Estimación" not in df_props_curr.columns:
+                            df_props_curr["Factor Estimación"] = "1.85x"
+                            changed_cols = True
+                        if "Valor Sugerido AI (UF)" not in df_props_curr.columns:
+                            df_props_curr["Valor Sugerido AI (UF)"] = 0.0
+                            changed_cols = True
+                        if "Origen Tasación" not in df_props_curr.columns:
+                            df_props_curr["Origen Tasación"] = "Sugerida por AI"
+                            changed_cols = True
+                        
+                        for idx, row in df_props_curr.iterrows():
+                            avaluo = float(row.get("Avalúo Fiscal (CLP)", 0.0) or 0.0)
+                            comuna = str(row.get("Comuna", "")).strip()
+                            destino = str(row.get("Destino", "HABITACIONAL")).strip()
+                            val_sug_uf, factor_tot = engine_prop.estimate_commercial_value_uf(avaluo, comuna, destino)
+                            
+                            df_props_curr.at[idx, "Factor Estimación"] = f"{factor_tot:.2f}x"
+                            df_props_curr.at[idx, "Valor Sugerido AI (UF)"] = val_sug_uf
+                            
+                            val_com_actual = float(row.get("Valor Com. (UF)", 0.0) or 0.0)
+                            if val_com_actual == 0.0:
+                                df_props_curr.at[idx, "Valor Com. (UF)"] = val_sug_uf
+                                
+                        st.session_state[k_prop] = df_props_curr
+
                     cols = st.session_state[k_prop].columns.tolist()
                     if "Dividendo (CLP)" in cols and "Dividendo" in cols:
                         cols.remove("Dividendo (CLP)")
@@ -920,7 +964,10 @@ def render_client_management_ui():
                             "Cuota Actual": st.column_config.NumberColumn(min_value=0, step=1),
                             "Total Cuotas": st.column_config.NumberColumn(min_value=0, step=1),
                             "Avalúo Fiscal (CLP)": st.column_config.NumberColumn(format="$ %,d"),
-                            "Valor Com. (UF)": st.column_config.NumberColumn(format="%.2f UF"),
+                            "Factor Estimación": st.column_config.TextColumn("Factor AI", help="Multiplicador asignado por Comuna y Destino"),
+                            "Valor Sugerido AI (UF)": st.column_config.NumberColumn("Sugerido AI (UF)", format="%.2f UF", help="Estimación calculada por la IA según Avalúo Fiscal"),
+                            "Valor Com. (UF)": st.column_config.NumberColumn("Valor Comercial / Tasación (UF)", format="%.2f UF", help="Valor usado para el Informe 360°. Puedes sobreescribirlo con tu tasación real (ej: 10.000 UF)"),
+                            "Origen Tasación": st.column_config.SelectboxColumn("Origen Valor", options=["Sugerida por AI", "Tasación Real / Cliente"]),
                             "Monto Inicial (UF)": st.column_config.NumberColumn(format="%.2f UF"),
                             "Saldo Actual (UF)": st.column_config.NumberColumn(format="%.2f UF"),
                             "Monto Asegurado (UF)": st.column_config.NumberColumn(format="%.2f UF"),
