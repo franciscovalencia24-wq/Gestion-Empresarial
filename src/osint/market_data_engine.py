@@ -387,12 +387,12 @@ class MarketDataEngine:
             for idx in indices:
                 market_status_text += f"- {region} ({idx['nombre']}): {idx['efecto']}\n"
         
-        if mode == "audio":
+        if mode in ["weekly", "audio"] or custom_news_text:
             focus_instruction = """
-            MODO REPORTE DE AUDIO DE MERCADO (ANÁLISIS PROFUNDO, EXTENSO Y EXHAUSTIVO):
-            El contenido proviene de un reporte de audio de mercado oficial enviado por una institución financiera (ej. audio semanal de Principal Financial Group / Banco / Corredora).
+            MODO REPORTE DE MERCADO EXTENSO (ANÁLISIS PROFUNDO, COMPLETO Y EXHAUSTIVO):
+            El contenido proviene de un reporte extenso de mercado, audio oficial o texto de WhatsApp (ej. reporte semanal de Principal Financial Group / Banco / Corredora).
             ES ESTRICTAMENTE OBLIGATORIO que el texto del post para LinkedIn ('post_linkedin') sea PROFUNDO, EXTENSO Y EXHAUSTIVO (entre 5 y 8 párrafos completos estructurados con subtítulos y emojis).
-            NO hagas un resumen corto ni superficial. Debes profundizar analíticamente en TODOS y cada uno de los temas tratados en el audio:
+            NUNCA hagas un resumen corto ni superficial. Debes profundizar analíticamente en TODOS y cada uno de los temas tratados en el reporte:
             1. 📌 **TITULAR Y RESUMEN ESTRATÉGICO DE LA SEMANA/JORNADA**
             2. 🌍 **COMPORTAMIENTO GLOBAL DE LOS MERCADOS**: Explica en detalle qué pasó en la bolsa de EE.UU. (S&P 500, NASDAQ), Europa, Asia y el IPSA local, citando los factores y catalizadores de los movimientos.
             3. 🏦 **BANCOS CENTRALES, INFLACIÓN Y TASAS**: Analiza las decisiones o postura de la Reserva Federal (FED) y del Banco Central de Chile (BCCh), datos de inflación e impacto en la curva de tasas de Renta Fija.
@@ -405,7 +405,7 @@ class MarketDataEngine:
         elif mode == "auto_chile":
             focus_instruction = "Elige la noticia MÁS IMPORTANTE enfocada en CHILE (economía, mercados, empresas, política que afecte la economía).\nCRÍTICO: Como la noticia es LOCAL de Chile, el impacto en los índices de USA, EUROPA y ASIA debe ser evaluado lógicamente. Una noticia local NO mueve el S&P500. Por lo tanto, para los índices globales, asigna 'NEUTRAL' en efecto y 'LEVE' o '-' en relevancia, a menos que la noticia tenga repercusiones mundiales demostrables."
         else:
-            focus_instruction = "Elige la noticia MÁS IMPORTANTE basándote en su potencial impacto en los mercados globales y locales."
+            focus_instruction = "Elige la noticia MÁS IMPORTANTE basándote en su potencial impacto en los mercados globales y locales. Genera un post extenso, analítico y riguroso de 4 a 6 párrafos bien desarrollados."
         
         current_date_str = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")
         prompt = f"""
@@ -426,7 +426,7 @@ class MarketDataEngine:
             "fuente_noticia": "Fuente real de la noticia extraída del texto (ej: Diario Financiero, Reuters, etc. NO inventes).",
             "fecha_noticia": "Usa ESTRICTAMENTE la fecha y hora que viene en el texto de NOTICIAS HOY. Si la hora viene en formato UTC (ejemplo terminada en Z), réstale 4 horas para ajustarla a Chile. NO inventes fechas pasadas ni uses la fecha de tus ejemplos. Formato final: DD de Mes, YYYY - HH:MM hrs",
             "prompt_imagen": "Un prompt corto en inglés (max 10 palabras) que describa la noticia para generar una imagen abstracta. (Ej: 'stock market crash red arrows')",
-            "post_linkedin": "El post completo para RRSS. IMPORTANTE: Debes EXPLICAR BREVEMENTE de qué se trata la noticia o el suceso (el porqué o el contexto) antes de sacar conclusiones o hablar de incertidumbre, para que el lector entienda la causa. Usa un tono analítico, condicional y NO absolutista al proyectar impactos. Usa EMOJIS profesionales 📊 y destaca las ideas clave en NEGRITA (usando markdown **). Separa el texto obligatoriamente con DOBLE SALTO DE LÍNEA (\\n\\n) entre cada párrafo para que no se vea amontonado. Finaliza el post EXACTAMENTE con este bloque literal:\n\n¿Qué podría significar esto para tus ahorros e inversiones?\nDescubre cómo preparar tu portafolio ante estos nuevos desafíos. Obtén tu Radiografía Patrimonial, impulsada por nuestro software privado ALTUS AI, y optimiza tu estrategia de inversión.\n\n📧 contacto@fv-inversiones.com | 📱 WhatsApp: +56966779662\n\nAgrega de 3 a 5 HASHTAGS al final (ej: #Inversiones #Mercados).",
+            "post_linkedin": "El post completo para RRSS para LinkedIn. REQUISITO CRÍTICO DE EXTENSIÓN Y PROFUNDIDAD: El post DEBE SER EXTENSO, COMPLETO Y PROFUNDO (entre 5 y 8 párrafos detallados). NO hagas un resumen corto ni acotado de 2 o 3 párrafos. Debes DESARROLLAR EN DETALLE la noticia o reporte, desglosando los hechos clave, el contexto geopolítico y macroeconómico, los movimientos de las bolsas globales (S&P 500, NASDAQ), del tipo de cambio USD/CLP, del cobre y petróleo, las tasas de interés y las implicancias estratégicas para portafolios y APV. Usa subtítulos con emojis 📌 🌍 🏦 🛢️ 💼 💡, negritas en markdown (**) para datos duros y saltos de línea dobles (\\n\\n) entre párrafos. Finaliza EXACTAMENTE con este bloque literal:\n\n¿Qué podría significar esto para tus ahorros e inversiones?\nDescubre cómo preparar tu portafolio ante estos nuevos desafíos. Obtén tu Radiografía Patrimonial, impulsada por nuestro software privado ALTUS AI, y optimiza tu estrategia de inversión.\n\n📧 contacto@fv-inversiones.com | 📱 WhatsApp: +56966779662\n\nAgrega de 3 a 5 HASHTAGS al final (ej: #Inversiones #Mercados).",
             "explicacion_interna": "Una explicación detallada (dirigida a los asesores de FV) de la lógica económica/financiera detrás de la noticia elegida y cómo fundamenta de forma causal los impactos (alzas y bajas) predichos en los commodities e índices. Sirve para responder dudas de clientes.",
             "explicacion_multifondos": "Un texto explicativo de unas 3-4 líneas (para clientes) justificando los movimientos proyectados (ALZA o BAJA) específicos de los Multifondos chilenos en base a la noticia y los mercados globales. Se incluirá en la presentación.",
             "impacto_local": {{
