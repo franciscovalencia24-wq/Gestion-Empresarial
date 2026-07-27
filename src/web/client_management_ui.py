@@ -807,9 +807,17 @@ def render_client_management_ui():
                             if not df_p.empty:
                                 for idx, row in df_p.iterrows():
                                     avaluo = float(row.get("Avalúo Fiscal (CLP)", 0.0) or 0.0)
-                                    comuna = str(row.get("Comuna", "")).strip()
-                                    destino = str(row.get("Destino", "HABITACIONAL")).strip()
+                                    comuna = str(row.get("Comuna", "") or "").strip()
+                                    destino = str(row.get("Destino", "HABITACIONAL") or "HABITACIONAL").strip()
+                                    rol_str = str(row.get("ROL", "") or "").strip()
                                     
+                                    is_valid_row = (avaluo > 0) or (comuna not in ["", "nan", "None"]) or (rol_str not in ["", "nan", "None"])
+                                    if not is_valid_row:
+                                        df_p.at[idx, "Factor Estimación"] = None
+                                        df_p.at[idx, "Valor Sugerido AI (UF)"] = None
+                                        df_p.at[idx, "Origen Tasación"] = None
+                                        continue
+
                                     res_est = engine_prop.estimate_commercial_value_uf(avaluo, comuna, destino)
                                     if isinstance(res_est, (tuple, list)):
                                         val_sugerido_uf, factor_total = float(res_est[0]), float(res_est[1])
@@ -821,7 +829,7 @@ def render_client_management_ui():
                                     
                                     # Verificar si el cliente ingresó una tasación personalizada (ej: 10.000 UF / 5.500 UF)
                                     val_actual_uf = float(row.get("Valor Com. (UF)", 0.0) or 0.0)
-                                    origen_prev = str(row.get("Origen Tasación", "")).strip()
+                                    origen_prev = str(row.get("Origen Tasación", "") or "").strip()
                                     
                                     if origen_prev == "Tasación Real / Cliente" or (val_actual_uf > 0 and abs(val_actual_uf - val_sugerido_uf) > 1.0):
                                         # PRESERVAR VALORACIÓN PROPIA DEL CLIENTE
@@ -934,8 +942,17 @@ def render_client_management_ui():
                         
                         for idx, row in df_props_curr.iterrows():
                             avaluo = float(row.get("Avalúo Fiscal (CLP)", 0.0) or 0.0)
-                            comuna = str(row.get("Comuna", "")).strip()
-                            destino = str(row.get("Destino", "HABITACIONAL")).strip()
+                            comuna = str(row.get("Comuna", "") or "").strip()
+                            destino = str(row.get("Destino", "HABITACIONAL") or "HABITACIONAL").strip()
+                            rol_str = str(row.get("ROL", "") or "").strip()
+                            
+                            is_valid_row = (avaluo > 0) or (comuna not in ["", "nan", "None"]) or (rol_str not in ["", "nan", "None"])
+                            if not is_valid_row:
+                                df_props_curr.at[idx, "Factor Estimación"] = None
+                                df_props_curr.at[idx, "Valor Sugerido AI (UF)"] = None
+                                df_props_curr.at[idx, "Origen Tasación"] = None
+                                continue
+
                             res_est = engine_prop.estimate_commercial_value_uf(avaluo, comuna, destino)
                             if isinstance(res_est, (tuple, list)):
                                 val_sug_uf, factor_tot = float(res_est[0]), float(res_est[1])
