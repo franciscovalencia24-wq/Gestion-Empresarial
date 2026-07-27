@@ -74,11 +74,22 @@ class PropertyLookupEngine:
         if not avaluo_fiscal_clp or avaluo_fiscal_clp <= 0:
             return 0.0, 1.85
 
-        comuna_upper = str(comuna or "").upper().strip()
+        comuna_raw = str(comuna or "").upper().strip()
         destino_upper = str(destino or "").upper().strip()
 
-        # Multiplicador base por comuna (default: 1.85)
-        mult_comuna = self.COMUNA_MULTIPLIERS.get(comuna_upper, 1.85)
+        import unicodedata
+        def normalize_str(s):
+            return ''.join(c for c in unicodedata.normalize('NFD', str(s)) if unicodedata.category(c) != 'Mn').upper().strip()
+
+        clean_c = normalize_str(comuna_raw)
+
+        # Buscar en el diccionario de multiplicadores comunales con normalización de acentos y subcadenas
+        mult_comuna = 1.85
+        for key, val in self.COMUNA_MULTIPLIERS.items():
+            key_clean = normalize_str(key)
+            if key_clean == clean_c or key_clean in clean_c or clean_c in key_clean:
+                mult_comuna = val
+                break
         
         # Multiplicador por destino
         mult_destino = 1.0

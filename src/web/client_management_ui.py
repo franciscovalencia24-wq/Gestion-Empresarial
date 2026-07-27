@@ -975,6 +975,10 @@ def render_client_management_ui():
                         cols.insert(idx + 1, "Dividendo (CLP)")
                         st.session_state[k_prop] = st.session_state[k_prop][cols]
 
+                    # Correlativo numerado 1-indexado (1, 2, 3...)
+                    if not st.session_state[k_prop].empty:
+                        st.session_state[k_prop].index = range(1, len(st.session_state[k_prop]) + 1)
+
                     edited_propiedades = st.data_editor(
                         st.session_state[k_prop], 
                         num_rows="dynamic", 
