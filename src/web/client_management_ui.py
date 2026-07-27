@@ -230,7 +230,7 @@ def render_client_management_ui():
                             "Mantención Anual (CLP)": p.gastos_mantencion_anual,
                             "Plusvalía Esperada (%)": p.plusvalia_esperada_anual,
                             "__fecha_act_cuota": p.hipoteca_fecha_ultima_actualizacion
-                        } for p in props])
+                        } for p in props if p.rol and str(p.rol).strip() not in ["", "None", "nan"]])
                     
                     df_poliza = pd.DataFrame([{
                         "Aseguradora": p.compania,
@@ -962,15 +962,7 @@ def render_client_management_ui():
                                 
                         st.session_state[k_prop] = df_props_curr
 
-                    # 2. Limpiar caché del data_editor de Streamlit para forzar refresco de vista si contenía factores antiguos
-                    editor_key = f"editor_propiedades_{rut}"
-                    if editor_key in st.session_state:
-                        # Si la caché contiene factores antiguos "1.85x" o filas None, la reseteamos
-                        cached_df = st.session_state[editor_key]
-                        if isinstance(cached_df, dict) or (isinstance(cached_df, pd.DataFrame) and not cached_df.empty and "Factor Estimación" in cached_df.columns and (cached_df["Factor Estimación"] == "1.85x").any()):
-                            del st.session_state[editor_key]
-
-                    # 3. Asignar columna explícita de Correlativo N° (1, 2, 3...)
+                    # 2. Asignar columna explícita de Correlativo N° (1, 2, 3...)
                     df_display = st.session_state[k_prop].copy()
                     if not df_display.empty:
                         # Eliminar filas None/vacías de la vista
@@ -993,7 +985,7 @@ def render_client_management_ui():
                         num_rows="dynamic", 
                         use_container_width=True, 
                         hide_index=True,
-                        key=f"editor_propiedades_{rut}",
+                        key=f"editor_propiedades_{rut}_v2",
                         column_config={
                             "N°": st.column_config.NumberColumn("N°", format="%d", disabled=True),
                             "Deuda Hipotecaria": st.column_config.CheckboxColumn("¿Tiene Deuda?", default=False),
