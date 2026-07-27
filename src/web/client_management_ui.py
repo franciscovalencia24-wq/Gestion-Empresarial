@@ -810,7 +810,12 @@ def render_client_management_ui():
                                     comuna = str(row.get("Comuna", "")).strip()
                                     destino = str(row.get("Destino", "HABITACIONAL")).strip()
                                     
-                                    val_sugerido_uf, factor_total = engine_prop.estimate_commercial_value_uf(avaluo, comuna, destino)
+                                    res_est = engine_prop.estimate_commercial_value_uf(avaluo, comuna, destino)
+                                    if isinstance(res_est, (tuple, list)):
+                                        val_sugerido_uf, factor_total = float(res_est[0]), float(res_est[1])
+                                    else:
+                                        val_sugerido_uf, factor_total = float(res_est), 1.85
+
                                     df_p.at[idx, "Factor Estimación"] = f"{factor_total:.2f}x"
                                     df_p.at[idx, "Valor Sugerido AI (UF)"] = val_sugerido_uf
                                     
@@ -931,8 +936,12 @@ def render_client_management_ui():
                             avaluo = float(row.get("Avalúo Fiscal (CLP)", 0.0) or 0.0)
                             comuna = str(row.get("Comuna", "")).strip()
                             destino = str(row.get("Destino", "HABITACIONAL")).strip()
-                            val_sug_uf, factor_tot = engine_prop.estimate_commercial_value_uf(avaluo, comuna, destino)
-                            
+                            res_est = engine_prop.estimate_commercial_value_uf(avaluo, comuna, destino)
+                            if isinstance(res_est, (tuple, list)):
+                                val_sug_uf, factor_tot = float(res_est[0]), float(res_est[1])
+                            else:
+                                val_sug_uf, factor_tot = float(res_est), 1.85
+
                             df_props_curr.at[idx, "Factor Estimación"] = f"{factor_tot:.2f}x"
                             df_props_curr.at[idx, "Valor Sugerido AI (UF)"] = val_sug_uf
                             
