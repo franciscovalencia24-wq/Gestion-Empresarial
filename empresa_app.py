@@ -81,8 +81,10 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
             subprocess.run(["powershell", "-Command", f"Copy-Item '{excel_path}' '{temp_path}' -Force"], check=True)
             xl = pd.ExcelFile(temp_path)
 
-        added_count = 0
-        db.query(CompanyFinancialMovement).filter(CompanyFinancialMovement.empresa == company_name).delete()
+        db.query(CompanyFinancialMovement).filter(
+            CompanyFinancialMovement.empresa == company_name,
+            CompanyFinancialMovement.observaciones.like("Importado desde%")
+        ).delete(synchronize_session=False)
         db.commit()
 
         if "DETALLE 26" in xl.sheet_names:

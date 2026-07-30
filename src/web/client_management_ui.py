@@ -12,10 +12,58 @@ import plotly.graph_objects as go
 from src.osint.parser_inversiones import parse_investment_files
 import os
 import json
+import importlib
+import src.utils.excel_kyc_generator as excel_gen
+import src.utils.kyc_email_generator as email_gen
+importlib.reload(excel_gen)
+importlib.reload(email_gen)
+
 from src.database.models import Prospect, ClientProfile, ClientHeir, ClientProperty, ClientInsurance, ClientDebt, ClientCompany, ClientPortfolio, CompanyShareholder, CompanyRepresentative
 from src.osint.herencia import calculate_inheritance_chile
+from src.utils.backup_manager import save_client_backup, get_latest_client_backup
+
+def safe_int(val, default=0):
+    if pd.isna(val) or val is None:
+        return default
+    try:
+        val_str = str(val).strip().lower()
+        if val_str in ["", "none", "nan", "null"]:
+            return default
+        return int(float(val_str))
+    except Exception:
+        return default
+
+def safe_float(val, default=0.0):
+    if pd.isna(val) or val is None:
+        return default
+    try:
+        val_str = str(val).strip().lower()
+        if val_str in ["", "none", "nan", "null"]:
+            return default
+        return float(val_str)
+    except Exception:
+        return default
+
+def parse_name_components(full_name: str):
+    if not full_name or str(full_name).strip().lower() in ["none", "nan", ""]:
+        return "", "", ""
+    parts = str(full_name).strip().split()
+    if len(parts) == 1:
+        return parts[0], "", ""
+    elif len(parts) == 2:
+        return parts[0], parts[1], ""
+    elif len(parts) == 3:
+        return parts[0], parts[1], parts[2]
+    else:
+        return " ".join(parts[:-2]), parts[-2], parts[-1]
 
 def render_client_management_ui():
+    import importlib
+    import src.utils.excel_kyc_generator as excel_gen
+    import src.utils.kyc_email_generator as email_gen
+    importlib.reload(excel_gen)
+    importlib.reload(email_gen)
+
     main_container = st.container()
     
     def render_manual_button(file_name, label):
@@ -123,13 +171,33 @@ def render_client_management_ui():
             k_fecha_vig = f"fecha_vig_{rut}"
             k_doc_legal = f"doc_legal_{rut}"
 
-            col_title, col_btn, col_btn_pdf = st.columns([0.5, 0.25, 0.25])
+            col_title, col_btn_ref, col_btn_res, col_btn_pdf = st.columns([0.4, 0.2, 0.2, 0.2])
             col_title.markdown(f"## 👤 {rut} - Perfil Integral del Cliente")
-            if col_btn.button("🔄 Refrescar Datos", help="Recarga la información desde la Base de Datos", use_container_width=True):
-                for key in [k_hered, k_prop, k_poliza, k_na, k_test, k_nota, k_alerta, k_debt, k_comp, k_tipo_persona, k_socios, k_repres, k_fecha_const, k_notaria, k_repertorio, k_fecha_vig, k_doc_legal]:
-                    if key in st.session_state:
+            if col_btn_ref.button("🔄 Refrescar", help="Recarga la información desde la Base de Datos", use_container_width=True):
+                for key in list(st.session_state.keys()):
+                    if rut in key or key.endswith(f"_{rut}") or key.startswith(f"{rut}_") or key.startswith(f"omit_{rut}_"):
                         del st.session_state[key]
                 st.rerun()
+
+            latest_backup = get_latest_client_backup(rut)
+            if latest_backup and "_saved_at" in latest_backup:
+                if col_btn_res.button("🛡️ Restaurar Copia", help=f"Restaurar copia física en disco del {latest_backup['_saved_at']}", use_container_width=True):
+                    try:
+                        if latest_backup.get("nombre"): st.session_state[f"{rut}_nombre"] = latest_backup["nombre"]
+                        if latest_backup.get("telefono"): st.session_state[f"{rut}_telefono"] = latest_backup["telefono"]
+                        if latest_backup.get("email"): st.session_state[f"{rut}_email"] = latest_backup["email"]
+                        if latest_backup.get("perfil"): st.session_state[f"{rut}_perfil"] = latest_backup["perfil"]
+                        if latest_backup.get("objetivo"): st.session_state[f"{rut}_objetivo"] = latest_backup["objetivo"]
+                        if latest_backup.get("herederos"): st.session_state[k_hered] = pd.DataFrame(latest_backup["herederos"])
+                        if latest_backup.get("propiedades"): st.session_state[k_prop] = pd.DataFrame(latest_backup["propiedades"])
+                        if latest_backup.get("polizas"): st.session_state[k_poliza] = pd.DataFrame(latest_backup["polizas"])
+                        if latest_backup.get("deudas"): st.session_state[k_debt] = pd.DataFrame(latest_backup["deudas"])
+                        if latest_backup.get("sociedades"): st.session_state[k_comp] = pd.DataFrame(latest_backup["sociedades"])
+                        if latest_backup.get("inversiones"): st.session_state[k_inv] = pd.DataFrame(latest_backup["inversiones"])
+                        st.success(f"¡Copia de seguridad local del {latest_backup['_saved_at']} restaurada exitosamente!")
+                        st.rerun()
+                    except Exception as e_res:
+                        st.error(f"Error al restaurar respaldo: {e_res}")
 
             from src.utils.pdf_generator import generate_succession_report_pdf
             try:
@@ -144,7 +212,7 @@ def render_client_management_ui():
 
             if pdf_top_bytes:
                 col_btn_pdf.download_button(
-                    label="📜 Descargar Reporte Total 360° (PDF)",
+                    label="📜 Descargar Reporte 360° (PDF)",
                     data=pdf_top_bytes,
                     file_name=f"Reporte_Consolidado_360_{rut}.pdf",
                     mime="application/pdf",
@@ -351,9 +419,16 @@ def render_client_management_ui():
                         if not heirs and prospect.profile.cantidad_herederos == 0:
                             na_val = True
                             
-                    nombre_val = prospect.nombre or ""
-                    telefono_val = prospect.telefono or ""
-                    email_val = prospect.email or ""
+                    nombre_val = str(prospect.nombre).strip() if prospect.nombre and str(prospect.nombre).strip().lower() not in ["none", "nan", ""] else ""
+                    if prospect.profile and (getattr(prospect.profile, 'nombres', None) or getattr(prospect.profile, 'apellido_paterno', None) or getattr(prospect.profile, 'apellido_materno', None)):
+                        nombres_val = getattr(prospect.profile, 'nombres', "") or ""
+                        paterno_val = getattr(prospect.profile, 'apellido_paterno', "") or ""
+                        materno_val = getattr(prospect.profile, 'apellido_materno', "") or ""
+                    else:
+                        nombres_val, paterno_val, materno_val = parse_name_components(nombre_val)
+
+                    telefono_val = str(prospect.telefono).strip() if prospect.telefono and str(prospect.telefono).strip().lower() not in ["none", "nan", "sin tel", ""] else ""
+                    email_val = str(prospect.email).strip() if prospect.email and str(prospect.email).strip().lower() not in ["none", "nan", ""] else ""
 
                 db.close()
 
@@ -380,6 +455,9 @@ def render_client_management_ui():
                 st.session_state[k_fecha_vig] = fecha_vig_val
                 st.session_state[k_doc_legal] = doc_legal_val
                 st.session_state[f"{rut}_nombre"] = nombre_val
+                st.session_state[f"{rut}_nombres"] = nombres_val
+                st.session_state[f"{rut}_paterno"] = paterno_val
+                st.session_state[f"{rut}_materno"] = materno_val
                 st.session_state[f"{rut}_telefono"] = telefono_val
                 st.session_state[f"{rut}_email"] = email_val
                 st.session_state[f"{rut}_perfil"] = perfil_val
@@ -433,13 +511,19 @@ def render_client_management_ui():
                     st.info("ℹ️ Permite registrar o actualizar a un cliente/prospecto, su perfil de inversionista y calcular asignaciones legales.")
                     
                     st.markdown("#### Datos Personales")
-                    col_dp1, col_dp2, col_dp3 = st.columns(3)
-                    with col_dp1:
-                        st.session_state[f"{rut}_nombre"] = st.text_input("Nombre Completo", value=st.session_state[f"{rut}_nombre"])
+                    col_n1, col_n2, col_n3 = st.columns(3)
+                    with col_n1:
+                        st.text_input("Nombres", key=f"{rut}_nombres")
+                    with col_n2:
+                        st.text_input("Apellido Paterno", key=f"{rut}_paterno")
+                    with col_n3:
+                        st.text_input("Apellido Materno", key=f"{rut}_materno")
+
+                    col_dp2, col_dp3 = st.columns(2)
                     with col_dp2:
-                        st.session_state[f"{rut}_telefono"] = st.text_input("Teléfono", value=st.session_state[f"{rut}_telefono"])
+                        st.text_input("Teléfono", key=f"{rut}_telefono")
                     with col_dp3:
-                        st.session_state[f"{rut}_email"] = st.text_input("Email", value=st.session_state[f"{rut}_email"])
+                        st.text_input("Email", key=f"{rut}_email")
                     
                     col_dp4, col_dp5 = st.columns(2)
                     
@@ -452,33 +536,37 @@ def render_client_management_ui():
                         "Agresivo (100% Máxima exposición Renta variable)"
                     ]
                     
-                    # Normalizar valor anterior
-                    perfil_actual = st.session_state[f"{rut}_perfil"]
-                    perfil_index = 3
-                    for i, opc in enumerate(opciones_perfil):
-                        if perfil_actual.lower() in opc.lower():
-                            perfil_index = i
+                    # Normalizar valor anterior en session_state
+                    perfil_actual = str(st.session_state.get(f"{rut}_perfil", "Moderado"))
+                    matched_perfil = opciones_perfil[3]
+                    for opc in opciones_perfil:
+                        if perfil_actual and perfil_actual.lower() in opc.lower():
+                            matched_perfil = opc
                             break
+                    st.session_state[f"{rut}_perfil"] = matched_perfil
                     
                     with col_dp4:
-                        st.session_state[f"{rut}_perfil"] = st.selectbox("Perfil de Inversionista", opciones_perfil, index=perfil_index)
+                        st.selectbox("Perfil de Inversionista", opciones_perfil, key=f"{rut}_perfil")
                     
                     opciones_obj = ["Jubilación", "Compra de vivienda", "Fondo de emergencia", "Educación de los Hijos", "Preservación de Capital", "Crecimiento a Largo Plazo", "Otro"]
-                    obj_actual = st.session_state[f"{rut}_objetivo"]
+                    obj_actual = str(st.session_state.get(f"{rut}_objetivo", "Otro"))
                     if obj_actual not in opciones_obj:
                         obj_actual = "Otro"
+                    st.session_state[f"{rut}_objetivo"] = obj_actual
                         
                     with col_dp5:
-                        st.session_state[f"{rut}_objetivo"] = st.selectbox("Principales Objetivos de Inversión", opciones_obj, index=opciones_obj.index(obj_actual))
+                        st.selectbox("Principales Objetivos de Inversión", opciones_obj, key=f"{rut}_objetivo")
                     
                     st.markdown("---")
                     st.markdown("#### 🏥 Estado Previsional y Régimen de Jubilación")
                     col_prev1, col_prev2 = st.columns(2)
                     with col_prev1:
                         prev_options = ["Cotizante Activo / Sueldo Empresarial", "Pensionado Retiro Programado (AFP)", "Pensionado Renta Vitalicia Simple", "Pensionado Renta Vitalicia Garantizada"]
-                        curr_prev = st.session_state.get(f"{rut}_estado_prev", "Cotizante Activo / Sueldo Empresarial")
-                        if curr_prev not in prev_options: curr_prev = "Cotizante Activo / Sueldo Empresarial"
-                        st.session_state[f"{rut}_estado_prev"] = st.selectbox("Estado Previsional del Cliente", prev_options, index=prev_options.index(curr_prev))
+                        curr_prev = str(st.session_state.get(f"{rut}_estado_prev", "Cotizante Activo / Sueldo Empresarial"))
+                        if curr_prev not in prev_options:
+                            curr_prev = "Cotizante Activo / Sueldo Empresarial"
+                        st.session_state[f"{rut}_estado_prev"] = curr_prev
+                        st.selectbox("Estado Previsional del Cliente", prev_options, key=f"{rut}_estado_prev")
                     with col_prev2:
                         if st.session_state[f"{rut}_estado_prev"] == "Pensionado Renta Vitalicia Garantizada":
                             st.session_state[f"{rut}_rv_anios"] = st.number_input("Período Garantizado Renta Vitalicia (Años)", min_value=1, max_value=30, value=int(st.session_state.get(f"{rut}_rv_anios", 15) or 15))
@@ -1036,16 +1124,16 @@ def render_client_management_ui():
                     
                         for idx, row in df.iterrows():
                             try:
-                                vc_clp = float(row.get('Valor Com. (UF)', 0) or 0) * uf_hoy
-                                arr = float(row.get('Monto Arriendo', 0) or 0)
-                                con = float(row.get('Contribuciones Trim.', 0) or 0) * 4
-                                gas = float(row.get('Gastos Comunes Mensuales', 0) or 0) * 12
-                                man = float(row.get('Mantención Anual (CLP)', 0) or 0)
-                                div_uf = float(row.get('Dividendo', 0) or 0)
+                                vc_clp = safe_float(row.get('Valor Com. (UF)')) * uf_hoy
+                                arr = safe_float(row.get('Monto Arriendo'))
+                                con = safe_float(row.get('Contribuciones Trim.')) * 4
+                                gas = safe_float(row.get('Gastos Comunes Mensuales')) * 12
+                                man = safe_float(row.get('Mantención Anual (CLP)'))
+                                div_uf = safe_float(row.get('Dividendo'))
                                 div_clp = div_uf * uf_hoy
-                                deu_uf = float(row.get('Saldo Actual (UF)', 0) or 0)
+                                deu_uf = safe_float(row.get('Saldo Actual (UF)'))
                                 deu_clp = deu_uf * uf_hoy
-                                plu = float(row.get('Plusvalía Esperada (%)', 0) or 0)
+                                plu = safe_float(row.get('Plusvalía Esperada (%)'))
                     
                                 ingreso_anual = (arr * 12) - con - gas - man
                                 cap_rate = (ingreso_anual / vc_clp * 100) if vc_clp > 0 else 0.0
@@ -1341,15 +1429,19 @@ def render_client_management_ui():
 
                 f_seguros = st.session_state.get(f"{rut}_f_seguros")
                 if f_seguros and not st.session_state.get(f"omit_{rut}_seguros"):
-                    diff = (datetime.date.today() - f_seguros).days
-                    if diff > 180:
-                        st.warning("⚠️ **Información de Seguros desactualizada:** Hace más de 6 meses que no se actualizan las pólizas.")
+                    f_seg_date = f_seguros.date() if hasattr(f_seguros, 'date') else (pd.to_datetime(f_seguros).date() if pd.notna(f_seguros) else None)
+                    if f_seg_date:
+                        diff = (datetime.date.today() - f_seg_date).days
+                        if diff > 180:
+                            st.warning("⚠️ **Información de Seguros desactualizada:** Hace más de 6 meses que no se actualizan las pólizas.")
 
                 f_deudas = st.session_state.get(f"{rut}_f_deudas")
                 if f_deudas and not st.session_state.get(f"omit_{rut}_deudas"):
-                    diff = (datetime.date.today() - f_deudas).days
-                    if diff > 90:
-                        st.warning("⚠️ **Información de Deudas desactualizada:** Hace más de 3 meses que no se actualiza el mapa de deudas (CMF).")
+                    f_deu_date = f_deudas.date() if hasattr(f_deudas, 'date') else (pd.to_datetime(f_deudas).date() if pd.notna(f_deudas) else None)
+                    if f_deu_date:
+                        diff = (datetime.date.today() - f_deu_date).days
+                        if diff > 90:
+                            st.warning("⚠️ **Información de Deudas desactualizada:** Hace más de 3 meses que no se actualiza el mapa de deudas (CMF).")
 
                 st.markdown("##### 🔔 Alertas y Reajustes de Arriendo")
                 from src.osint.indicadores import get_uf_today, get_ipc_accumulated
@@ -1490,26 +1582,55 @@ def render_client_management_ui():
                         req_fields.append("Pólizas de Vida o APV (Aseguradora, Montos)")
                         req_reasons.append("Para auditar estructuras inembargables y maximizar beneficios tributarios (Art. 57 LIR, etc).")
                 
-                    if not req_fields:
-                        st.info("El perfil está completo. No se requiere solicitar más datos por ahora.")
+                    client_name_str = st.session_state.get('current_client_name', 'Cliente')
+                    
+                    solicitud_tipo = st.radio(
+                        "🎯 Selecciona el Enfoque de la Solicitud para el Cliente:",
+                        options=["🏛️ Auditoría Patrimonial 360° (KYC General)", "🎯 Aporte Mensual APV & Reliquidación de Impuestos"],
+                        key=f"rad_solic_tipo_{rut}"
+                    )
+                    
+                    if "APV" in solicitud_tipo:
+                        from src.utils.excel_kyc_generator import generar_excel_apv_reliquidacion
+                        from src.utils.kyc_email_generator import generar_comunicacion_apv_reliquidacion
+                        
+                        val = generar_excel_apv_reliquidacion(client_name=client_name_str)
+                        comm = generar_comunicacion_apv_reliquidacion(client_name=client_name_str)
+                        file_out_name = f"Formulario_APV_Reliquidacion_{client_name_str.replace(' ', '_')}.xlsx"
+                        btn_label = "💾 Descargar Excel APV & Reliquidación para Cliente"
                     else:
-                        df_req = pd.DataFrame({
-                            "Dato Requerido por Altus AI": req_fields,
-                            "¿Por qué lo necesitamos?": req_reasons,
-                            "Respuesta del Cliente": [""] * len(req_fields)
-                        })
-                
-                        output = io.BytesIO()
-                        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                            df_req.to_excel(writer, index=False, sheet_name='Formulario_KYC')
-                        val = output.getvalue()
-                
-                        st.download_button(
-                            label="💾 Descargar Excel KYC para Cliente",
-                            data=val,
-                            file_name=f"Altus_KYC_{st.session_state.current_client_name.replace(' ', '_')}.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        from src.utils.excel_kyc_generator import generar_excel_kyc_corporativo
+                        from src.utils.kyc_email_generator import generar_comunicacion_kyc
+                        
+                        val = generar_excel_kyc_corporativo(
+                            client_name=client_name_str,
+                            missing_herederos=missing_herederos,
+                            missing_propiedades=missing_propiedades,
+                            missing_polizas=missing_polizas
                         )
+                        comm = generar_comunicacion_kyc(
+                            client_name=client_name_str,
+                            missing_herederos=missing_herederos,
+                            missing_propiedades=missing_propiedades,
+                            missing_polizas=missing_polizas
+                        )
+                        file_out_name = f"Altus_KYC_{client_name_str.replace(' ', '_')}.xlsx"
+                        btn_label = "💾 Descargar Excel KYC Corporativo para Cliente"
+                
+                    st.download_button(
+                        label=btn_label,
+                        data=val,
+                        file_name=file_out_name,
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True
+                    )
+                    
+                    with st.expander("✉️ Ver y Copiar Texto de Correo (Sin Asteriscos para Outlook) & WhatsApp", expanded=False):
+                        st.markdown(f"**Asunto Sugerido:** `{comm['asunto']}`")
+                        st.markdown("##### 📩 Texto del Correo Electrónico (Listo para pegar en Outlook):")
+                        st.code(comm['cuerpo_email'], language="text")
+                        st.markdown("##### 📱 Mensaje Corto para WhatsApp:")
+                        st.code(comm['mensaje_whatsapp'], language="text")
                 
                 with c_form2:
                     uploaded_form = st.file_uploader("📤 Subir Excel/PDF completado por el cliente", type=["xlsx", "xls", "pdf"])
@@ -1554,6 +1675,39 @@ def render_client_management_ui():
                     st.session_state[k_inv] = edited_inv
                 if "edited_deudas" in locals():
                     st.session_state[k_debt] = edited_deudas
+
+                # --- 0. GARANTÍA DE CERO PÉRDIDA: RESPALDO FÍSICO EN DISCO LOCAL ---
+                nombres_in = str(st.session_state.get(f"{rut}_nombres", "")).strip()
+                paterno_in = str(st.session_state.get(f"{rut}_paterno", "")).strip()
+                materno_in = str(st.session_state.get(f"{rut}_materno", "")).strip()
+                full_name_concat = f"{nombres_in} {paterno_in} {materno_in}".strip()
+                while "  " in full_name_concat:
+                    full_name_concat = full_name_concat.replace("  ", " ")
+                if full_name_concat:
+                    st.session_state[f"{rut}_nombre"] = full_name_concat
+
+                backup_payload = {
+                    "nombres": nombres_in,
+                    "paterno": paterno_in,
+                    "materno": materno_in,
+                    "nombre": full_name_concat,
+                    "telefono": st.session_state.get(f"{rut}_telefono"),
+                    "email": st.session_state.get(f"{rut}_email"),
+                    "perfil": st.session_state.get(f"{rut}_perfil"),
+                    "objetivo": st.session_state.get(f"{rut}_objetivo"),
+                    "estado_prev": st.session_state.get(f"{rut}_estado_prev"),
+                    "rv_anios": st.session_state.get(f"{rut}_rv_anios"),
+                    "herederos": st.session_state.get(k_hered),
+                    "propiedades": st.session_state.get(k_prop),
+                    "polizas": st.session_state.get(k_poliza),
+                    "deudas": st.session_state.get(k_debt),
+                    "sociedades": st.session_state.get(k_comp),
+                    "inversiones": st.session_state.get(k_inv),
+                    "socios": st.session_state.get(k_socios),
+                    "repres": st.session_state.get(k_repres),
+                    "nota": st.session_state.get(k_nota)
+                }
+                saved_backup_file = save_client_backup(rut, backup_payload)
             
                 # Obtener el documento legal actual si existe en el uploader
                 uploaded_doc_legal = st.session_state.get(f"legal_{rut}")
@@ -1572,8 +1726,12 @@ def render_client_management_ui():
                             db.flush()
                             prospect.profile = nuevo_perfil
                             
-                        # Actualizar datos de Prospect
-                        prospect.nombre = st.session_state.get(f"{rut}_nombre", prospect.nombre)
+                        # Actualizar datos de Prospect y Profile
+                        if full_name_concat:
+                            prospect.nombre = full_name_concat
+                        prospect.profile.nombres = nombres_in
+                        prospect.profile.apellido_paterno = paterno_in
+                        prospect.profile.apellido_materno = materno_in
                         prospect.telefono = st.session_state.get(f"{rut}_telefono", prospect.telefono)
                         prospect.email = st.session_state.get(f"{rut}_email", prospect.email)
                         
@@ -1584,7 +1742,7 @@ def render_client_management_ui():
                         prospect.profile.nivel_riesgo = st.session_state.get(f"{rut}_perfil", prospect.profile.nivel_riesgo)
                         prospect.profile.objetivo_inversion = st.session_state.get(f"{rut}_objetivo", prospect.profile.objetivo_inversion)
                         prospect.estado_previsional = st.session_state.get(f"{rut}_estado_prev", getattr(prospect, "estado_previsional", ""))
-                        prospect.periodo_garantizado_rv_meses = int(st.session_state.get(f"{rut}_rv_anios", 0) or 0) * 12
+                        prospect.periodo_garantizado_rv_meses = safe_int(st.session_state.get(f"{rut}_rv_anios", 0), default=0) * 12
                         
                         omit_list = []
                         if st.session_state.get(f"omit_{rut}_sii"): omit_list.append("sii")
@@ -1633,11 +1791,11 @@ def render_client_management_ui():
                                 
                                     nuevo_heredero = ClientHeir(
                                         prospect_id=prospect.id,
-                                        rut=str(row.get("RUT", "")),
-                                        relacion=str(row.get("Relación", "")),
-                                        nombre=str(row.get("Nombre", "")),
+                                        rut=str(row.get("RUT", "") or ""),
+                                        relacion=str(row.get("Relación", "") or ""),
+                                        nombre=str(row.get("Nombre", "") or ""),
                                         fecha_nacimiento=fecha_nac,
-                                        porcentaje_asignacion=float(row.get("% Asignación", 0.0) or 0.0),
+                                        porcentaje_asignacion=safe_float(row.get("% Asignación"), default=0.0),
                                         es_estudiante=bool(row.get("¿Estudiante (18-24 años)?", False))
                                     )
                                     db.add(nuevo_heredero)
@@ -1648,38 +1806,38 @@ def render_client_management_ui():
                             for _, row in edited_propiedades.iterrows():
                                 nueva_prop = ClientProperty(
                                     prospect_id=prospect.id,
-                                    direccion=row.get("Dirección", ""),
-                                    comuna=row.get("Comuna", ""),
-                                    destino=row.get("Destino", ""),
-                                    fojas=str(row.get("Fojas", "")),
-                                    numero=str(row.get("Número", "")),
-                                    ano=int(float(str(row.get("Año")).strip())) if pd.notna(row.get("Año")) and str(row.get("Año")).strip() not in ["", "None", "nan"] else None,
-                                    porcentaje_derecho=float(row.get("% de Derecho", 100.0) or 100.0),
-                                    avaluo_fiscal=float(row.get("Avalúo Fiscal (CLP)", 0.0) or 0.0),
-                                    rol=row.get("ROL", ""),
-                                    valor_comercial_estimado=float(row.get("Valor Com. (UF)", 0.0) or 0.0),
+                                    direccion=str(row.get("Dirección", "") or ""),
+                                    comuna=str(row.get("Comuna", "") or ""),
+                                    destino=str(row.get("Destino", "") or ""),
+                                    fojas=str(row.get("Fojas", "") or ""),
+                                    numero=str(row.get("Número", "") or ""),
+                                    ano=safe_int(row.get("Año"), default=None),
+                                    porcentaje_derecho=safe_float(row.get("% de Derecho"), default=100.0),
+                                    avaluo_fiscal=safe_float(row.get("Avalúo Fiscal (CLP)"), default=0.0),
+                                    rol=str(row.get("ROL", "") or ""),
+                                    valor_comercial_estimado=safe_float(row.get("Valor Com. (UF)"), default=0.0),
                                     deuda_hipotecaria=float(1) if row.get("Deuda Hipotecaria") else 0.0,
-                                    hipoteca_institucion=row.get("Institución Hipoteca", ""),
-                                    hipoteca_monto_inicial=float(row.get("Monto Inicial (UF)")) if pd.notna(row.get("Monto Inicial (UF)")) else 0.0,
-                                    hipoteca_saldo_actual=float(row.get("Saldo Actual (UF)")) if pd.notna(row.get("Saldo Actual (UF)")) else 0.0,
+                                    hipoteca_institucion=str(row.get("Institución Hipoteca", "") or ""),
+                                    hipoteca_monto_inicial=safe_float(row.get("Monto Inicial (UF)"), default=0.0),
+                                    hipoteca_saldo_actual=safe_float(row.get("Saldo Actual (UF)"), default=0.0),
                                     hipoteca_fecha_escritura=str(row.get("Fecha Escritura", "")) if pd.notna(row.get("Fecha Escritura")) else "",
-                                    hipoteca_valor_tasacion=float(row.get("Tasación (UF)")) if pd.notna(row.get("Tasación (UF)")) else 0.0,
-                                    hipoteca_monto_asegurado=float(row.get("Monto Asegurado (UF)")) if pd.notna(row.get("Monto Asegurado (UF)")) else 0.0,
-                                    hipoteca_tasa_interes=float(row.get("Tasa Interés (%)")) if pd.notna(row.get("Tasa Interés (%)")) else 0.0,
-                                    hipoteca_tipo_tasa=row.get("Tipo Tasa", ""),
-                                    hipoteca_cuota_actual=int(row.get("Cuota Actual", 0) or 0),
-                                    hipoteca_total_cuotas=int(row.get("Total Cuotas", 0) or 0),
+                                    hipoteca_valor_tasacion=safe_float(row.get("Tasación (UF)"), default=0.0),
+                                    hipoteca_monto_asegurado=safe_float(row.get("Monto Asegurado (UF)"), default=0.0),
+                                    hipoteca_tasa_interes=safe_float(row.get("Tasa Interés (%)"), default=0.0),
+                                    hipoteca_tipo_tasa=str(row.get("Tipo Tasa", "") or ""),
+                                    hipoteca_cuota_actual=safe_int(row.get("Cuota Actual"), default=0),
+                                    hipoteca_total_cuotas=safe_int(row.get("Total Cuotas"), default=0),
                                     hipoteca_fecha_ultima_actualizacion=row.get("__fecha_act_cuota"),
-                                    dividendo_mensual=float(row.get("Dividendo")) if pd.notna(row.get("Dividendo")) else 0.0,
-                                    arriendo_mensual=float(row.get("Monto Arriendo")) if pd.notna(row.get("Monto Arriendo")) else 0.0,
-                                    arriendo_moneda=row.get("Moneda Arriendo", "CLP"),
+                                    dividendo_mensual=safe_float(row.get("Dividendo"), default=0.0),
+                                    arriendo_mensual=safe_float(row.get("Monto Arriendo"), default=0.0),
+                                    arriendo_moneda=str(row.get("Moneda Arriendo", "CLP") or "CLP"),
                                     arriendo_fecha_contrato=str(row.get("Fecha Contrato Arriendo", "")) if pd.notna(row.get("Fecha Contrato Arriendo")) else "",
-                                    arriendo_periodo_reajuste=int(row.get("Meses Reajuste Arriendo", 12)) if pd.notna(row.get("Meses Reajuste Arriendo")) else None,
-                                    contribuciones_anuales=float(row.get("Contribuciones Trim.", 0.0) or 0.0) * 4,
-                                    gastos_comunes=float(row.get("Gastos Comunes Mensuales", 0.0) or 0.0),
-                                    gastos_mantencion_anual=float(row.get("Mantención Anual (CLP)", 0.0) or 0.0),
-                                    plusvalia_esperada_anual=float(row.get("Plusvalía Esperada (%)", 0.0) or 0.0),
-                                    observaciones=row.get("Nombre/Alias", "")
+                                    arriendo_periodo_reajuste=safe_int(row.get("Meses Reajuste Arriendo"), default=12),
+                                    contribuciones_anuales=safe_float(row.get("Contribuciones Trim."), default=0.0) * 4,
+                                    gastos_comunes=safe_float(row.get("Gastos Comunes Mensuales"), default=0.0),
+                                    gastos_mantencion_anual=safe_float(row.get("Mantención Anual (CLP)"), default=0.0),
+                                    plusvalia_esperada_anual=safe_float(row.get("Plusvalía Esperada (%)"), default=0.0),
+                                    observaciones=str(row.get("Nombre/Alias", "") or "")
                                 )
                                 db.add(nueva_prop)
                         
@@ -1696,20 +1854,20 @@ def render_client_management_ui():
                             for _, row in df_polizas_to_save.iterrows():
                                 nueva_poliza = ClientInsurance(
                                     prospect_id=prospect.id,
-                                    compania=str(row.get("Aseguradora", "")),
-                                    asegurado=str(row.get("Asegurado", "")),
-                                    contratante=str(row.get("Contratante", "")),
-                                    tipo_seguro=str(row.get("Tipo", "")),
-                                    numero_poliza=str(row.get("N° Póliza", "")),
-                                    colectivo_individual=str(row.get("Colectivo / Individual", "")),
-                                    alias_patente=str(row.get("Alias / Patente", "")),
-                                    capital_asegurado=float(row.get("Monto (UF)", 0.0) or 0.0),
-                                    prima_mensual=float(row.get("Prima", 0.0) or 0.0),
-                                    medio_pago=str(row.get("Medio de Pago", "")),
-                                    fecha_contratacion=str(row.get("Fecha Contratación", "")),
+                                    compania=str(row.get("Aseguradora", "") or ""),
+                                    asegurado=str(row.get("Asegurado", "") or ""),
+                                    contratante=str(row.get("Contratante", "") or ""),
+                                    tipo_seguro=str(row.get("Tipo", "") or ""),
+                                    numero_poliza=str(row.get("N° Póliza", "") or ""),
+                                    colectivo_individual=str(row.get("Colectivo / Individual", "") or ""),
+                                    alias_patente=str(row.get("Alias / Patente", "") or ""),
+                                    capital_asegurado=safe_float(row.get("Monto (UF)"), default=0.0),
+                                    prima_mensual=safe_float(row.get("Prima"), default=0.0),
+                                    medio_pago=str(row.get("Medio de Pago", "") or ""),
+                                    fecha_contratacion=str(row.get("Fecha Contratación", "") or ""),
                                     es_apv_poliza=bool(row.get("¿APV Póliza?", False)),
-                                    coberturas=str(row.get("Coberturas", "")),
-                                    analisis_ia=str(row.get("Análisis IA", ""))
+                                    coberturas=str(row.get("Coberturas", "") or ""),
+                                    analisis_ia=str(row.get("Análisis IA", "") or "")
                                 )
                                 db.add(nueva_poliza)
                         
@@ -1728,14 +1886,6 @@ def render_client_management_ui():
                                 if not inst_val or inst_val in ["None", "nan", ""]:
                                     continue
 
-                                def safe_float(val):
-                                    if pd.isna(val) or str(val).strip().lower() in ["none", "nan", ""]:
-                                        return 0.0
-                                    try:
-                                        return float(val)
-                                    except:
-                                        return 0.0
-                                        
                                 kwargs = {
                                     "prospect_id": prospect.id,
                                     "institucion": inst_val,
@@ -1790,9 +1940,7 @@ def render_client_management_ui():
                                 inst_name = str(row.get("Institucion", "")).strip() if pd.notna(row.get("Institucion")) else ""
                                 if not inst_name or inst_name in ["None", "nan", ""]:
                                     continue
-                                def safe_float(val):
-                                    try: return float(val) if pd.notna(val) else 0.0
-                                    except: return 0.0
+
                                 kwargs = {
                                     "prospect_id": prospect.id,
                                     "institucion": inst_name,
@@ -1857,6 +2005,11 @@ def render_client_management_ui():
                                         db.add(nuevo_rep)
 
                         db.commit()
+                        try:
+                            from src.utils.gcs_sync import upload_db_to_gcs
+                            upload_db_to_gcs()
+                        except Exception:
+                            pass
                         st.success("¡Perfil integral guardado exitosamente en la base de datos permanente!")
                 except Exception as e:
                     st.error(f"Error guardando en base de datos: {e}")

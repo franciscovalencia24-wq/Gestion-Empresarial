@@ -122,6 +122,11 @@ class ClientProfile(Base):
     edad = Column(Integer, nullable=True)
     edad_actuarial = Column(Integer, nullable=True)
     
+    # Nombres y Apellidos Desglosados
+    nombres = Column(String(150), nullable=True)
+    apellido_paterno = Column(String(100), nullable=True)
+    apellido_materno = Column(String(100), nullable=True)
+
     # Nuevos Perfilamientos
     segmento_cliente = Column(String(50), nullable=True)
     tipo_persona = Column(String(20), default="PN")

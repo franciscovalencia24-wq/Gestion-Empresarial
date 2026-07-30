@@ -1591,157 +1591,300 @@ def main():
     ], key="main_nav")
     
     st.sidebar.markdown("---")
-    
-    st.sidebar.markdown("---")
-    
+
+    def set_nav(main_page, sub_key=None, sub_page=None):
+        st.session_state.main_nav = main_page
+        if sub_key and sub_page:
+            st.session_state[sub_key] = sub_page
+
+    # ----------------------------------------------------
+    # 🏠 0. INICIO - LANDING PRINCIPAL CON TODOS LOS HUBS
+    # ----------------------------------------------------
     if nav == "🏠 Inicio":
         st.markdown("""
-        <div style='background: radial-gradient(circle at top right, #3a3a3a 0%, #050505 80%); padding: 50px; border-radius: 15px; margin-bottom: 25px; color: white; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.4); border: 1px solid #D4AF37;'>
-            <img src="https://img.icons8.com/color/96/000000/artificial-intelligence.png" width="80" style="margin-bottom: 15px;"/>
-            <h1 style='color: white; margin: 0; font-size: 3.5em; font-weight: 600;'>Bienvenido a <span style="color: #D4AF37;">Altus AI</span></h1>
-            <p style='color: #ffffff; margin: 15px 0 0 0; font-size: 1.4em; font-weight: 400;'>Tu Motor Cuantitativo Patrimonial Privado</p>
+        <div style='background: radial-gradient(circle at top right, #3a3a3a 0%, #050505 80%); padding: 45px; border-radius: 15px; margin-bottom: 25px; color: white; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.4); border: 1px solid #D4AF37;'>
+            <img src="https://img.icons8.com/color/96/000000/artificial-intelligence.png" width="70" style="margin-bottom: 10px;"/>
+            <h1 style='color: white; margin: 0; font-size: 3em; font-weight: 700;'>Bienvenido a <span style="color: #D4AF37;">Altus AI</span></h1>
+            <p style='color: #ffffff; margin: 10px 0 0 0; font-size: 1.3em;'>Tu Motor Cuantitativo Patrimonial & Asesoría Integrada 360°</p>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown("### 🛠️ Flujo de Trabajo Metodológico")
         st.markdown("<p style='color: #6b7280; margin-bottom: 20px;'>Sigue este camino para una gestión patrimonial óptima:</p>", unsafe_allow_html=True)
         
-        def set_nav(main_page, sub_key=None, sub_page=None):
-            st.session_state.main_nav = main_page
-            if sub_key and sub_page:
-                st.session_state[sub_key] = sub_page
+        # SEC 1: CLIENTES
+        st.markdown("#### 👥 1. Punto de Partida & Gestión de Clientes")
+        st.button("🎯 Seleccionar o Crear Cliente (Ficha 360°, Herederos, Propiedades & KYC)", on_click=set_nav, args=("👤 1. Gestión de Clientes",), use_container_width=True)
 
-        st.markdown("<div class='section-header'>👥 1. Punto de Partida</div>", unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3)
-        c1.button("🎯 Seleccionar o Crear Cliente", on_click=set_nav, args=("👤 1. Gestión de Clientes",), use_container_width=True)
+        st.markdown("---")
 
-        st.markdown("<div class='section-header'>📊 2. Análisis de Inversiones</div>", unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3)
-        c1.button("📉 Auditor de Portafolio", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Auditor de Portafolio"), use_container_width=True)
-        c2.button("🧠 Asesor Patrimonial (Omni)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Asesor Patrimonial Senior (Omni)"), use_container_width=True)
-        c3.button("🌍 Analista Macro", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Analista Macro (Consenso & Playbooks)"), use_container_width=True)
+        # SEC 2: ANÁLISIS DE INVERSIONES (TODAS LAS 7 HERRAMIENTAS VISIBLES EN INICIO)
+        st.markdown("#### 📊 2. Hub de Análisis de Inversiones")
+        a1, a2 = st.columns(2)
+        a1.button("📉 Auditor de Portafolio", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Auditor de Portafolio"), use_container_width=True)
+        a2.button("📈 Análisis Técnico y Fundamental", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Análisis Técnico y Fundamental"), use_container_width=True)
 
-        st.markdown("<div class='section-header'>💼 3. Gestión Comercial</div>", unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3)
-        c1.button("🚀 Motor de Campañas", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "🚀 Motor de Campañas"), use_container_width=True)
-        c2.button("📊 Embudo CRM (Kanban)", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "📊 Embudo CRM (Kanban)"), use_container_width=True)
-        c3.button("🌊 Innovación (Océanos Azules)", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "🌊 Innovación & Océanos Azules"), use_container_width=True)
-        
-        c4, c5, c6 = st.columns(3)
-        c4.button("📱 Generador de Infografías RRSS", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "📱 Generador de Infografías RRSS"), use_container_width=True)
+        a3, a4 = st.columns(2)
+        a3.button("🏢 Valuación de Portafolios (Real Estate)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Valuación de Portafolios"), use_container_width=True)
+        a4.button("🧠 Asesor Patrimonial Senior (Omni AI)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Asesor Patrimonial Senior (Omni)"), use_container_width=True)
 
-        st.markdown("<div class='section-header'>📥 4. Central de Operaciones</div>", unsafe_allow_html=True)
-        c1, c2, c3 = st.columns(3)
-        c1.button("🏰 Bóveda de Ingesta Unificada\n(Scrapers & Data)", on_click=set_nav, args=("📥 4. Ingesta de Datos",), use_container_width=True)
-        
+        a5, a6 = st.columns(2)
+        a5.button("📊 Estrategia & Cartolas (Parsing Bancario)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Estrategia & Cartolas"), use_container_width=True)
+        a6.button("🌍 Analista Macro (Consenso & Playbooks)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Analista Macro (Consenso & Playbooks)"), use_container_width=True)
+
+        a7, _ = st.columns([0.5, 0.5])
+        a7.button("🧮 Simuladores Cuantitativos (APV Inteligente, Reliquidación & Créditos)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Simuladores Cuantitativos"), use_container_width=True)
+
+        st.markdown("---")
+
+        # SEC 3: GESTIÓN COMERCIAL (TODAS LAS 5 HERRAMIENTAS VISIBLES EN INICIO)
+        st.markdown("#### 💼 3. Gestión Comercial & Marketing Pro")
+        m1, m2 = st.columns(2)
+        m1.button("🚀 Motor de Campañas & Outreach", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "🚀 Motor de Campañas"), use_container_width=True)
+        m2.button("📊 Embudo CRM (Kanban)", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "📊 Embudo CRM (Kanban)"), use_container_width=True)
+
+        m3, m4 = st.columns(2)
+        m3.button("🌊 Innovación & Océanos Azules", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "🌊 Innovación & Océanos Azules"), use_container_width=True)
+        m4.button("🧠 Diseñador de Flujos (Playbooks)", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "🧠 Diseñador de Flujos (Playbook)"), use_container_width=True)
+
+        m5, _ = st.columns([0.5, 0.5])
+        m5.button("📱 Generador de Infografías RRSS (4K)", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "📱 Generador de Infografías RRSS"), use_container_width=True)
+
+        st.markdown("---")
+
+        # SEC 4: INGESTA
+        st.markdown("#### 📥 4. Central de Operaciones & Ingesta")
+        st.button("🏰 Bóveda de Ingesta Unificada (Scrapers, Cartolas & Data)", on_click=set_nav, args=("📥 4. Ingesta de Datos",), use_container_width=True)
+
+    # ----------------------------------------------------
+    # 👤 1. GESTIÓN DE CLIENTES
+    # ----------------------------------------------------
     elif nav == "👤 1. Gestión de Clientes":
         from src.web.client_management_ui import render_client_management_ui
         render_client_management_ui()
-        
+
+    # ----------------------------------------------------
+    # 📊 2. ANÁLISIS DE INVERSIONES (HUB CON TODAS LAS HERRAMIENTAS)
+    # ----------------------------------------------------
     elif nav == "📊 2. Análisis de Inversiones":
         if "sub_nav_analisis" not in st.session_state:
             st.session_state.sub_nav_analisis = "🏠 Landing de Análisis"
-            
-        sub_nav = st.sidebar.selectbox("Herramientas Analíticas", [
-            "🏠 Landing de Análisis",
-            "Análisis Técnico y Fundamental",
-            "Auditor de Portafolio", 
-            "Valuación de Portafolios", 
-            "Asesor Patrimonial Senior (Omni)", 
-            "Estrategia & Cartolas", 
-            "Analista Macro (Consenso & Playbooks)",
-            "Simuladores Cuantitativos"
-        ], key="sub_nav_analisis")
+
+        sub_nav = st.session_state.sub_nav_analisis
+
+        def set_subanalisis(val):
+            st.session_state.sub_nav_analisis = val
+
+        # Menú Rápido de 4 Pilares Funcionales
+        st.markdown("##### 📌 Menú de Pilares Estratégicos de Análisis:")
+        b1, b2, b3, b4, b5 = st.columns(5)
         
+        if b1.button("🏠 Inicio Hub", use_container_width=True): set_subanalisis("🏠 Landing de Análisis")
+        if b2.button("📁 1. Auditoría & Cartolas", use_container_width=True): set_subanalisis("Pilar 1: Auditoría de Portafolios")
+        if b3.button("🌍 2. Macro & Mercado", use_container_width=True): set_subanalisis("Pilar 2: Inteligencia Macro y Mercado")
+        if b4.button("🧮 3. Modelación Cuantitativa", use_container_width=True): set_subanalisis("Pilar 3: Modelación Cuantitativa")
+        if b5.button("🧠 4. Copilot Omni AI", use_container_width=True): set_subanalisis("Pilar 4: Copilot Patrimonial Omni AI")
+
+        st.markdown("---")
+
         if sub_nav == "🏠 Landing de Análisis":
-            st.title("🎯 Hub de Análisis de Inversiones")
-            st.markdown("Selecciona qué aspecto del patrimonio deseas evaluar hoy.")
+            st.markdown("""
+                <div style='background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 25px; border-radius: 15px; margin-bottom: 25px; color: white;'>
+                    <h1 style='color: white; margin: 0; font-size: 2.2em; font-weight: 900;'>🎯 Hub de Análisis de Inversiones</h1>
+                    <p style='color: #94a3b8; margin: 10px 0 0 0; font-size: 1.1em;'>Suite integral reorganizada en 4 Pilares Estratégicos de Wealth Management.</p>
+                </div>
+            """, unsafe_allow_html=True)
             
             if "current_client_name" in st.session_state:
                 st.success(f"📌 Analizando al cliente activo: **{st.session_state.current_client_name}**")
             else:
-                st.warning("⚠️ No hay ningún cliente activo. Se recomienda ir a 'Gestión de Clientes' primero.")
+                st.info("ℹ️ Puedes seleccionar un cliente activo en 'Gestión de Clientes' para enriquecer los diagnósticos.")
                 
-            c1, c2 = st.columns(2)
+            st.markdown("#### 🏛️ Selecciona el Pilar de Análisis a Ejecutar:")
             
-            def set_subnav(val):
-                st.session_state.sub_nav_analisis = val
-                
-            c1.button("📉 Auditor de Portafolio", use_container_width=True, on_click=set_subnav, args=("Auditor de Portafolio",))
-            c2.button("🌍 Analista Macro", use_container_width=True, on_click=set_subnav, args=("Analista Macro (Consenso & Playbooks)",))
-            c1.button("📈 Análisis Técnico y Fundamental", use_container_width=True, on_click=set_subnav, args=("Análisis Técnico y Fundamental",))
-            c2.button("🏢 Valuación de Portafolios", use_container_width=True, on_click=set_subnav, args=("Valuación de Portafolios",))
-            c1.button("🧑‍💼 Asesor Patrimonial Senior (Omni)", use_container_width=True, on_click=set_subnav, args=("Asesor Patrimonial Senior (Omni)",))
-            c2.button("📊 Estrategia & Cartolas", use_container_width=True, on_click=set_subnav, args=("Estrategia & Cartolas",))
-            c1.button("🧮 Simuladores Cuantitativos", use_container_width=True, on_click=set_subnav, args=("Simuladores Cuantitativos",))
-                
-        elif sub_nav == "Análisis Técnico y Fundamental":
-            from src.web.analysis_hub_ui import render_analysis_hub
-            render_analysis_hub()
-        elif sub_nav == "Auditor de Portafolio":
-            from src.web.app import render_portfolio_auditor # Asumiendo que render_portfolio_auditor está en app.py por ahora
-            render_portfolio_auditor()
-        elif sub_nav == "Valuación de Portafolios":
-            from src.web.valuation_ui import render_valuation_ui
-            render_valuation_ui()
-        elif sub_nav == "Asesor Patrimonial Senior (Omni)":
-            from src.web.app import render_omni_advisor_ui
-            render_omni_advisor_ui()
-        elif sub_nav == "Estrategia & Cartolas":
-            from src.web.cartolas_ui import render_cartolas_ui
-            render_cartolas_ui()
-        elif sub_nav == "Analista Macro (Consenso & Playbooks)":
-            from src.web.macro_chat_ui import render_macro_chat_ui
-            render_macro_chat_ui()
-        elif sub_nav == "Simuladores Cuantitativos":
+            p1_col, p2_col = st.columns(2)
+            with p1_col:
+                st.markdown("""
+                    <div style='background: #1e293b; padding: 18px; border-radius: 12px; border-left: 5px solid #0284c7; margin-bottom: 12px;'>
+                        <h3 style='color: #38bdf8; margin: 0;'>📁 Pilar 1: Auditoría de Portafolios & Cartolas</h3>
+                        <p style='color: #cbd5e1; font-size: 0.95em; margin: 8px 0 0 0;'>Ingesta inteligente de cartolas bancarias (OCR/AI) + Diagnóstico de sobrecostos, comisiones y asset allocation.</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.button("Ingresar a Pilar 1 (Cartolas & Auditoría)", use_container_width=True, on_click=set_subanalisis, args=("Pilar 1: Auditoría de Portafolios",))
+
+            with p2_col:
+                st.markdown("""
+                    <div style='background: #1e293b; padding: 18px; border-radius: 12px; border-left: 5px solid #10b981; margin-bottom: 12px;'>
+                        <h3 style='color: #34d399; margin: 0;'>🌍 Pilar 2: Inteligencia Macro & Mercado</h3>
+                        <p style='color: #cbd5e1; font-size: 0.95em; margin: 8px 0 0 0;'>Análisis Macro (Consenso BCCh, Fed, Playbooks) + Diagnóstico Técnico y Fundamental de activos financieros.</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.button("Ingresar a Pilar 2 (Macro & Mercado)", use_container_width=True, on_click=set_subanalisis, args=("Pilar 2: Inteligencia Macro y Mercado",))
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            p3_col, p4_col = st.columns(2)
+            with p3_col:
+                st.markdown("""
+                    <div style='background: #1e293b; padding: 18px; border-radius: 12px; border-left: 5px solid #f59e0b; margin-bottom: 12px;'>
+                        <h3 style='color: #fbbf24; margin: 0;'>🧮 Pilar 3: Modelación Cuantitativa & Bienes Raíces</h3>
+                        <p style='color: #cbd5e1; font-size: 0.95em; margin: 8px 0 0 0;'>Valuación Real Estate + Simuladores Cuantitativos (APV Régimen A/B, Reliquidación Tributaria, Créditos).</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.button("Ingresar a Pilar 3 (Simuladores & Real Estate)", use_container_width=True, on_click=set_subanalisis, args=("Pilar 3: Modelación Cuantitativa",))
+
+            with p4_col:
+                st.markdown("""
+                    <div style='background: #1e293b; padding: 18px; border-radius: 12px; border-left: 5px solid #8b5cf6; margin-bottom: 12px;'>
+                        <h3 style='color: #c084fc; margin: 0;'>🧠 Pilar 4: Copilot Patrimonial Senior (Omni AI)</h3>
+                        <p style='color: #cbd5e1; font-size: 0.95em; margin: 8px 0 0 0;'>Co-piloto cognitivo senior para síntesis patrimonial integral 360° y preparación de comité de inversión.</p>
+                    </div>
+                """, unsafe_allow_html=True)
+                st.button("Ingresar a Pilar 4 (Copilot Omni AI)", use_container_width=True, on_click=set_subanalisis, args=("Pilar 4: Copilot Patrimonial Omni AI",))
+
+        # PILAR 1: AUDITORÍA Y CARTOLAS
+        elif sub_nav in ["Pilar 1: Auditoría de Portafolios", "Estrategia & Cartolas", "Auditor de Portafolio"]:
             st.markdown("""
-                <div style='background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 25px; border-radius: 15px; margin-bottom: 25px; color: white;'>
-                    <h1 style='color: white; margin: 0; font-size: 2.2em; font-weight: 900;'>🧮 Simuladores Cuantitativos</h1>
-                    <p style='color: #94a3b8; margin: 10px 0 0 0; font-size: 1.1em;'>Herramientas matemáticas para proyectar y optimizar el patrimonio.</p>
+                <div style='background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; color: white;'>
+                    <h2 style='color: white; margin: 0;'>📁 Pilar 1: Auditoría de Portafolios & Cartolas Bancarias</h2>
+                    <p style='color: #e0f2fe; margin: 5px 0 0 0;'>Ingesta automatizada de cartolas + Evaluación de riesgos, comisiones y asignación estratégica.</p>
                 </div>
             """, unsafe_allow_html=True)
             
-            tab_apv, tab_reliq, tab_credito = st.tabs(["🏛️ APV Inteligente", "⚖️ Reliquidación", "💰 Crédito vs Inversión"])
+            tab_p1_cartolas, tab_p1_auditor = st.tabs(["📊 1.1 Ingesta & Parsing de Cartolas OCR/AI", "🔍 1.2 Diagnóstico & Auditoría de Portafolio"])
             
-            with tab_apv:
+            with tab_p1_cartolas:
+                from src.web.cartolas_ui import render_cartolas_ui
+                render_cartolas_ui()
+                
+            with tab_p1_auditor:
+                from src.web.app import render_portfolio_auditor
+                render_portfolio_auditor()
+
+        # PILAR 2: INTELIGENCIA MACRO Y MERCADO
+        elif sub_nav in ["Pilar 2: Inteligencia Macro y Mercado", "Analista Macro (Consenso & Playbooks)", "Análisis Técnico y Fundamental"]:
+            st.markdown("""
+                <div style='background: linear-gradient(135deg, #059669 0%, #0f172a 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; color: white;'>
+                    <h2 style='color: white; margin: 0;'>🌍 Pilar 2: Inteligencia Macro & Análisis de Mercado</h2>
+                    <p style='color: #d1fae5; margin: 5px 0 0 0;'>Visión macroeconómica institucional + Análisis técnico/fundamental de instrumentos financieros.</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            tab_p2_macro, tab_p2_tecnico = st.tabs(["🌍 2.1 Consenso Macro, Banco Central & Playbooks", "📈 2.2 Análisis Técnico y Fundamental de Activos"])
+            
+            with tab_p2_macro:
+                from src.web.macro_chat_ui import render_macro_chat_ui
+                render_macro_chat_ui()
+                
+            with tab_p2_tecnico:
+                from src.web.analysis_hub_ui import render_analysis_hub
+                render_analysis_hub()
+
+        # PILAR 3: MODELACIÓN CUANTITATIVA Y REAL ESTATE
+        elif sub_nav in ["Pilar 3: Modelación Cuantitativa", "Valuación de Portafolios", "Simuladores Cuantitativos"]:
+            st.markdown("""
+                <div style='background: linear-gradient(135deg, #d97706 0%, #0f172a 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; color: white;'>
+                    <h2 style='color: white; margin: 0;'>🧮 Pilar 3: Modelación Cuantitativa & Bienes Raíces</h2>
+                    <p style='color: #fef3c7; margin: 5px 0 0 0;'>Modelos matemáticos para optimización inmobiliaria, tributaria y previsional.</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            tab_p3_re, tab_p3_apv, tab_p3_reliq, tab_p3_credito = st.tabs([
+                "🏢 3.1 Valuación Real Estate & Cap Rates",
+                "🏛️ 3.2 APV Inteligente (Régimen A/B)",
+                "⚖️ 3.3 Reliquidación Tributaria (Global Comp.)",
+                "💰 3.4 Comparador Crédito vs Inversión"
+            ])
+            
+            with tab_p3_re:
+                from src.web.valuation_ui import render_valuation_ui
+                render_valuation_ui()
+                
+            with tab_p3_apv:
                 from src.web.simulators_ui import render_apv_simulator
                 render_apv_simulator(38000)
                 
-            with tab_reliq:
+            with tab_p3_reliq:
                 from src.web.simulators_ui import render_reliquidacion_simulator
                 render_reliquidacion_simulator(66000, 38000)
                 
-            with tab_credito:
+            with tab_p3_credito:
                 from src.web.simulators_ui import render_credito_vs_inversion_simulator
                 render_credito_vs_inversion_simulator()
-            
+
+        # PILAR 4: COPILOT OMNI AI
+        elif sub_nav in ["Pilar 4: Copilot Patrimonial Omni AI", "Asesor Patrimonial Senior (Omni)"]:
+            st.markdown("""
+                <div style='background: linear-gradient(135deg, #7c3aed 0%, #0f172a 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; color: white;'>
+                    <h2 style='color: white; margin: 0;'>🧠 Pilar 4: Copilot Patrimonial Senior (Omni AI)</h2>
+                    <p style='color: #ede9fe; margin: 5px 0 0 0;'>Co-piloto cognitivo ejecutivo para dictamen patrimonial integral 360°.</p>
+                </div>
+            """, unsafe_allow_html=True)
+            from src.web.app import render_omni_advisor_ui
+            render_omni_advisor_ui()
+
+    # ----------------------------------------------------
+    # 💼 3. GESTIÓN COMERCIAL (HUB CON TODOS LOS MÓDULOS)
+    # ----------------------------------------------------
     elif nav == "💼 3. Gestión Comercial":
         if "sub_nav_comercial" not in st.session_state:
             st.session_state.sub_nav_comercial = "🚀 Motor de Campañas"
-        sub_nav = st.sidebar.selectbox("Módulo Comercial", [
-            "🚀 Motor de Campañas", 
-            "📊 Embudo CRM (Kanban)",
-            "🌊 Innovación & Océanos Azules",
-            "🧠 Diseñador de Flujos (Playbook)",
-            "📱 Generador de Infografías RRSS"
-        ], key="sub_nav_comercial")
-        
-        if sub_nav == "🚀 Motor de Campañas":
+
+        sub_nav_com = st.session_state.sub_nav_comercial
+
+        # Barra superior de navegación interna horizontal en la pantalla principal
+        st.markdown("##### 📌 Menú Rápido Comercial:")
+        c1, c2, c3, c4, c5, c6 = st.columns(6)
+
+        def set_subcomercial(val):
+            st.session_state.sub_nav_comercial = val
+
+        if c1.button("🏠 Inicio Hub", use_container_width=True): set_subcomercial("🏠 Landing Comercial")
+        if c2.button("🚀 Campañas", use_container_width=True): set_subcomercial("🚀 Motor de Campañas")
+        if c3.button("📊 CRM (Kanban)", use_container_width=True): set_subcomercial("📊 Embudo CRM (Kanban)")
+        if c4.button("🌊 Innovación", use_container_width=True): set_subcomercial("🌊 Innovación & Océanos Azules")
+        if c5.button("🧠 Flujogramas", use_container_width=True): set_subcomercial("🧠 Diseñador de Flujos (Playbook)")
+        if c6.button("📱 Infografías", use_container_width=True): set_subcomercial("📱 Generador de Infografías RRSS")
+
+        st.markdown("---")
+
+        if sub_nav_com == "🏠 Landing Comercial":
+            st.markdown("""
+                <div style='background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 25px; border-radius: 15px; margin-bottom: 25px; color: white;'>
+                    <h1 style='color: white; margin: 0; font-size: 2.2em; font-weight: 900;'>💼 Hub de Gestión Comercial & Marketing Pro</h1>
+                    <p style='color: #94a3b8; margin: 10px 0 0 0; font-size: 1.1em;'>Selecciona el módulo comercial que deseas operar hoy.</p>
+                </div>
+            """, unsafe_allow_html=True)
+            
+            m1, m2 = st.columns(2)
+            m1.button("🚀 3.1 Motor de Campañas & Outreach", on_click=set_subcomercial, args=("🚀 Motor de Campañas",), use_container_width=True)
+            m2.button("📊 3.2 Embudo CRM (Kanban)", on_click=set_subcomercial, args=("📊 Embudo CRM (Kanban)",), use_container_width=True)
+
+            m3, m4 = st.columns(2)
+            m3.button("🌊 3.3 Innovación & Océanos Azules", on_click=set_subcomercial, args=("🌊 Innovación & Océanos Azules",), use_container_width=True)
+            m4.button("🧠 3.4 Diseñador de Flujos (Playbooks)", on_click=set_subcomercial, args=("🧠 Diseñador de Flujos (Playbook)",), use_container_width=True)
+
+            m5, _ = st.columns([0.5, 0.5])
+            m5.button("📱 3.5 Generador de Infografías RRSS (4K)", on_click=set_subcomercial, args=("📱 Generador de Infografías RRSS",), use_container_width=True)
+
+        elif sub_nav_com == "🚀 Motor de Campañas":
             from src.web.app import render_campaign_launcher
             render_campaign_launcher()
-        elif sub_nav == "📊 Embudo CRM (Kanban)":
+        elif sub_nav_com == "📊 Embudo CRM (Kanban)":
             from src.web.app import render_crm_kanban
             render_crm_kanban()
-        elif sub_nav == "🌊 Innovación & Océanos Azules":
+        elif sub_nav_com == "🌊 Innovación & Océanos Azules":
             from src.web.app import render_blue_ocean_ui
             render_blue_ocean_ui()
-        elif sub_nav == "🧠 Diseñador de Flujos (Playbook)":
+        elif sub_nav_com == "🧠 Diseñador de Flujos (Playbook)":
             from src.web.app import render_flujograma
             render_flujograma()
-        elif sub_nav == "📱 Generador de Infografías RRSS":
+        elif sub_nav_com == "📱 Generador de Infografías RRSS":
             from src.web.infographic_generator_ui import render_infographic_generator_ui
             render_infographic_generator_ui()
 
+    # ----------------------------------------------------
+    # 📥 4. CENTRAL DE OPERACIONES
+    # ----------------------------------------------------
     elif nav == "📥 4. Ingesta de Datos":
         from src.web.app import render_unified_vault
         render_unified_vault()
@@ -1749,7 +1892,8 @@ def main():
     # Pie de página en sidebar
     st.sidebar.markdown("---")
     import datetime
-    st.sidebar.markdown(f"v4.0.0 | Metodología Activa | Sincronizado: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}")
+    st.sidebar.markdown(f"v4.1.0 | Metodología Activa | Sincronizado: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
 if __name__ == "__main__":
     main()
+

@@ -37,8 +37,12 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
 
         added_count = 0
 
-        # Limpiar registros previos de la empresa para evitar duplicaciones al re-sincronizar
-        db.query(CompanyFinancialMovement).filter(CompanyFinancialMovement.empresa == company_name).delete()
+        # Limpiar ÚNICAMENTE los registros importados previamente desde Excel para la empresa,
+        # preservando al 100% todos los movimientos ingresados manualmente desde la interfaz web.
+        db.query(CompanyFinancialMovement).filter(
+            CompanyFinancialMovement.empresa == company_name,
+            CompanyFinancialMovement.observaciones.like("Importado desde%")
+        ).delete(synchronize_session=False)
         db.commit()
 
         # PARSEAR HOJA DETALLE 26 (Fuente oficial de Ingresos, Egresos y Movimientos de Socios)
