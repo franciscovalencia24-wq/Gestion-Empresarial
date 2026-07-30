@@ -14,10 +14,11 @@ def render_infographic_generator_ui():
     st.write("")
     
     # Pestañas principales
-    main_tab_posts, main_tab_comments, main_tab_whatsapp = st.tabs([
+    main_tab_posts, main_tab_comments, main_tab_whatsapp, main_tab_remote = st.tabs([
         "📊 Generador de Infografías & Posts Institucionales",
         "💬 Copiloto de Comentarios de Alto Impacto (LinkedIn)",
-        "📱 WhatsApp Business Kit (Estados 9:16, Catálogo & Firmas)"
+        "📱 WhatsApp Business Kit (Estados 9:16, Catálogo & Firmas)",
+        "🤖 Antigravity Remote Chat (Control desde Celular)"
     ])
 
     # ---------------------------------------------------------
@@ -237,3 +238,10 @@ def render_infographic_generator_ui():
     with main_tab_whatsapp:
         from src.web.whatsapp_marketing_kit import render_whatsapp_kit_ui
         render_whatsapp_kit_ui()
+
+    # ---------------------------------------------------------
+    # TAB 4: ANTIGRAVITY REMOTE CHAT (CONTROL DESDE CELULAR)
+    # ---------------------------------------------------------
+    with main_tab_remote:
+        from src.web.mobile_chat_ui import render_mobile_chat_ui
+        render_mobile_chat_ui()
