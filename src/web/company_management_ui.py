@@ -234,6 +234,15 @@ def render_company_management_ui():
         total_devoluciones = df_devoluciones_socio["Monto Total"].sum() if not df_devoluciones_socio.empty else 0.0
         prestamo_neto_socio = total_pres_otorgados - total_devoluciones
 
+        # Desglose de préstamos individuales por socio
+        df_fco_p = df_prestamos_otorgados[df_prestamos_otorgados["Razón Social / Proveedor"].str.contains("FRANCISCO", na=False) | df_prestamos_otorgados["Cuenta Corriente"].str.contains("FCO", na=False)] if not df_prestamos_otorgados.empty else pd.DataFrame()
+        df_fco_d = df_devoluciones_socio[df_devoluciones_socio["Razón Social / Proveedor"].str.contains("FRANCISCO", na=False) | df_devoluciones_socio["Cuenta Corriente"].str.contains("FCO", na=False)] if not df_devoluciones_socio.empty else pd.DataFrame()
+        fco_neto = (df_fco_p["Monto Total"].sum() if not df_fco_p.empty else 0.0) - (df_fco_d["Monto Total"].sum() if not df_fco_d.empty else 0.0)
+
+        df_nat_p = df_prestamos_otorgados[df_prestamos_otorgados["Razón Social / Proveedor"].str.contains("NATALIA", na=False) | df_prestamos_otorgados["Cuenta Corriente"].str.contains("NATALIA", na=False)] if not df_prestamos_otorgados.empty else pd.DataFrame()
+        df_nat_d = df_devoluciones_socio[df_devoluciones_socio["Razón Social / Proveedor"].str.contains("NATALIA", na=False) | df_devoluciones_socio["Cuenta Corriente"].str.contains("NATALIA", na=False)] if not df_devoluciones_socio.empty else pd.DataFrame()
+        nat_neto = (df_nat_p["Monto Total"].sum() if not df_nat_p.empty else 0.0) - (df_nat_d["Monto Total"].sum() if not df_nat_d.empty else 0.0)
+
         # Saldo Banco BCI disponible real (Conciliado con cartola desde BD)
         saldo_bci_base = 21160054.0
         bci_acc_db = None
@@ -273,7 +282,11 @@ def render_company_management_ui():
         with k3:
             st.metric("💰 Utilidad Operacional", fmt_money(utilidad_neta))
         with k4:
-            st.metric("🤝 Préstamo a Socio (Francisco Valencia)", fmt_money(prestamo_neto_socio), help="Monto neto desembolsado por la empresa como préstamo a Francisco Valencia ($22.5M prestados - $500k devueltos).")
+            st.metric(
+                "🤝 Préstamos a Socios (Consolidado)",
+                fmt_money(prestamo_neto_socio),
+                help=f"Préstamos consolidados desembolsados a socios de la empresa:\n• Francisco Valencia: {fmt_money(fco_neto)}\n• Natalia Tapia: {fmt_money(nat_neto)}\n• Total Consolidado: {fmt_money(prestamo_neto_socio)}"
+            )
         with k5:
             st.metric(
                 "🏦 Saldo Cta Cte BCI Real",
