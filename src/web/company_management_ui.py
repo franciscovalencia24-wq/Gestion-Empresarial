@@ -59,8 +59,15 @@ def render_company_management_ui():
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         show_new_form = st.checkbox("➕ Nuevo Movimiento", key="toggle_new_mov")
 
-    # 2. CARGA DE DATOS DESDE BASE DE DATOS Y AUTO-MIGRACIÓN DE COLUMNAS SQLITE
+    # 2. CARGA DE DATOS DESDE BASE DE DATOS Y AUTO-CREACIÓN DE TABLAS Y COLUMNAS SQLITE
     from sqlalchemy import text
+    from src.database.connection import SessionLocal, engine, Base
+    
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception:
+        pass
+
     db = SessionLocal()
     for col_sql in [
         "ALTER TABLE company_financial_movements ADD COLUMN monto_exento FLOAT DEFAULT 0.0",
@@ -228,22 +235,31 @@ def render_company_management_ui():
         prestamo_neto_socio = total_pres_otorgados - total_devoluciones
 
         # Saldo Banco BCI disponible real (Conciliado con cartola desde BD)
-        bci_acc_db = db.query(CompanyAccount).filter(
-            CompanyAccount.alias == "CTA. CTE. BCI: FV ASESORIAS"
-        ).first()
+        saldo_bci_base = 21160054.0
+        bci_acc_db = None
+        try:
+            bci_acc_db = db.query(CompanyAccount).filter(
+                CompanyAccount.alias == "CTA. CTE. BCI: FV ASESORIAS"
+            ).first()
 
-        if not bci_acc_db:
-            bci_acc_db = CompanyAccount(
-                empresa=empresa_sel,
-                banco="Banco BCI",
-                titular=empresa_sel,
-                alias="CTA. CTE. BCI: FV ASESORIAS",
-                saldo_actual=21160054.0
-            )
-            db.add(bci_acc_db)
-            db.commit()
+            if not bci_acc_db:
+                bci_acc_db = CompanyAccount(
+                    empresa=empresa_sel,
+                    banco="Banco BCI",
+                    titular=empresa_sel,
+                    alias="CTA. CTE. BCI: FV ASESORIAS",
+                    saldo_actual=21160054.0
+                )
+                db.add(bci_acc_db)
+                db.commit()
 
-        saldo_bci_base = float(bci_acc_db.saldo_actual or 21160054.0)
+            saldo_bci_base = float(bci_acc_db.saldo_actual or 21160054.0)
+        except Exception:
+            db.rollback()
+            try:
+                Base.metadata.create_all(bind=engine)
+            except Exception:
+                pass
 
         # CÁLCULO DINÁMICO DE MOVIMIENTOS ASIGNADOS A LA CTA CTE BCI
         df_bci = df_all[df_all["Cuenta Corriente"].str.contains("BCI", na=False)] if not df_all.empty else pd.DataFrame()
