@@ -4,15 +4,11 @@ from playwright.async_api import async_playwright
 async def generate_whatsapp_state(title="APV & Reliquidación Tributaria", topic="Optimización de Impuestos 2026", bullet1="Gana hasta 15% de Bonificación Fiscal Directa con Régimen A", bullet2="Rebaja hasta 54 UF anuales de Impuesto Global Complementario en Régimen B", bullet3="Recupera retenciones por crédito hipotecario de dividendos", cta="Escríbeme por WhatsApp para evaluar tu tramo tributario sin costo.", filename="estado_whatsapp_1.png"):
     brand_dir = os.path.join(os.getcwd(), "src", "web", "assets", "brand")
     fv_svg_path = os.path.join(brand_dir, "fv_logo_negativo.svg")
-    altus_svg_path = os.path.join(brand_dir, "altus_ai_logo_principal.svg")
 
     with open(fv_svg_path, "r", encoding="utf-8") as f:
         fv_svg = f.read()
-    with open(altus_svg_path, "r", encoding="utf-8") as f:
-        altus_svg = f.read()
 
     fv_b64 = base64.b64encode(fv_svg.encode("utf-8")).decode("utf-8")
-    altus_b64 = base64.b64encode(altus_svg.encode("utf-8")).decode("utf-8")
 
     # Render at 2160x3840px 4K Ultra HD (2x 1080x1920)
     html_content = f"""<!DOCTYPE html>
@@ -175,30 +171,12 @@ async def generate_whatsapp_state(title="APV & Reliquidación Tributaria", topic
         .author b {{
             color: #ffffff;
         }}
-        .altus-tag {{
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            background: rgba(30, 41, 59, 0.85);
-            padding: 16px 40px;
-            border-radius: 50px;
-            border: 2px solid #f59e0b;
-        }}
-        .altus-tag .p-lbl {{
-            font-size: 24px;
-            font-weight: 800;
-            color: #94a3b8;
-            letter-spacing: 4px;
-        }}
-        .altus-tag img {{
-            height: 50px;
-            width: auto;
-        }}
-        .altus-tag .a-txt {{
+        .dfo-tag {{
             font-size: 34px;
             font-weight: 900;
-            color: #ffffff;
-            letter-spacing: 2px;
+            color: #f59e0b;
+            letter-spacing: 5px;
+            text-transform: uppercase;
         }}
     </style>
 </head>
@@ -234,15 +212,11 @@ async def generate_whatsapp_state(title="APV & Reliquidación Tributaria", topic
     <div class="footer">
         <div class="cta-card">
             <div class="cta-title">💬 {cta}</div>
-            <div class="cta-sub">FV Asesorías e Inversiones • Senior Family Office</div>
+            <div class="cta-sub">FV Asesorías e Inversiones • Digital Family Office</div>
         </div>
         <div class="brand-row">
             <div class="author"><b>Francisco Valencia</b> | Managing Partner</div>
-            <div class="altus-tag">
-                <span class="p-lbl">POWERED BY</span>
-                <img src="data:image/svg+xml;base64,{altus_b64}" alt="ALTUS AI"/>
-                <span class="a-txt">ALTUS AI</span>
-            </div>
+            <div class="dfo-tag">DIGITAL FAMILY OFFICE</div>
         </div>
     </div>
 </body>

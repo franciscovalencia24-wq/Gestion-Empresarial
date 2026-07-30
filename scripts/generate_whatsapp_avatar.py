@@ -4,24 +4,19 @@ from playwright.async_api import async_playwright
 async def generate_avatar():
     brand_dir = os.path.join(os.getcwd(), "src", "web", "assets", "brand")
     svg_path = os.path.join(brand_dir, "fv_logo_negativo.svg")
-    altus_svg_path = os.path.join(brand_dir, "altus_ai_logo_principal.svg")
 
     with open(svg_path, "r", encoding="utf-8") as f:
         fv_svg = f.read()
 
-    with open(altus_svg_path, "r", encoding="utf-8") as f:
-        altus_svg = f.read()
-
     fv_b64 = base64.b64encode(fv_svg.encode("utf-8")).decode("utf-8")
-    altus_b64 = base64.b64encode(altus_svg.encode("utf-8")).decode("utf-8")
 
-    # 4K Ultra HD 2160x2160 resolution rendering
+    # Render at 2160x2160px 4K Ultra HD
     html_content = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Inter:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800;900&family=Inter:wght@400;600;700&display=swap');
         
         * {{
             box-sizing: border-box;
@@ -32,7 +27,7 @@ async def generate_avatar():
         body {{
             width: 2160px;
             height: 2160px;
-            background: radial-gradient(circle at center, #0f172a 0%, #080d1a 60%, #020617 100%);
+            background: radial-gradient(circle at center, #0f172a 0%, #060b18 55%, #020617 100%);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -41,13 +36,13 @@ async def generate_avatar():
             position: relative;
         }}
 
-        /* Subtle Gold Glow Background */
+        /* Gold & Emerald Radial Glow */
         .glow {{
             position: absolute;
-            width: 1800px;
-            height: 1800px;
+            width: 1750px;
+            height: 1750px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(16, 185, 129, 0.18) 0%, rgba(245, 158, 11, 0.15) 50%, transparent 70%);
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, rgba(245, 158, 11, 0.15) 45%, transparent 70%);
             z-index: 1;
         }}
 
@@ -61,30 +56,30 @@ async def generate_avatar():
             justify-content: center;
             align-items: center;
             z-index: 2;
-            padding: 90px;
+            padding: 100px;
             background: rgba(15, 23, 42, 0.65);
             backdrop-filter: blur(25px);
-            box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.8), 0 0 100px rgba(245, 158, 11, 0.25);
-            border: 5px solid rgba(245, 158, 11, 0.6);
+            box-shadow: inset 0 0 140px rgba(0, 0, 0, 0.85), 0 0 100px rgba(245, 158, 11, 0.3);
+            border: 6px solid rgba(245, 158, 11, 0.65);
         }}
 
         .logo-container {{
-            width: 1600px;
+            width: 1650px;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-bottom: 45px;
+            margin-bottom: 65px;
         }}
 
         .logo-container img {{
             width: 100%;
             height: auto;
-            max-height: 800px;
-            filter: drop-shadow(0 30px 50px rgba(0, 0, 0, 0.85));
+            max-height: 850px;
+            filter: drop-shadow(0 35px 60px rgba(0, 0, 0, 0.9));
         }}
 
         .badge-text {{
-            font-size: 64px;
+            font-size: 68px;
             font-weight: 900;
             letter-spacing: 12px;
             color: #f59e0b;
@@ -94,48 +89,13 @@ async def generate_avatar():
         }}
 
         .subtext {{
-            font-size: 44px;
-            font-weight: 700;
-            letter-spacing: 7px;
-            color: #f8fafc;
-            text-transform: uppercase;
-            margin-top: 14px;
-        }}
-
-        /* Highly Prominent Altus AI Tag */
-        .altus-tag {{
-            margin-top: 65px;
-            display: flex;
-            align-items: center;
-            gap: 26px;
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
-            padding: 28px 70px;
-            border-radius: 70px;
-            border: 4px solid #f59e0b;
-            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.75), 0 0 35px rgba(245, 158, 11, 0.4);
-        }}
-
-        .altus-tag .powered-label {{
-            font-size: 34px;
+            font-size: 52px;
             font-weight: 800;
-            color: #94a3b8;
-            letter-spacing: 5px;
-            text-transform: uppercase;
-        }}
-
-        .altus-tag img.altus-icon {{
-            height: 80px;
-            width: auto;
-            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
-        }}
-
-        .altus-tag .altus-name {{
-            font-size: 50px;
-            font-weight: 900;
+            letter-spacing: 9px;
             color: #ffffff;
-            letter-spacing: 4px;
-            font-family: 'Outfit', sans-serif;
-            text-shadow: 0 4px 14px rgba(0,0,0,0.9);
+            text-transform: uppercase;
+            margin-top: 18px;
+            text-shadow: 0 6px 18px rgba(0,0,0,0.9);
         }}
     </style>
 </head>
@@ -146,12 +106,7 @@ async def generate_avatar():
             <img src="data:image/svg+xml;base64,{fv_b64}" alt="FV Logo"/>
         </div>
         <div class="badge-text">ASESORÍA PATRIMONIAL</div>
-        <div class="subtext">SENIOR FAMILY OFFICE</div>
-        <div class="altus-tag">
-            <span class="powered-label">POWERED BY</span>
-            <img src="data:image/svg+xml;base64,{altus_b64}" alt="ALTUS AI Emblem" class="altus-icon"/>
-            <span class="altus-name">ALTUS AI</span>
-        </div>
+        <div class="subtext">DIGITAL FAMILY OFFICE</div>
     </div>
 </body>
 </html>
@@ -168,7 +123,7 @@ async def generate_avatar():
         await page.screenshot(path=avatar_file, type="png")
         await browser.close()
 
-    print(f"Created 4K Avatar: {avatar_file}")
+    print(f"Created Clean 4K Avatar (DIGITAL FAMILY OFFICE): {avatar_file}")
 
 if __name__ == "__main__":
     asyncio.run(generate_avatar())
