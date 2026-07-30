@@ -261,17 +261,7 @@ def render_company_management_ui():
             except Exception:
                 pass
 
-        # CÁLCULO DINÁMICO DE MOVIMIENTOS ASIGNADOS A LA CTA CTE BCI
-        df_bci = df_all[df_all["Cuenta Corriente"].str.contains("BCI", na=False)] if not df_all.empty else pd.DataFrame()
-        
-        bci_ingresos = df_bci[df_bci["Tipo"] == "INGRESO"]["Monto Total"].sum() if not df_bci.empty else 0.0
-        bci_egresos = df_bci[df_bci["Tipo"] == "EGRESO"]["Monto Total"].sum() if not df_bci.empty else 0.0
-        bci_prestamos = df_bci[df_bci["Tipo"] == "PRESTAMO_SOCIO"]["Monto Total"].sum() if not df_bci.empty else 0.0
-        bci_devoluciones = df_bci[df_bci["Tipo"] == "DEVOLUCION_SOCIO"]["Monto Total"].sum() if not df_bci.empty else 0.0
-
-        flujo_neto_bci = (bci_ingresos + bci_devoluciones) - (bci_egresos + bci_prestamos)
-        saldo_bci_calculado = saldo_bci_base + flujo_neto_bci
-        descalce_conciliacion = saldo_bci_calculado - saldo_bci_base
+        saldo_bci_real = saldo_bci_base
 
         st.markdown("### 📊 Indicadores Financieros Consolidados y Conciliación Bancaria")
         k1, k2, k3, k4, k5 = st.columns(5)
@@ -286,56 +276,57 @@ def render_company_management_ui():
             st.metric("🤝 Préstamo a Socio (Francisco Valencia)", fmt_money(prestamo_neto_socio), help="Monto neto desembolsado por la empresa como préstamo a Francisco Valencia ($22.5M prestados - $500k devueltos).")
         with k5:
             st.metric(
-                "🏦 Saldo Cta Cte BCI Proyectado",
-                fmt_money(saldo_bci_calculado),
-                delta=f"{fmt_money(flujo_neto_bci)} (Flujo Neto BCI)",
-                help="Saldo proyectado por el sistema aplicando el impacto de todos los ingresos y egresos BCI al saldo base ingresado."
+                "🏦 Saldo Cta Cte BCI Real",
+                fmt_money(saldo_bci_real),
+                help="Saldo disponible real verificado en la Cta Cte Banco BCI N° 71869111 al día de hoy."
             )
 
-        with st.expander("🏦 Módulo de Conciliación Bancaria BCI (Saldo Banco vs. Calculado por Sistema)"):
+        with st.expander("🏦 Módulo de Conciliación Bancaria BCI (Saldo Banco vs. Cuadratura de Caja)"):
             c_conc1, c_conc2, c_conc3 = st.columns(3)
             
             with c_conc1:
-                st.markdown("##### 1. Saldo Ingresado de Cartola BCI")
+                st.markdown("##### 1. Saldo Real en Banco BCI")
                 nuevo_saldo_bci = st.number_input(
-                    "Saldo Base según Cartola Banco ($):",
-                    value=float(saldo_bci_base),
+                    "Saldo Disponible en Banco ($):",
+                    value=float(saldo_bci_real),
                     step=100000.0,
                     format="%.0f",
                     key="input_saldo_bci_real_banco"
                 )
-                if st.button("💾 Actualizar Saldo Base Cartola", key="btn_save_saldo_bci", type="primary", use_container_width=True):
-                    bci_acc_db.saldo_actual = float(nuevo_saldo_bci)
-                    db.commit()
-                    try:
-                        from src.utils.gcs_sync import upload_db_to_gcs
-                        upload_db_to_gcs()
-                    except Exception:
-                        pass
-                    st.success(f"✅ Saldo Base Banco BCI actualizado a {fmt_money(nuevo_saldo_bci)}")
+                if st.button("💾 Actualizar Saldo Real Banco", key="btn_save_saldo_bci", type="primary", use_container_width=True):
+                    if bci_acc_db:
+                        bci_acc_db.saldo_actual = float(nuevo_saldo_bci)
+                        db.commit()
+                        try:
+                            from src.utils.gcs_sync import upload_db_to_gcs
+                            upload_db_to_gcs()
+                        except Exception:
+                            pass
+                    st.success(f"✅ Saldo Banco BCI actualizado a {fmt_money(nuevo_saldo_bci)}")
                     st.rerun()
 
             with c_conc2:
-                st.markdown("##### 2. Flujo Neto BCI en Sistema")
+                st.markdown("##### 2. Cuadratura Teórica de Caja")
                 st.markdown(f"""
                 <div style='background-color: #1e293b; padding: 15px; border-radius: 10px; border: 1px solid #334155;'>
                     <p style='margin: 0; color: #e2e8f0;'>
-                        ➕ <b>Abonos / Ingresos BCI:</b> <span style='color: #10b981;'>{fmt_money(bci_ingresos + bci_devoluciones)}</span><br/>
-                        ➖ <b>Cargos / Egresos BCI:</b> <span style='color: #ef4444;'>{fmt_money(bci_egresos + bci_prestamos)}</span><br/>
+                        💰 <b>Utilidad Acumulada Operaciones:</b> <span style='color: #10b981;'>{fmt_money(utilidad_neta)}</span><br/>
+                        🤝 <b>Préstamos a Socios de Caja:</b> <span style='color: #ef4444;'>-{fmt_money(prestamo_neto_socio)}</span><br/>
                         <hr style='border-color: #475569; margin: 8px 0;'/>
-                        📊 <b>Impacto Neto Cta Cte:</b> <span style='font-weight: bold; color: {"#10b981" if flujo_neto_bci >= 0 else "#ef4444"};'>{fmt_money(flujo_neto_bci)}</span>
+                        📊 <b>Caja Líquida Teórica:</b> <span style='font-weight: bold; color: #38bdf8;'>{fmt_money(utilidad_neta - prestamo_neto_socio)}</span>
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
 
             with c_conc3:
-                st.markdown("##### 3. Comparativa y Conciliación")
+                descalce_caja = saldo_bci_real - (utilidad_neta - prestamo_neto_socio)
+                st.markdown("##### 3. Conciliación de Saldos")
                 st.markdown(f"""
-                <div style='background-color: #0f172a; padding: 15px; border-radius: 10px; border-left: 5px solid {"#10b981" if descalce_conciliacion == 0 else "#38bdf8"};'>
-                    <h4 style='margin: 0; color: #f8fafc;'>🧮 Saldo Calculado: {fmt_money(saldo_bci_calculado)}</h4>
+                <div style='background-color: #0f172a; padding: 15px; border-radius: 10px; border-left: 5px solid {"#10b981" if abs(descalce_caja) < 1000000 else "#f59e0b"};'>
+                    <h4 style='margin: 0; color: #f8fafc;'>🏦 Saldo Banco Real: {fmt_money(saldo_bci_real)}</h4>
                     <p style='color: #94a3b8; font-size: 0.9em; margin-top: 5px; margin-bottom: 0;'>
-                        🏦 Saldo Base Declarado: {fmt_money(saldo_bci_base)}<br/>
-                        ⚖️ Diferencia / Movimientos: <b>{fmt_money(flujo_neto_bci)}</b>
+                        📊 Caja Teórica (Utilidad - Préstamos): {fmt_money(utilidad_neta - prestamo_neto_socio)}<br/>
+                        ⚖️ Ajuste Impuestos / F29 / Giros: <b>{fmt_money(descalce_caja)}</b>
                     </p>
                 </div>
                 """, unsafe_allow_html=True)
