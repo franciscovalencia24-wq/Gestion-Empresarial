@@ -4,7 +4,7 @@ from playwright.async_api import async_playwright
 async def generate_whatsapp_state(title="APV & Reliquidación Tributaria", topic="Optimización de Impuestos 2026", bullet1="Gana hasta 15% de Bonificación Fiscal Directa con Régimen A", bullet2="Rebaja hasta 54 UF anuales de Impuesto Global Complementario en Régimen B", bullet3="Recupera retenciones por crédito hipotecario de dividendos", cta="Escríbeme por WhatsApp para evaluar tu tramo tributario sin costo.", filename="estado_whatsapp_1.png"):
     brand_dir = os.path.join(os.getcwd(), "src", "web", "assets", "brand")
     fv_svg_path = os.path.join(brand_dir, "fv_logo_negativo.svg")
-    altus_svg_path = os.path.join(brand_dir, "altus_ai_logo_negativo.svg")
+    altus_svg_path = os.path.join(brand_dir, "altus_ai_logo_principal.svg")
 
     with open(fv_svg_path, "r", encoding="utf-8") as f:
         fv_svg = f.read()
@@ -14,19 +14,20 @@ async def generate_whatsapp_state(title="APV & Reliquidación Tributaria", topic
     fv_b64 = base64.b64encode(fv_svg.encode("utf-8")).decode("utf-8")
     altus_b64 = base64.b64encode(altus_svg.encode("utf-8")).decode("utf-8")
 
+    # Render at 2160x3840px 4K Ultra HD (2x 1080x1920)
     html_content = f"""<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
         * {{ box-sizing: border-box; margin: 0; padding: 0; }}
         body {{
-            width: 1080px;
-            height: 1920px;
+            width: 2160px;
+            height: 3840px;
             background: linear-gradient(180deg, #020617 0%, #0f172a 40%, #1e293b 100%);
             font-family: 'Outfit', sans-serif;
-            padding: 100px 80px;
+            padding: 180px 140px;
             color: #f8fafc;
             display: flex;
             flex-direction: column;
@@ -36,22 +37,22 @@ async def generate_whatsapp_state(title="APV & Reliquidación Tributaria", topic
         }}
         .bg-glow-1 {{
             position: absolute;
-            top: -100px;
-            right: -100px;
-            width: 800px;
-            height: 800px;
+            top: -200px;
+            right: -200px;
+            width: 1600px;
+            height: 1600px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, transparent 70%);
             z-index: 1;
         }}
         .bg-glow-2 {{
             position: absolute;
-            bottom: 200px;
-            left: -200px;
-            width: 900px;
-            height: 900px;
+            bottom: 400px;
+            left: -400px;
+            width: 1800px;
+            height: 1800px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(217, 119, 6, 0.15) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba(245, 158, 11, 0.18) 0%, transparent 70%);
             z-index: 1;
         }}
         .header {{
@@ -59,77 +60,78 @@ async def generate_whatsapp_state(title="APV & Reliquidación Tributaria", topic
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 2px solid rgba(255,255,255,0.1);
-            padding-bottom: 40px;
+            border-bottom: 3px solid rgba(255,255,255,0.15);
+            padding-bottom: 70px;
         }}
         .header img.fv-logo {{
-            height: 85px;
+            height: 170px;
             width: auto;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.6));
         }}
         .tag {{
-            font-size: 20px;
-            font-weight: 700;
-            letter-spacing: 4px;
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: 6px;
             color: #10b981;
-            background: rgba(16, 185, 129, 0.1);
-            padding: 14px 28px;
-            border-radius: 40px;
-            border: 1px solid rgba(16, 185, 129, 0.4);
+            background: rgba(16, 185, 129, 0.12);
+            padding: 24px 50px;
+            border-radius: 60px;
+            border: 2px solid rgba(16, 185, 129, 0.45);
             text-transform: uppercase;
         }}
         .hero {{
             z-index: 2;
-            margin-top: 40px;
+            margin-top: 60px;
         }}
         .topic {{
-            font-size: 24px;
-            font-weight: 700;
-            color: #d97706;
-            letter-spacing: 5px;
+            font-size: 44px;
+            font-weight: 800;
+            color: #f59e0b;
+            letter-spacing: 8px;
             text-transform: uppercase;
-            margin-bottom: 20px;
+            margin-bottom: 35px;
         }}
         .title {{
-            font-size: 68px;
-            font-weight: 800;
+            font-size: 120px;
+            font-weight: 900;
             line-height: 1.15;
             color: #ffffff;
-            letter-spacing: -1.5px;
-            margin-bottom: 60px;
-            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            letter-spacing: -3px;
+            margin-bottom: 100px;
+            text-shadow: 0 15px 40px rgba(0,0,0,0.6);
         }}
         .card-box {{
             z-index: 2;
-            background: rgba(15, 23, 42, 0.75);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 36px;
-            padding: 50px;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            background: rgba(15, 23, 42, 0.85);
+            border: 3px solid rgba(255,255,255,0.15);
+            border-radius: 60px;
+            padding: 90px;
+            backdrop-filter: blur(30px);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.5);
             display: flex;
             flex-direction: column;
-            gap: 35px;
+            gap: 65px;
         }}
         .bullet-item {{
             display: flex;
             align-items: flex-start;
-            gap: 25px;
+            gap: 45px;
         }}
         .bullet-icon {{
-            font-size: 36px;
-            background: rgba(16, 185, 129, 0.15);
+            font-size: 64px;
+            background: rgba(16, 185, 129, 0.18);
             color: #10b981;
-            width: 70px;
-            height: 70px;
-            border-radius: 20px;
+            width: 120px;
+            height: 120px;
+            border-radius: 36px;
             display: flex;
             justify-content: center;
             align-items: center;
             flex-shrink: 0;
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            border: 2px solid rgba(16, 185, 129, 0.4);
         }}
         .bullet-text {{
-            font-size: 28px;
+            font-size: 48px;
             color: #e2e8f0;
             font-weight: 500;
             line-height: 1.4;
@@ -138,34 +140,35 @@ async def generate_whatsapp_state(title="APV & Reliquidación Tributaria", topic
             z-index: 2;
             display: flex;
             flex-direction: column;
-            gap: 30px;
+            gap: 50px;
         }}
         .cta-card {{
-            background: linear-gradient(135deg, rgba(217, 119, 6, 0.2) 0%, rgba(16, 185, 129, 0.2) 100%);
-            border: 2px solid #d97706;
-            border-radius: 30px;
-            padding: 40px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(16, 185, 129, 0.25) 100%);
+            border: 4px solid #f59e0b;
+            border-radius: 50px;
+            padding: 70px;
             text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
         }}
         .cta-title {{
-            font-size: 32px;
-            font-weight: 800;
+            font-size: 56px;
+            font-weight: 900;
             color: #ffffff;
-            margin-bottom: 10px;
+            margin-bottom: 16px;
         }}
         .cta-sub {{
-            font-size: 22px;
-            color: #cbd5e1;
-            font-weight: 500;
+            font-size: 38px;
+            color: #e2e8f0;
+            font-weight: 600;
         }}
         .brand-row {{
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 10px;
+            padding: 0 20px;
         }}
         .author {{
-            font-size: 22px;
+            font-size: 38px;
             color: #94a3b8;
             font-weight: 600;
         }}
@@ -175,17 +178,27 @@ async def generate_whatsapp_state(title="APV & Reliquidación Tributaria", topic
         .altus-tag {{
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 20px;
+            background: rgba(30, 41, 59, 0.85);
+            padding: 16px 40px;
+            border-radius: 50px;
+            border: 2px solid #f59e0b;
         }}
-        .altus-tag span {{
-            font-size: 16px;
-            font-weight: 600;
+        .altus-tag .p-lbl {{
+            font-size: 24px;
+            font-weight: 800;
             color: #94a3b8;
-            letter-spacing: 2px;
+            letter-spacing: 4px;
         }}
         .altus-tag img {{
-            height: 32px;
+            height: 50px;
             width: auto;
+        }}
+        .altus-tag .a-txt {{
+            font-size: 34px;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 2px;
         }}
     </style>
 </head>
@@ -226,8 +239,9 @@ async def generate_whatsapp_state(title="APV & Reliquidación Tributaria", topic
         <div class="brand-row">
             <div class="author"><b>Francisco Valencia</b> | Managing Partner</div>
             <div class="altus-tag">
-                <span>POWERED BY</span>
+                <span class="p-lbl">POWERED BY</span>
                 <img src="data:image/svg+xml;base64,{altus_b64}" alt="ALTUS AI"/>
+                <span class="a-txt">ALTUS AI</span>
             </div>
         </div>
     </div>
@@ -241,12 +255,12 @@ async def generate_whatsapp_state(title="APV & Reliquidación Tributaria", topic
 
     async with async_playwright() as p:
         browser = await p.chromium.launch()
-        page = await browser.new_page(viewport={"width": 1080, "height": 1920, "device_scale_factor": 2})
+        page = await browser.new_page(viewport={"width": 2160, "height": 3840, "device_scale_factor": 1})
         await page.set_content(html_content)
         await page.screenshot(path=out_file, type="png")
         await browser.close()
 
-    print(f"Generated WhatsApp State: {out_file}")
+    print(f"Generated 4K WhatsApp State: {out_file}")
 
 if __name__ == "__main__":
     asyncio.run(generate_whatsapp_state())
