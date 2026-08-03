@@ -29,33 +29,16 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# BASE DE DATOS E INGESTION AUTOCONTENIDA (SQLite)
+# BASE DE DATOS Y CONEXIÓN CENTRALIZADA (data/crm_database.db)
 # -----------------------------------------------------------------------------
-DB_PATH = "sqlite:///data/crm_database.db"
-os.makedirs("data", exist_ok=True)
-engine = create_engine(DB_PATH, connect_args={"check_same_thread": False})
-Base = declarative_base()
+sys.path.append(os.getcwd())
+from src.database.connection import engine, SessionLocal, Base
+from src.database.models import CompanyFinancialMovement, CompanyAccount
 
-class CompanyFinancialMovement(Base):
-    __tablename__ = 'company_financial_movements'
-    id = Column(Integer, primary_base=True, primary_key=True, autoincrement=True)
-    empresa = Column(String(100), default="FV Asesorías SpA")
-    tipo_movimiento = Column(String(50)) # INGRESO, EGRESO, PRESTAMO_SOCIO, DEVOLUCION_SOCIO, MOVIMIENTO_CTA_CTE
-    categoria = Column(String(100)) # FACTURACION, GASTO, PRÉSTAMO, etc.
-    fecha = Column(Date)
-    periodo = Column(String(20))
-    folio_factura = Column(String(50))
-    rut_contraparte = Column(String(20))
-    razon_social = Column(String(200))
-    concepto = Column(Text)
-    monto_neto = Column(Float, default=0.0)
-    monto_iva = Column(Float, default=0.0)
-    monto_total = Column(Float, default=0.0)
-    cuenta_corriente = Column(String(100))
-    observaciones = Column(Text)
-
-Base.metadata.create_all(engine)
-SessionLocal = sessionmaker(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception:
+    pass
 
 def normalize_period(per_raw, fecha_dt=None):
     if pd.notna(per_raw):

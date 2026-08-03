@@ -14,7 +14,7 @@ def get_gcs_client():
         logger.warning(f"No se pudo inicializar cliente de GCS: {e}")
         return None
 
-def download_db_from_gcs(db_filename="prospectos.db", destination_path="data/processed/prospectos.db"):
+def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/crm_database.db"):
     """
     Descarga la última versión de la base de datos desde Google Cloud Storage (GCS)
     al iniciar la aplicación web en la nube.
@@ -37,7 +37,7 @@ def download_db_from_gcs(db_filename="prospectos.db", destination_path="data/pro
         logger.warning(f"Error descargando DB desde GCS: {e}")
         return False
 
-def upload_db_to_gcs(source_path="data/processed/prospectos.db", db_filename="prospectos.db"):
+def upload_db_to_gcs(source_path="data/crm_database.db", db_filename="crm_database.db"):
     """
     Sube la base de datos local a Google Cloud Storage (GCS)
     después de un guardado o actualización de clientes/movimientos.
