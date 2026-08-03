@@ -78,12 +78,12 @@ def render_macro_chat_ui():
             st.subheader("🌐 Ingesta Web (Robots OSINT)")
             st.write("Dispara los robots para extraer la visión de las páginas públicas (SURA, Banchile, Santander, etc.)")
             if st.button("Ejecutar Scrapers Institucionales", use_container_width=True):
-                with st.spinner("Desplegando robots web..."):
+                with st.spinner(f"Desplegando robots web OSINT para {periodo_actual}..."):
                     scraper = InstitutionalScraper()
-                    res = scraper.run_all_scrapers()
-                    st.success("✅ Scrapers ejecutados. Las visiones han sido guardadas en el mes correspondiente.")
+                    res = scraper.run_all_scrapers(target_period=periodo_actual)
+                    st.success(f"✅ Scrapers ejecutados. Las visiones de {periodo_actual} han sido guardadas y consolidadas.")
                     if res.get("alerts"):
-                        st.warning("Se detectaron problemas en algunas webs: " + str(res["alerts"]))
+                        st.warning("Se detectaron alertas en algunas páginas: " + str(res["alerts"]))
                     st.rerun()
 
         with c2:
