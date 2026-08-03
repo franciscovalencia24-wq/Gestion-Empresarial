@@ -9,40 +9,10 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
     fecha_actual = datetime.now().strftime("%d/%m/%Y")
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     
-    # Logos
-    logo_fv_path = os.path.join(root_dir, "assets", "Logo_FV_Principal.png")
-    altus_logo_path = os.path.join(root_dir, "assets", "Logo_ALTUS AI_Principal_Fondo oscuro.png")
-    
-    try:
-        with open(logo_fv_path, "rb") as f:
-            fv_b64 = "data:image/png;base64," + base64.b64encode(f.read()).decode('utf-8')
-    except:
-        fv_b64 = ""
-        
-    try:
-        from PIL import Image, ImageDraw
-        import io as pil_io
-        with Image.open(altus_logo_path).convert("RGBA") as img:
-            rad = 40
-            circle = Image.new('L', (rad * 2, rad * 2), 0)
-            draw = ImageDraw.Draw(circle)
-            draw.ellipse((0, 0, rad * 2 - 1, rad * 2 - 1), fill=255)
-            alpha = Image.new('L', img.size, 255)
-            w, h = img.size
-            alpha.paste(circle.crop((0, 0, rad, rad)), (0, 0))
-            alpha.paste(circle.crop((0, rad, rad, rad * 2)), (0, h - rad))
-            alpha.paste(circle.crop((rad, 0, rad * 2, rad)), (w - rad, 0))
-            alpha.paste(circle.crop((rad, rad, rad * 2, rad * 2)), (w - rad, h - rad))
-            img.putalpha(alpha)
-            buffered = pil_io.BytesIO()
-            img.save(buffered, format="PNG")
-            altus_b64 = "data:image/png;base64," + base64.b64encode(buffered.getvalue()).decode('utf-8')
-    except Exception as e:
-        try:
-            with open(altus_logo_path, "rb") as f:
-                altus_b64 = "data:image/png;base64," + base64.b64encode(f.read()).decode('utf-8')
-        except:
-            altus_b64 = ""
+    # Logos vectoriales (Regla de oro: usar SVG de assets/)
+    from src.utils.pdf_generator import _get_logo_base64
+    fv_b64 = _get_logo_base64("Logo_FV_Principal.svg")
+    altus_b64 = _get_logo_base64("Logo_ALTUS AI_Principal.svg")
 
     # Reemplazar marcadores manuales de salto de página
     markdown_processed = contenido_markdown.replace("[SALTO]", "<pdf:nextpage />")
@@ -170,7 +140,11 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
         
         <div class="corp-desc" style="margin-top: 20px; page-break-inside: avoid;">
             <strong>Sobre FV Asesorías e Inversiones</strong><br>
-            Somos un Multi-Family Office Digital potenciado por <b>Altus AI</b>, nuestro Software Cuantitativo Privado. Combinamos la precisión algorítmica de la Inteligencia Artificial con la exclusividad de la banca privada para auditar portafolios, cruzar normativas tributarias complejas, incorporar información de valor para cada cliente y diseñar estrategias patrimoniales hiper-personalizadas de grado institucional.
+            FV Asesorías e Inversiones somos un Multi-Family Office Digital impulsado por nuestro software cuantitativo privado de Inteligencia Artificial (ALTUS AI). Combinamos la agilidad tecnológica de una WealthTech con la exclusividad de una oficina patrimonial privada, auditando en 360° la situación tributaria, inmobiliaria, composición familiar, seguros e inversiones para proteger su legado a través de las generaciones.
+        </div>
+
+        <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-left: 3px solid #0A2342; padding: 6px 10px; margin-top: 8px; font-size: 7.5pt; color: #334155; line-height: 1.3; font-family: Helvetica, Arial, sans-serif; page-break-inside: avoid;">
+            <strong>🔒 Ciberseguridad & Resguardo Patrimonial:</strong> Toda la información analizada por Altus AI se encuentra protegida bajo cifrado nativo <strong>AES-256 bits</strong> y transmisión <strong>TLS 1.3</strong> de grado bancario. Garantizamos estricta confidencialidad bajo Secreto Patrimonial y cumplimiento riguroso de la Ley N° 19.628 de Protección de Datos Personales en Chile.
         </div>
 
         <div id="footer_content">

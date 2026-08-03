@@ -62,15 +62,65 @@ def render_macro_chat_ui():
                     with st.expander("Ver Visión Extendida"):
                         st.write(v.resumen_extendido)
 
-        # Mostrar Consenso si fue disparado
+        # Mostrar Consenso si fue disparado o si existe en memoria
         if getattr(st.session_state, "trigger_consensus", False):
             st.session_state.trigger_consensus = False
             with st.spinner(f"Altus AI Macro está leyendo las visiones de {periodo_actual} y debatiendo el consenso..."):
                 agent = MacroAnalystAgent()
-                consenso = agent.generate_monthly_consolidation(periodo_actual)
-                st.markdown("---")
-                st.markdown("## 🧠 Consenso Definitivo del Mes")
-                st.success(consenso)
+                consenso_text = agent.generate_monthly_consolidation(periodo_actual)
+                st.session_state[f"last_consensus_{periodo_actual}"] = consenso_text
+
+        current_consensus = st.session_state.get(f"last_consensus_{periodo_actual}")
+        if current_consensus:
+            st.markdown("---")
+            st.markdown(f"## 🧠 Consenso Definitivo del Mes ({periodo_actual})")
+            st.success(current_consensus)
+
+            # Sección de Descarga Exportable Institucional
+            st.markdown("### 📥 Descargar Informe Institucional Exportable")
+            col_pdf, col_docx = st.columns(2)
+            
+            with col_pdf:
+                try:
+                    import tempfile
+                    from src.utils.pdf_generator_macro import generate_macro_pdf
+                    pdf_path = os.path.join(tempfile.gettempdir(), f"Consenso_Institucional_{periodo_actual}.pdf")
+                    generate_macro_pdf(
+                        cliente_nombre="Comité de Inversiones / Clientes FV",
+                        contenido_markdown=current_consensus,
+                        output_path=pdf_path
+                    )
+                    with open(pdf_path, "rb") as f_pdf:
+                        st.download_button(
+                            label="📄 Descargar Informe Completo en PDF",
+                            data=f_pdf.read(),
+                            file_name=f"Informe_Consenso_Macro_{periodo_actual}.pdf",
+                            mime="application/pdf",
+                            use_container_width=True
+                        )
+                except Exception as e_pdf:
+                    st.error(f"Error generando PDF: {e_pdf}")
+
+            with col_docx:
+                try:
+                    import tempfile
+                    from src.utils.docx_generator_macro import generate_macro_docx
+                    docx_path = os.path.join(tempfile.gettempdir(), f"Consenso_Institucional_{periodo_actual}.docx")
+                    generate_macro_docx(
+                        cliente_nombre="Comité de Inversiones / Clientes FV",
+                        contenido_markdown=current_consensus,
+                        output_path=docx_path
+                    )
+                    with open(docx_path, "rb") as f_docx:
+                        st.download_button(
+                            label="📝 Descargar Informe Completo en Word (.docx)",
+                            data=f_docx.read(),
+                            file_name=f"Informe_Consenso_Macro_{periodo_actual}.docx",
+                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                            use_container_width=True
+                        )
+                except Exception as e_docx:
+                    st.error(f"Error generando Word: {e_docx}")
 
     with tab2:
         c1, c2 = st.columns(2)
