@@ -161,8 +161,8 @@ class InstitutionalScraper:
         except Exception as e:
             self.log_alert("LarrainVial", str(e))
 
-    def run_all_scrapers(self, target_period: str = None) -> dict:
-        period = target_period or datetime.datetime.now().strftime("%Y-%m")
+    def run_all_scrapers(self, target_period: str = None, *args, **kwargs) -> dict:
+        period = target_period or kwargs.get("periodo") or kwargs.get("period") or (args[0] if len(args) > 0 else None) or datetime.datetime.now().strftime("%Y-%m")
         logging.info(f"Iniciando OSINT Institucional para el período {period} y actualizando BD...")
         self.scrape_sura(period)
         self.scrape_banchile(period)
