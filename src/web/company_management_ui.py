@@ -118,9 +118,14 @@ def render_company_management_ui():
         db.rollback()
 
     try:
-        movs = db.query(CompanyFinancialMovement).filter(
-            CompanyFinancialMovement.empresa == empresa_sel
-        ).order_by(CompanyFinancialMovement.fecha.desc()).all()
+        if "FV" in empresa_sel:
+            movs = db.query(CompanyFinancialMovement).filter(
+                CompanyFinancialMovement.empresa.like("%FV%")
+            ).order_by(CompanyFinancialMovement.fecha.desc()).all()
+        else:
+            movs = db.query(CompanyFinancialMovement).filter(
+                CompanyFinancialMovement.empresa.like("%ALTUS%")
+            ).order_by(CompanyFinancialMovement.fecha.desc()).all()
 
         data_list = []
         for m in movs:
