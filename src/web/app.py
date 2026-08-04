@@ -43,7 +43,9 @@ for query in [
     "ALTER TABLE client_insurances ADD COLUMN colectivo_individual VARCHAR(50)",
     "ALTER TABLE client_insurances ADD COLUMN bien_asegurado_tipo VARCHAR(100)",
     "ALTER TABLE client_insurances ADD COLUMN alias_patente VARCHAR(100)",
-    "ALTER TABLE client_insurances ADD COLUMN medio_pago VARCHAR(100)",
+    "ALTER TABLE client_profiles ADD COLUMN nombres VARCHAR(150)",
+    "ALTER TABLE client_profiles ADD COLUMN apellido_paterno VARCHAR(100)",
+    "ALTER TABLE client_profiles ADD COLUMN apellido_materno VARCHAR(100)",
     "ALTER TABLE client_profiles ADD COLUMN renta_anual_declarada FLOAT DEFAULT 0.0",
     "ALTER TABLE client_profiles ADD COLUMN tipo_persona VARCHAR(20) DEFAULT 'PN'",
     "ALTER TABLE client_profiles ADD COLUMN audio_path VARCHAR(500)",
@@ -71,7 +73,7 @@ Base.metadata.create_all(bind=engine)
 st.set_page_config(page_title="Altus AI - FV Asesorías", layout="wide", initial_sidebar_state="expanded")
 
 # --- IDENTIDAD VISUAL Y DISEÑO PREMIUM ---
-LOGO_PATH = os.path.join(root_path, "assets", "Logo_FV_Principal.png")
+LOGO_PATH = os.path.join(root_path, "assets", "NUEVO LOGO FV.png")
 ALTUS_LOGO_PATH = os.path.join(root_path, "assets", "Logo_ALTUS AI_Principal_Fondo oscuro.png")
 
 st.markdown("""
@@ -1558,17 +1560,9 @@ def main():
         </style>
     """, unsafe_allow_html=True)
     
-    # Mostrar Logo Corporativo
+    # Mostrar Logo Corporativo Oficial FV
     if os.path.exists(LOGO_PATH):
         st.sidebar.image(LOGO_PATH, use_container_width=True)
-    
-    st.sidebar.markdown("<p style='text-align:center; color:#6b7280; font-size:0.7em; margin-top: -10px; margin-bottom: 5px;'>Powered by</p>", unsafe_allow_html=True)
-    
-    if os.path.exists(ALTUS_LOGO_PATH):
-        # Mostramos el logo de altus centrado
-        col1, col2, col3 = st.sidebar.columns([1,2,1])
-        with col2:
-            st.image(ALTUS_LOGO_PATH, use_container_width=True)
     else:
         st.sidebar.title("💎 FV WealthTech")
         
