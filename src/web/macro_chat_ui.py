@@ -303,7 +303,6 @@ def render_macro_chat_ui():
                 import importlib
                 importlib.reload(src.utils.pdf_generator_macro)
                 from src.utils.pdf_generator_macro import generate_macro_pdf
-                import os
                 import tempfile
                 
                 client_name = st.session_state.get("current_client_name", "Cliente")
@@ -364,7 +363,6 @@ def render_macro_chat_ui():
                     
                     todos_los_prospectos = [prospect] + related
                     encontro_notas = False
-                    import os
                     for p in todos_los_prospectos:
                         if p.profile:
                             has_notes = bool(p.profile.notas_neuroventas)
