@@ -1563,15 +1563,7 @@ def main():
     # Mostrar Logo Corporativo Oficial FV en Vector Nativo Puro SVG
     svg_sidebar_path = os.path.join(root_path, "assets", "brand", "fv_logo_vector_pure.svg")
     if os.path.exists(svg_sidebar_path):
-        with open(svg_sidebar_path, "r", encoding="utf-8") as f_side:
-            svg_side_code = f_side.read()
-        st.sidebar.markdown(f"""
-        <div style="text-align: center; margin-bottom: 15px; width: 100%;">
-            <div style="width: 100%; max-width: 230px; margin: 0 auto;">
-                {svg_side_code}
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.sidebar.image(svg_sidebar_path, use_container_width=True)
     elif os.path.exists(LOGO_PATH):
         st.sidebar.image(LOGO_PATH, use_container_width=True)
     else:

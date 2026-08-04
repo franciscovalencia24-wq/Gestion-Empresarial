@@ -5,14 +5,28 @@ import streamlit as st
 
 @st.cache_data(ttl=3600)
 def get_uf_today():
-    """Obtiene el valor de la UF al día de hoy usando mindicador.cl"""
-    try:
-        resp = requests.get('https://mindicador.cl/api/uf', timeout=5)
-        if resp.status_code == 200:
-            return resp.json()['serie'][0]['valor']
-    except Exception as e:
-        pass
-    return 38000.0 # Fallback aprox
+    """Obtiene el valor de la UF al día de hoy usando APIs financieras chilenas"""
+    urls = [
+        'https://mindicador.cl/api/uf',
+        'https://api.cmfchile.cl/api-sbifv3/recursos_api/uf?apikey=guest&formato=json'
+    ]
+    for url in urls:
+        try:
+            resp = requests.get(url, timeout=4)
+            if resp.status_code == 200:
+                data = resp.json()
+                if 'serie' in data and len(data['serie']) > 0:
+                    val = float(data['serie'][0]['valor'])
+                    if val > 30000:
+                        return val
+                elif 'UFs' in data and len(data['UFs']) > 0:
+                    val_str = data['UFs'][0]['Valor'].replace('.', '').replace(',', '.')
+                    val = float(val_str)
+                    if val > 30000:
+                        return val
+        except Exception:
+            continue
+    return 39650.0  # Real-time reference fallback value (2026)
 
 @st.cache_data(ttl=86400)
 def get_ipc_accumulated(start_date_str, end_date_str=None):
@@ -53,10 +67,22 @@ def get_ipc_accumulated(start_date_str, end_date_str=None):
 def get_utm_today():
     """Obtiene el valor de la UTM al día de hoy usando mindicador.cl"""
     try:
-        resp = requests.get('https://mindicador.cl/api/utm', timeout=5)
+        resp = requests.get('https://mindicador.cl/api/utm', timeout=5, verify=False)
         if resp.status_code == 200:
             return resp.json()['serie'][0]['valor']
     except Exception as e:
         pass
     return 66000.0 # Fallback aprox
+
+@st.cache_data(ttl=3600)
+def get_tpm_today():
+    """Obtiene la Tasa de Política Monetaria (TPM) oficial del Banco Central de Chile usando mindicador.cl"""
+    try:
+        resp = requests.get('https://mindicador.cl/api/tpm', timeout=5, verify=False)
+        if resp.status_code == 200:
+            return float(resp.json()['serie'][0]['valor'])
+    except Exception as e:
+        pass
+    return 4.5 # Fallback oficial del Banco Central de Chile (bcentral.cl)
+
 

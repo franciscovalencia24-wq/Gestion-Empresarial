@@ -4,7 +4,7 @@ from io import BytesIO
 from xhtml2pdf import pisa
 import base64
 
-def _get_logo_base64(filename="Logo_FV_Principal.svg"):
+def _get_logo_base64(filename="fv_logo_vector_pure.svg"):
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     
     candidates = []
@@ -13,22 +13,25 @@ def _get_logo_base64(filename="Logo_FV_Principal.svg"):
     candidates.append(filename)
     
     name_map = {
-        "fv_logo_principal_light.png": "fv_logo_vector_principal.svg",
-        "fv_logo_principal_hd.png": "fv_logo_vector_principal.svg",
-        "fv_emblem_3d_metallic.png": "fv_logo_vector_principal.svg",
-        "altus_logo_minimalist_1780936005587.png": "Logo_ALTUS AI_Principal.svg",
-        "altus_ai_logo_dark.svg": "Logo_ALTUS AI_Negativo.svg",
-        "NUEVO LOGO FV.svg": "fv_logo_vector_principal.svg",
-        "Logo_FV_Principal.svg": "fv_logo_vector_principal.svg"
+        "fv_logo_principal_light.png": "fv_logo_vector_pure.svg",
+        "fv_logo_principal_hd.png": "fv_logo_vector_pure.svg",
+        "fv_emblem_3d_metallic.png": "fv_logo_vector_pure.svg",
+        "altus_logo_minimalist_1780936005587.png": "altus_ai_logo_dark.svg",
+        "Logo_ALTUS AI_Negativo.png": "altus_ai_logo_dark.svg",
+        "Logo_ALTUS AI_Negativo.svg": "altus_ai_logo_dark.svg",
+        "altus_ai_logo_dark.svg": "altus_ai_logo_dark.svg",
+        "NUEVO LOGO FV.svg": "fv_logo_vector_pure.svg",
+        "Logo_FV_Principal.svg": "fv_logo_vector_pure.svg",
+        "fv_logo_vector_principal.svg": "fv_logo_vector_pure.svg"
     }
     if filename in name_map:
         candidates.insert(0, name_map[filename])
         
     search_dirs = [
-        os.path.join(root_dir, "assets"),
         os.path.join(root_dir, "assets", "brand"),
-        os.path.join(root_dir, "src", "web", "assets"),
+        os.path.join(root_dir, "assets"),
         os.path.join(root_dir, "src", "web", "assets", "brand"),
+        os.path.join(root_dir, "src", "web", "assets"),
     ]
     
     for cand in candidates:
@@ -146,17 +149,17 @@ def generate_succession_report_pdf(prospect_id: int) -> bytes:
     if not data:
         return b""
 
-    logo_fv = _get_logo_base64("Logo_FV_Negativo.png")
-    logo_altus = _get_logo_base64("Logo_ALTUS AI_Negativo.png")
+    logo_fv = _get_logo_base64("fv_logo_vector_pure.svg")
+    logo_altus = _get_logo_base64("altus_ai_logo_dark.svg")
 
-    img_fv_tag = f'<img src="{logo_fv}" height="45" style="vertical-align: middle;"/>' if logo_fv else '<strong style="color:#fff; font-size:16pt;">FV ASESORÍAS</strong>'
-    img_altus_tag = f'<img src="{logo_altus}" height="32" style="vertical-align: middle; margin-left: 20px;"/>' if logo_altus else ''
+    img_fv_tag = f'<img src="{logo_fv}" width="200" style="vertical-align: middle;"/>' if logo_fv else '<strong style="color:#fff; font-size:16pt;">FV ASESORÍAS</strong>'
+    img_altus_tag = f'<img src="{logo_altus}" width="70" style="vertical-align: middle; margin-left: 20px;"/>' if logo_altus else ''
 
     tot = data["totales"]
     nombre_cliente = data["nombre"]
     rut_cliente = data["rut"]
     estado_prev = data["estado_previsional"]
-    uf_val = tot.get("uf_actual", 38800.0)
+    uf_val = tot.get("uf_actual", 39650.0)
 
     # 1. HEREDEROS LEGALES Y DERECHOS PROPORCIONALES
     herederos_rows = ""
