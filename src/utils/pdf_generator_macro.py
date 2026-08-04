@@ -42,12 +42,22 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
     fecha_actual = datetime.now().strftime("%d/%m/%Y")
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     
-    # Logos vectoriales / HD de marca oficial
-    from src.utils.pdf_generator import _get_logo_base64
-    
-    # Cargar logo FV oficial en alta definición SVG
-    fv_b64 = _get_logo_base64("fv_logo_vector_principal.svg")
-    altus_b64 = _get_logo_base64("Logo_ALTUS AI_Principal.svg")
+    # Cargar logo FV oficial en alta definición PNG para xhtml2pdf
+    root_assets = os.path.join(root_dir, "assets")
+    fv_logo_path = os.path.join(root_assets, "NUEVO LOGO FV.png")
+    if not os.path.exists(fv_logo_path):
+        fv_logo_path = os.path.join(root_assets, "brand", "fv_logo_principal_light.png")
+
+    with open(fv_logo_path, "rb") as img_f:
+        fv_b64 = f"data:image/png;base64,{base64.b64encode(img_f.read()).decode('utf-8')}"
+
+    # Cargar logo ALTUS AI en alta definición PNG
+    altus_logo_path = os.path.join(root_assets, "Logo_ALTUS AI_Principal.png")
+    if not os.path.exists(altus_logo_path):
+        altus_logo_path = os.path.join(root_assets, "brand", "altus_ai_logo_principal.png")
+
+    with open(altus_logo_path, "rb") as alt_f:
+        altus_b64 = f"data:image/png;base64,{base64.b64encode(alt_f.read()).decode('utf-8')}"
 
     # Reemplazar marcadores manuales de salto de página y convertir tablas
     markdown_processed = _parse_md_tables_to_html(contenido_markdown)
@@ -66,64 +76,70 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
         <style>
             @page {{
                 size: A4 portrait;
-                margin: 1.8cm;
-                margin-bottom: 2cm;
+                margin: 1.4cm;
+                margin-bottom: 1.6cm;
                 @frame footer_frame {{
                     -pdf-frame-content: footer_content;
-                    left: 1.8cm; right: 1.8cm; bottom: 0.5cm; height: 1cm;
+                    left: 1.4cm; right: 1.4cm; bottom: 0.4cm; height: 0.8cm;
                 }}
             }}
             body {{
                 font-family: Helvetica, Arial, sans-serif;
-                color: #333333;
-                line-height: 1.45;
-                font-size: 10pt;
+                color: #1e293b;
+                line-height: 1.35;
+                font-size: 9.5pt;
             }}
             h1 {{
                 color: #0A2342;
-                font-size: 18px;
+                font-size: 16pt;
                 text-align: center;
-                margin-top: 15px;
+                margin-top: 10px;
+                margin-bottom: 12px;
                 font-weight: bold;
             }}
             h2 {{
                 color: #104b3c;
-                font-size: 14px;
+                font-size: 13pt;
                 border-bottom: 1.5px solid #0A2342;
-                padding-bottom: 4px;
-                margin-top: 20px;
+                padding-bottom: 3px;
+                margin-top: 14px;
+                margin-bottom: 8px;
                 font-weight: bold;
             }}
             h3 {{
-                color: #1a202c;
-                font-size: 12px;
-                margin-top: 15px;
+                color: #0f172a;
+                font-size: 11pt;
+                margin-top: 12px;
+                margin-bottom: 6px;
                 font-weight: bold;
             }}
             p {{
                 text-align: justify;
-                margin-bottom: 8px;
+                margin-top: 0;
+                margin-bottom: 6px;
+                line-height: 1.35;
             }}
             ul, ol {{
-                margin-bottom: 10px;
-                margin-top: 4px;
-                padding-left: 18px;
+                margin-bottom: 8px;
+                margin-top: 3px;
+                padding-left: 16px;
             }}
             li {{
-                margin-bottom: 4px;
+                margin-bottom: 3px;
                 text-align: justify;
+                line-height: 1.35;
             }}
             table {{
                 width: 100%;
                 border-collapse: collapse;
-                margin-top: 10px;
-                margin-bottom: 14px;
+                margin-top: 8px;
+                margin-bottom: 12px;
                 font-size: 9pt;
                 page-break-inside: avoid;
             }}
             th, td {{
                 border: 1px solid #cbd5e1;
-                padding: 5px 8px;
+                padding: 5px 7px;
                 text-align: left;
                 vertical-align: top;
             }}
@@ -140,20 +156,20 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
                 background-color: #f8fafc;
             }}
             .disclaimer {{
-                font-size: 8.5pt;
+                font-size: 8pt;
                 color: #64748b;
                 text-align: justify;
                 border-top: 1px solid #e2e8f0;
-                padding-top: 8px;
-                margin-top: 20px;
+                padding-top: 6px;
+                margin-top: 16px;
                 page-break-inside: avoid;
             }}
             .corp-desc {{
                 background-color: #f8fafc;
                 border-left: 3px solid #D4AF37; /* Altus Gold */
-                padding: 10px;
-                font-size: 8.5pt;
-                margin-top: 12px;
+                padding: 8px 10px;
+                font-size: 8pt;
+                margin-top: 10px;
                 color: #374151;
                 page-break-inside: avoid;
             }}
@@ -164,20 +180,20 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
     </head>
     <body>
 
-        <table style="width: 100%; border-bottom: 2px solid #0A2342; margin-bottom: 20px; padding-bottom: 10px;">
-            <tr>
-                <td style="text-align: left; width: 40%; vertical-align: middle; border:none;">
-                    <img src="{fv_b64}" width="190">
+        <table style="width: 100%; border-bottom: 2px solid #0A2342; margin-bottom: 15px; padding-bottom: 8px;">
+            <tr style="border: none; background-color: transparent;">
+                <td style="text-align: left; width: 45%; vertical-align: middle; border:none; padding: 0;">
+                    <img src="{fv_b64}" width="210">
                 </td>
-                <td style="text-align: right; width: 60%; vertical-align: middle; border:none;">
+                <td style="text-align: right; width: 55%; vertical-align: middle; border:none; padding: 0;">
                     <table style="width: 100%; border: none; margin: 0; padding: 0;">
                         <tr style="border: none; background-color: transparent;">
-                            <td style="text-align: right; vertical-align: middle; border: none; padding-right: 12px;">
+                            <td style="text-align: right; vertical-align: middle; border: none; padding-right: 10px;">
                                 <span style="font-size: 11pt; color: #0A2342; font-weight: bold;">Digital Family Office Analytics</span><br>
                                 <span style="font-size: 8pt; color: #6b7280;">Fecha de Emisión: {datetime.now().strftime("%d-%m-%Y")}</span>
                             </td>
-                            <td style="text-align: right; width: 80px; vertical-align: middle; border: none; padding: 0;">
-                                <img src="{altus_b64}" width="65">
+                            <td style="text-align: right; width: 75px; vertical-align: middle; border: none; padding: 0;">
+                                <img src="{altus_b64}" width="70">
                             </td>
                         </tr>
                     </table>
