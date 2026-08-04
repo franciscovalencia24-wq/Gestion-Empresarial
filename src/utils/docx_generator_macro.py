@@ -19,9 +19,11 @@ def generate_macro_docx(cliente_nombre: str, contenido_markdown: str, output_pat
         section.left_margin = Inches(1)
         section.right_margin = Inches(1)
         
-    # Encabezado con Logo Oficial FV
+    # Encabezado con Logo Oficial FV desde la carpeta de marca assets/brand
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    fv_logo_path = os.path.join(root_dir, "assets", "NUEVO LOGO FV.png")
+    fv_logo_path = os.path.join(root_dir, "assets", "brand", "fv_logo_principal_light.png")
+    if not os.path.exists(fv_logo_path):
+        fv_logo_path = os.path.join(root_dir, "assets", "brand", "fv_logo_principal_trimmed.png")
     if os.path.exists(fv_logo_path):
         try:
             p_logo = doc.add_paragraph()

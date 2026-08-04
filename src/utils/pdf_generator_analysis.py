@@ -31,21 +31,10 @@ def generar_pdf_analisis_integral(ticker, tech_opinion, fund_opinion, integral_o
     fecha_actual = datetime.now().strftime("%d-%m-%Y")
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     
-    # Logos vectoriales (Regla de oro: usar SVG)
-    logo_fv_path = os.path.join(root_dir, "assets", "NUEVO LOGO FV.svg")
-    altus_logo_path = os.path.join(root_dir, "assets", "Logo_ALTUS AI_Principal_Fondo oscuro.svg")
-    
-    try:
-        with open(logo_fv_path, "rb") as f:
-            fv_b64 = "data:image/svg+xml;base64," + base64.b64encode(f.read()).decode('utf-8')
-    except:
-        fv_b64 = ""
-        
-    try:
-        with open(altus_logo_path, "rb") as f:
-            altus_b64 = "data:image/svg+xml;base64," + base64.b64encode(f.read()).decode('utf-8')
-    except:
-        altus_b64 = ""
+    # Logos vectoriales (Regla de oro: usar SVG de assets/)
+    from src.utils.pdf_generator import _get_logo_base64
+    fv_b64 = _get_logo_base64("fv_logo_vector_pure.svg")
+    altus_b64 = _get_logo_base64("altus_ai_logo_dark.svg")
     
     # Resolver nombre de destinatario
     if is_generic:
@@ -325,7 +314,11 @@ def generar_pdf_analisis_integral(ticker, tech_opinion, fund_opinion, integral_o
         
         <div class="corp-desc">
             <strong>Sobre FV Asesorías e Inversiones</strong><br>
-            Somos un Multi-Family Office Digital potenciado por <strong>Altus AI</strong>, nuestro Software Cuantitativo Privado. Combinamos la precisión algorítmica de la Inteligencia Artificial con la exclusividad de la banca privada para auditar portafolios, cruzar normativas tributarias complejas, incorporar información de valor para cada cliente y diseñar estrategias patrimoniales hiper-personalizadas de grado institucional.
+            FV Asesorías e Inversiones somos un Multi-Family Office Digital impulsado por nuestro software cuantitativo privado de Inteligencia Artificial (ALTUS AI). Combinamos la agilidad tecnológica de una WealthTech con la exclusividad de una oficina patrimonial privada, auditando en 360° la situación tributaria, inmobiliaria, composición familiar, seguros e inversiones para proteger su legado a través de las generaciones.
+        </div>
+
+        <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-left: 3px solid #0A2342; padding: 6px 10px; margin-top: 8px; font-size: 7.5pt; color: #334155; line-height: 1.3; font-family: Helvetica, Arial, sans-serif;">
+            <strong>🔒 Ciberseguridad & Resguardo Patrimonial:</strong> Toda la información analizada por Altus AI se encuentra protegida bajo cifrado nativo <strong>AES-256 bits</strong> y transmisión <strong>TLS 1.3</strong> de grado bancario. Garantizamos estricta confidencialidad bajo Secreto Patrimonial y cumplimiento riguroso de la Ley N° 19.628 de Protección de Datos Personales en Chile.
         </div>
         
     </body>

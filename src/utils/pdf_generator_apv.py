@@ -12,44 +12,10 @@ def generar_pdf_apv(rut: str, nombre: str, sueldo: float, aporte: float, aporte_
                     rentabilidad: float, ahorro_anual: float, bono_estado: float, df_proy: pd.DataFrame) -> str:
     """Convierte los resultados de la simulación APV en un PDF corporativo con CSS elegante usando xhtml2pdf"""
     
-    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    logo_fv_path = os.path.join(root_dir, "src", "web", "assets", "NUEVO LOGO FV.png")
-    altus_logo_path = os.path.join(root_dir, "altus_logo_minimalist_1780936005587.png")
-    
-    # Convertir imágenes a base64
-    def get_rounded_logo(img_path, radius):
-        try:
-            im = Image.open(img_path).convert("RGBA")
-            circle = Image.new('L', (radius * 2, radius * 2), 0)
-            draw = ImageDraw.Draw(circle)
-            draw.ellipse((0, 0, radius * 2 - 1, radius * 2 - 1), fill=255)
-            alpha = Image.new('L', im.size, 255)
-            w, h = im.size
-            alpha.paste(circle.crop((0, 0, radius, radius)), (0, 0))
-            alpha.paste(circle.crop((0, radius, radius, radius * 2)), (0, h - radius))
-            alpha.paste(circle.crop((radius, 0, radius * 2, radius)), (w - radius, 0))
-            alpha.paste(circle.crop((radius, radius, radius * 2, radius * 2)), (w - radius, h - radius))
-            im.putalpha(alpha)
-            
-            img_byte_arr = io.BytesIO()
-            im.save(img_byte_arr, format='PNG')
-            return "data:image/png;base64," + base64.b64encode(img_byte_arr.getvalue()).decode('utf-8')
-        except:
-            return ""
-
-    try:
-        with open(logo_fv_path, "rb") as f:
-            fv_b64 = "data:image/png;base64," + base64.b64encode(f.read()).decode('utf-8')
-    except:
-        fv_b64 = ""
-        
-    altus_b64 = get_rounded_logo(altus_logo_path, radius=40)
-    if not altus_b64:
-        try:
-            with open(altus_logo_path, "rb") as f:
-                altus_b64 = "data:image/png;base64," + base64.b64encode(f.read()).decode('utf-8')
-        except:
-            altus_b64 = ""
+    # Logos vectoriales (Regla de oro: usar SVG de assets/)
+    from src.utils.pdf_generator import _get_logo_base64
+    fv_b64 = _get_logo_base64("fv_logo_vector_pure.svg")
+    altus_b64 = _get_logo_base64("altus_ai_logo_dark.svg")
         
     # Construir tabla HTML de proyección (solo cada 5 años para no saturar si son muchos años)
     filas_html = ""
@@ -286,7 +252,11 @@ def generar_pdf_apv(rut: str, nombre: str, sueldo: float, aporte: float, aporte_
         
         <div class="corp-desc">
             <strong>Sobre FV Asesorías e Inversiones</strong><br>
-            Somos un Multi-Family Office Digital potenciado por <strong>Altus AI</strong>, nuestro Software Cuantitativo Privado. Combinamos la precisión algorítmica de la Inteligencia Artificial con la exclusividad de la banca privada para auditar portafolios, cruzar normativas tributarias complejas, incorporar información de valor para cada cliente y diseñar estrategias patrimoniales hiper-personalizadas de grado institucional.
+            FV Asesorías e Inversiones somos un Multi-Family Office Digital impulsado por nuestro software cuantitativo privado de Inteligencia Artificial (ALTUS AI). Combinamos la agilidad tecnológica de una WealthTech con la exclusividad de una oficina patrimonial privada, auditando en 360° la situación tributaria, inmobiliaria, composición familiar, seguros e inversiones para proteger su legado a través de las generaciones.
+        </div>
+
+        <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-left: 3px solid #0A2342; padding: 6px 10px; margin-top: 8px; font-size: 7.5pt; color: #334155; line-height: 1.3; font-family: Helvetica, Arial, sans-serif;">
+            <strong>🔒 Ciberseguridad & Resguardo Patrimonial:</strong> Toda la información analizada por Altus AI se encuentra protegida bajo cifrado nativo <strong>AES-256 bits</strong> y transmisión <strong>TLS 1.3</strong> de grado bancario. Garantizamos estricta confidencialidad bajo Secreto Patrimonial y cumplimiento riguroso de la Ley N° 19.628 de Protección de Datos Personales en Chile.
         </div>
         
     </body>

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Informe de Arquitectura Técnica - FV Asesorías</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        
+        @page {
+            size: A4;
+            margin: 20mm;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #1a202c;
+            margin: 0;
+            padding: 0;
+            background-color: #ffffff;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .content-wrapper {
+            padding: 0 30px;
+        }
+
+        .cover-page {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 250mm;
+            text-align: center;
+            border: 4px solid #104b3c;
+            padding: 40px;
+            box-sizing: border-box;
+            margin: 0 30px;
+        }
+
+        .cover-logo {
+            max-width: 350px;
+            margin-bottom: 60px;
+        }
+
+        .cover-title {
+            color: #104b3c;
+            font-size: 32px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+        }
+
+        .cover-subtitle {
+            font-size: 20px;
+            color: #4a5568;
+            font-weight: 300;
+            margin-bottom: 60px;
+        }
+
+        .cover-footer {
+            margin-top: auto;
+            font-size: 14px;
+            color: #718096;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .page-break {
+            page-break-before: always;
+            height: 1px;
+        }
+
+        .section-header {
+            border-bottom: 3px solid #104b3c;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            margin-top: 10px;
+        }
+
+        .section-header h2 {
+            color: #104b3c;
+            font-size: 24px;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .intro-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #2d3748;
+            margin-bottom: 20px;
+            background: #f7fafc;
+            padding: 15px 20px;
+            border-left: 5px solid #38b2ac;
+        }
+
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+            font-size: 13px;
+            page-break-inside: auto;
+        }
+
+        .tech-table th, .tech-table td {
+            border: 1px solid #e2e8f0;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .tech-table th {
+            background-color: #104b3c;
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tech-table tr:nth-child(even) {
+            background-color: #f7fafc;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .status-prod { background-color: #c6f6d5; color: #22543d; }
+        .status-beta { background-color: #feebc8; color: #7b341e; }
+        .status-dev { background-color: #e2e8f0; color: #4a5568; }
+
+        .module-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            page-break-inside: avoid;
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #edf2f7;
+            padding-bottom: 8px;
+        }
+
+        .module-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1a202c;
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .module-file {
+            font-family: monospace;
+            background: #edf2f7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            color: #4a5568;
+            margin-left: 10px;
+        }
+
+        .module-content p {
+            font-size: 13px;
+            line-height: 1.5;
+            color: #4a5568;
+            margin: 0 0 10px 0;
+        }
+
+        .tech-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .tech-tag {
+            background: #edf2f7;
+            color: #2d3748;
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- PORTADA -->
+    <div class="cover-page">
+        <img src="assets/brand/fv_logo_principal_light.png" alt="FV Asesorías" class="cover-logo">
+        <div class="cover-title">Arquitectura Técnica y<br>Ecosistema de IA</div>
+        <div class="cover-subtitle">Especificaciones de Software, Agentes Inteligentes y Estado de Desarrollo</div>
+        <div class="cover-footer">DOCUMENTO TÉCNICO CONFIDENCIAL | FV ASESORÍAS E INVERSIONES</div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- CONTENIDO -->
+    <div class="content-wrapper">
+        <div class="section-header">
+            <h2>1. Stack Tecnológico Base (Core)</h2>
+        </div>
+
+        <div class="intro-text">
+            El sistema está construido bajo una arquitectura modular en Python, diseñada para alta escalabilidad, procesamiento concurrente y seguridad de datos bancarios.
+        </div>
+
+        <table class="tech-table">
+            <thead>
+                <tr>
+                    <th>Capa del Sistema</th>
+                    <th>Tecnología / Framework</th>
+                    <th>Propósito en la Plataforma</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Frontend / UI</strong></td>
+                    <td>Streamlit / HTML5 / CSS3</td>
+                    <td>Interfaces interactivas para gestión de cartolas, CRM y cuadros de mando.</td>
+                </tr>
+                <tr>
+                    <td><strong>Backend & Lógica</strong></td>
+                    <td>Python 3.10+</td>
+                    <td>Orquestación de agentes, procesamiento de datos y scripts de extracción.</td>
+                </tr>
+                <tr>
+                    <td><strong>Base de Datos</strong></td>
+                    <td>SQLite 3 / SQLAlchemy</td>
+                    <td>Almacenamiento encriptado local (`database.db`, `prospectos.db`) para máxima privacidad sin nube externa.</td>
+                </tr>
+                <tr>
+                    <td><strong>Inteligencia Artificial</strong></td>
+                    <td>Google Gemini / OpenAI LLMs</td>
+                    <td>Motores de lenguaje natural para lectura óptica (OCR) y razonamiento complejo.</td>
+                </tr>
+                <tr>
+                    <td><strong>Extracción / OSINT</strong></td>
+                    <td>PyPDF2, Regex, Selenium</td>
+                    <td>Scraping de datos públicos (CMF, CAMV) y lectura de cartolas financieras.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="section-header">
+            <h2>2. Clúster de Agentes Inteligentes (Intelligence)</h2>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Supervisor / Orchestrator Agent <span class="module-file">src/intelligence/supervisor.py</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>El nodo central de jerarquía. Evalúa la complejidad de cada tarea ingresada al ecosistema y la delega al agente especializado correspondiente. Monitorea que todos los sub-agentes cumplan sus objetivos sin alucinaciones.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Task Delegation</span>
+                    <span class="tech-tag">Agentic Routing</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Proactive Advisor <span class="module-file">src/intelligence/proactive_advisor.py</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>Actúa como el consejero principal que analiza los portafolios y detona alertas proactivas. Utiliza técnicas de recuperación aumentada (RAG) para aconsejar basándose en el historial del cliente.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">LangChain</span>
+                    <span class="tech-tag">LLM Reasoning</span>
+                    <span class="tech-tag">RAG</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Data Scientist Agent <span class="module-file">src/intelligence/data_scientist.py</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>Especialista en análisis estadístico. Procesa grandes volúmenes de datos numéricos provenientes de cartolas y series históricas, ejecutando las simulaciones Monte Carlo y pruebas de estrés institucionales.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Pandas/NumPy</span>
+                    <span class="tech-tag">Monte Carlo</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Market Analyst Agent <span class="module-file">src/intelligence/market_analyst.py</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>Rastrea tendencias macroeconómicas globales. Digiere noticias financieras, tasas de interés de bancos centrales y fluctuaciones de commodities para contextualizar los riesgos de los portafolios de nuestros clientes.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Macroeconomics</span>
+                    <span class="tech-tag">Time Series Analysis</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Technical Analyst & Quant Agent <span class="module-file">src/agents/technical_analyst.py</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>Agente algorítmico especializado en análisis técnico institucional. Calcula osciladores de momento (RSI, MACD), tendencias (SMA 20/50/200) y bandas de volatilidad en tiempo real sobre datos de la Bolsa de Santiago y EE.UU. Su núcleo de IA genera dictámenes matemáticos instantáneos.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">yfinance API</span>
+                    <span class="tech-tag">Pandas-TA</span>
+                    <span class="tech-tag">Plotly Interactive</span>
+                    <span class="tech-tag">Gemini Quant</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Competitor Agent <span class="module-file">src/intelligence/competitor_agent.py</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>Agente entrenado específicamente para leer folletos, fondos mutuos y propuestas de bancos competidores. Extrae costos ocultos, comisiones fantasmas y elabora cuadros comparativos matemáticos para desarmar la oferta rival.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">OCR Avanzado</span>
+                    <span class="tech-tag">NLP Finance</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Execution Agent <span class="module-file">src/intelligence/execution_agent.py</span></div>
+                <span class="status-badge status-beta">Fase Beta</span>
+            </div>
+            <div class="module-content">
+                <p>Encargado de llevar a la acción las estrategias diseñadas. Formatea órdenes, compila los informes finales en PDF y dispara las notificaciones al equipo humano para el contacto final con el cliente.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Workflow Automation</span>
+                    <span class="tech-tag">Report Generation</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">LLM Reader Agent <span class="module-file">src/osint/llm_reader.py</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>Módulo de visión por computadora y extracción de texto profundo. Es capaz de "leer" contratos, pólizas escaneadas y extraer cláusulas abusivas que los sistemas OCR tradicionales omiten.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Vision LLM</span>
+                    <span class="tech-tag">Document Parsing</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Audio Processor (Neurociencia) <span class="module-file">src/intelligence/audio_processor.py</span></div>
+                <span class="status-badge status-beta">Fase Beta</span>
+            </div>
+            <div class="module-content">
+                <p>Módulo diseñado para transcribir y aplicar análisis de sentimiento/perfilamiento psicológico sobre notas de voz de clientes. Identifica marcadores de aversión al riesgo y sesgos cognitivos.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Whisper AI</span>
+                    <span class="tech-tag">Sentiment Analysis</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-break"></div>
+
+        <div class="section-header" style="margin-top: 0;">
+            <h2>3. Módulos de Ingesta y Extracción OSINT</h2>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Cartola Reader <span class="module-file">src/ingestion/cartola_reader.py</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>Motor de ingesta automatizada. Lee archivos PDF bancarios, reconoce tablas de inversiones de distintas instituciones y consolida el patrimonio en un formato estandarizado dentro de la base de datos.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Regex Parsing</span>
+                    <span class="tech-tag">PDF Extraction</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Scraper CMF y CAMV <span class="module-file">src/osint/scraper_cmf.py</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>Robots de Inteligencia de Fuentes Abiertas (OSINT). Se conectan diariamente a la Comisión para el Mercado Financiero y al CAMV para descargar series históricas, valores cuota y certificar datos de mercado sin intervención humana.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Web Scraping</span>
+                    <span class="tech-tag">Data Mining</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Rutificador Engine <span class="module-file">src/osint/rutificador_engine.py</span></div>
+                <span class="status-badge status-beta">Fase Beta</span>
+            </div>
+            <div class="module-content">
+                <p>Motor de enriquecimiento de datos que asocia RUTs con información pública legal y patrimonial para armar expedientes previos a las reuniones con prospectos.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Data Enrichment</span>
+                    <span class="tech-tag">API Integration</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2>4. Integraciones y Salida de Datos</h2>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">WhatsApp Bot / Messaging <span class="module-file">src/messaging/whatsapp_web.py</span></div>
+                <span class="status-badge status-dev">En Desarrollo</span>
+            </div>
+            <div class="module-content">
+                <p>Integración en progreso para automatizar el envío de alertas patrimoniales, resúmenes de mercado y reportes de rentabilidad directamente al WhatsApp de los clientes VIP.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Twilio / WA API</span>
+                    <span class="tech-tag">Cron Jobs</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">PDF Engine <span class="module-file">src/reporting/pdf_engine.py</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>Motor de renderizado documental que toma los análisis matemáticos de la IA y los convierte en propuestas PDF de diseño institucional (generación de informes patrimoniales y simulaciones Monte Carlo).</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">FPDF / ReportLab</span>
+                    <span class="tech-tag">Vector Graphics</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2>5. Bóveda de Sabiduría Institucional (Knowledge Vault)</h2>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Vector Database & RAG Docs <span class="module-file">DOCUMENTACIÓN CMV/</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>El repositorio central donde reside el "cerebro" de la compañía. Almacena manuales de procedimientos, "mega prompts", reglas de negocios y estudios de mercado. El sistema de Recuperación Aumentada (RAG) consulta esta bóveda en nanosegundos antes de darle cualquier respuesta a un cliente para asegurar precisión legal.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Vector Embeddings</span>
+                    <span class="tech-tag">Semantic Search</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-header">
+            <h2>6. Componentes de UI y Motores de Renderizado Gráfico</h2>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">CRM Kanban Board <span class="module-file">src/web/components/kanban.py</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>Interfaz de usuario interactiva para la gestión visual de prospectos y clientes. Permite arrastrar y soltar cuentas entre diferentes etapas del embudo de conversión (pipeline), todo conectado a la base de datos local SQLite.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Streamlit UI</span>
+                    <span class="tech-tag">Drag & Drop CRM</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Motor de Renderizado Nativo (Anuncios) <span class="module-file">generar_pngs.py</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>Motor de generación gráfica programada en Python puro (Pillow). Dibuja píxel por píxel anuncios de marketing con tamaños de imprenta exactos (2480x1748 px) e inyecta logos y textos precisos, evadiendo las alucinaciones de las IAs gráficas comunes.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Python PIL</span>
+                    <span class="tech-tag">Vector Output</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="module-card">
+            <div class="module-header">
+                <div class="module-title">Premium PDF Engine <span class="module-file">generar_pdf.py</span></div>
+                <span class="status-badge status-prod">Producción</span>
+            </div>
+            <div class="module-content">
+                <p>Generador de propuestas comerciales en PDF utilizando CSS inyectado y FPDF. Asegura que los márgenes institucionales, las tipografías corporativas y la diagramación a múltiples páginas siempre se impriman con un look de alta gama.</p>
+                <div class="tech-tags">
+                    <span class="tech-tag">Print CSS</span>
+                    <span class="tech-tag">FPDF</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Infografía Seguro de Vida</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @page {
+            size: 2560px 1440px;
+            margin: 0;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            width: 2560px;
+            height: 1440px;
+            background: radial-gradient(circle at center, #0F172A 0%, #0A2342 100%);
+            font-family: 'Montserrat', sans-serif;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            box-sizing: border-box;
+            padding: 60px 100px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 50px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid rgba(212, 175, 55, 0.3);
+        }
+
+        .header h1 {
+            font-size: 65px;
+            font-weight: 800;
+            margin: 0;
+            color: #ffffff;
+        }
+
+        .header h1 span {
+            color: #D4AF37;
+        }
+
+        .logos {
+            display: flex;
+            align-items: center;
+            gap: 40px;
+        }
+
+        .logos img.fv {
+            height: 200px;
+            width: auto;
+        }
+
+        .logos img.altus {
+            height: 100px; /* Manteniendo la proporción (FV al doble que Altus en altura) */
+            width: auto;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+            gap: 40px;
+            flex-grow: 1;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            border-radius: 15px;
+            padding: 50px 40px; /* Más padding interno */
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            overflow: hidden; /* Para que el icono no se salga */
+        }
+
+        .card::before {
+            content: attr(data-num);
+            position: absolute;
+            top: -20px;
+            left: -20px;
+            width: 60px;
+            height: 60px;
+            background: #D4AF37;
+            color: #0A2342;
+            font-size: 30px;
+            font-weight: 800;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .card h3 {
+            color: #D4AF37;
+            font-size: 34px; /* Aumentado */
+            margin-top: 15px;
+            margin-bottom: 30px; /* Más espacio abajo del título */
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .card ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .card li {
+            font-size: 24px; /* Letra mucho más grande */
+            line-height: 1.5;
+            margin-bottom: 18px;
+            position: relative;
+            padding-left: 28px;
+            color: #E2E8F0;
+        }
+
+        .card li::before {
+            content: "•";
+            color: #D4AF37;
+            position: absolute;
+            left: 0;
+            top: 0;
+            font-size: 30px;
+        }
+
+        .card-icon {
+            position: absolute;
+            bottom: -20px;
+            right: -10px;
+            font-size: 140px;
+            color: rgba(212, 175, 55, 0.06); /* Icono gigante semi-transparente de fondo */
+            z-index: -1;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>¿POR QUÉ TENER UN <span>SEGURO DE VIDA CON AHORRO?</span></h1>
+        <div class="logos">
+            <img src="Logo_FV_Negativo.png" alt="FV" class="fv">
+            <img src="Logo_ALTUS AI_Negativo.png" alt="Altus AI" class="altus">
+        </div>
+    </div>
+
+    <div class="grid-container">
+        <!-- 1 -->
+        <div class="card" data-num="1">
+            <i class="fas fa-users-viewfinder card-icon"></i>
+            <h3>Sucesión</h3>
+            <ul>
+                <li>Rápida liquidez a los Herederos o Terceros ante fin de la vida del Contratante/Asegurado.</li>
+                <li>Sin trámite de posesión efectiva, siendo único en la industria financiera.</li>
+                <li>Complementario a un testamento.</li>
+            </ul>
+        </div>
+        <!-- 2 -->
+        <div class="card" data-num="2">
+            <i class="fas fa-money-bill-transfer card-icon"></i>
+            <h3>Desacumulación</h3>
+            <ul>
+                <li>Permite retirar "inversión en UF" antes que la utilidad o ganancia (cuenta caja).</li>
+                <li>Ideal para complementar un programa de desacumulación eficiente.</li>
+            </ul>
+        </div>
+        <!-- 3 -->
+        <div class="card" data-num="3">
+            <i class="fas fa-file-invoice-dollar card-icon"></i>
+            <h3>Tributación</h3>
+            <ul>
+                <li>No se debe presentar DDJJ N°1929 (Junio), por inversiones en el exterior.</li>
+                <li>Retiros de la inversión no se registran en la declaración de renta.</li>
+            </ul>
+        </div>
+        <!-- 4 -->
+        <div class="card" data-num="4">
+            <i class="fas fa-scale-balanced card-icon"></i>
+            <h3>Pérdidas Tributarias</h3>
+            <ul>
+                <li>Permite compensar con ganancias tributarias otros instrumentos financieros.</li>
+            </ul>
+        </div>
+        <!-- 5 -->
+        <div class="card" data-num="5">
+            <i class="fas fa-shield-halved card-icon"></i>
+            <h3>Protección</h3>
+            <ul>
+                <li>Tiene componente de Protección y Ahorro.</li>
+                <li>Permite libre designación de beneficiarios.</li>
+                <li>Inembargable según código de procedimiento civil.</li>
+                <li>Bajos costos de administración.</li>
+            </ul>
+        </div>
+        <!-- 6 -->
+        <div class="card" data-num="6">
+            <i class="fas fa-earth-americas card-icon"></i>
+            <h3>Inversión</h3>
+            <ul>
+                <li>Inversión en activos Chilenos o Extranjeros.</li>
+                <li>Permite gran diversificación en una cartera de inversión y mitigar riesgos del mercado.</li>
+            </ul>
+        </div>
+        <!-- 7 -->
+        <div class="card" data-num="7">
+            <i class="fas fa-arrow-trend-up card-icon"></i>
+            <h3>Acumulación</h3>
+            <ul>
+                <li>Reinversiones de activos financieros dentro del seguro de vida no generan hecho gravado de tributación.</li>
+                <li>Otorga una administración activa del portafolio.</li>
+            </ul>
+        </div>
+        <!-- 8 -->
+        <div class="card" data-num="8">
+            <i class="fas fa-coins card-icon"></i>
+            <h3>Ingreso No Renta</h3>
+            <ul>
+                <li>17 UTM sobre la ganancia de capital, para pólizas desde 5 años y retiros totales.</li>
+                <li>Opción de dejar utilidad para herencia.</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

@@ -149,10 +149,18 @@ class CreditoVsInversionReport:
         # Usar la carpeta assets en la raiz del proyecto para los logos nuevos
         root_assets_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(self.assets_dir))), "assets")
         
-        # Preparar Diccionario Data
+        # Preparar Diccionario Data con logos desde assets/brand
+        logo_fv_p = os.path.join(root_assets_dir, "brand", "fv_logo_vector_pure.svg")
+        if not os.path.exists(logo_fv_p):
+            logo_fv_p = os.path.join(root_assets_dir, "brand", "fv_logo_principal_light.png")
+
+        logo_altus_p = os.path.join(root_assets_dir, "brand", "altus_ai_logo_dark.svg")
+        if not os.path.exists(logo_altus_p):
+            logo_altus_p = os.path.join(root_assets_dir, "brand", "altus_ai_logo_dark.png")
+
         data = {
-            "logo_fv_base64": self.get_image_base64(os.path.join(root_assets_dir, "Logo_FV_Negativo.png")),
-            "logo_altus_base64": self.get_image_base64(os.path.join(root_assets_dir, "Logo_ALTUS AI_Principal.png")),
+            "logo_fv_base64": self.get_image_base64(logo_fv_p),
+            "logo_altus_base64": self.get_image_base64(logo_altus_p),
             "cliente_nombre": client_name,
             "fecha_reporte": datetime.datetime.now().strftime("%d de %B de %Y"),
             "cr_monto": self._format_clp(monto),

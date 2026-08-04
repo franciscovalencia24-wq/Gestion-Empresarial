@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Propuesta FV Asesorías</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        @page {
+            size: A4;
+            margin: 20mm; /* Esto le dirá a Chrome que SIEMPRE deje 2cm arriba y abajo en cada página */
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            -webkit-print-color-adjust: exact;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 20mm;
+            box-sizing: border-box;
+            background: #ffffff;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header img {
+            max-width: 280px;
+            height: auto;
+        }
+
+        h1 {
+            color: #104b3c;
+            font-size: 24px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #104b3c;
+            padding-bottom: 15px;
+        }
+
+        h2 {
+            color: #104b3c;
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        p {
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: #4a5568;
+            text-align: justify;
+        }
+
+        .methodology {
+            margin-top: 30px;
+        }
+
+        .method-item {
+            display: flex;
+            margin-bottom: 20px;
+            align-items: flex-start;
+            page-break-inside: avoid; /* Evita que el titulo y texto se separen en 2 páginas */
+        }
+
+        .method-icon {
+            background-color: #104b3c;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .method-content h3 {
+            margin: 0 0 5px 0;
+            font-size: 15px;
+            color: #2d3748;
+        }
+
+        .method-content p {
+            margin: 0;
+            font-size: 13px;
+        }
+
+        .footer-box {
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-left: 5px solid #104b3c;
+            padding: 20px;
+            margin-top: 40px;
+            text-align: center;
+            border-radius: 4px;
+        }
+
+        .footer-box h4 {
+            color: #104b3c;
+            font-size: 16px;
+            margin: 0 0 10px 0;
+        }
+
+        .footer-box p {
+            margin: 0;
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page">
+        <div class="header">
+            <!-- Ensure local relative path or absolute path for local PDF printing -->
+            <img src="src/web/assets/NUEVO LOGO FV.png" alt="FV Asesorías Logo">
+        </div>
+
+        <h1>Bienvenido al Futuro de la Gestión Patrimonial</h1>
+
+        <p>En el complejo entorno económico actual, la verdadera seguridad no se encuentra en acumular activos aislados, sino en construir una arquitectura financiera sólida, dinámicamente blindada y tributariamente eficiente.</p>
+        
+        <p>En <strong>FV Asesorías e Inversiones</strong>, hemos trascendido la asesoría tradicional para convertirnos en su <strong>Digital Family Office (DFO)</strong>. Integramos tecnología de Inteligencia Artificial y modelamiento estadístico institucional para proteger lo que más importa: el legado de su familia.</p>
+
+        <h2>Nuestra Metodología: Arquitectura Tecnológica Aplicada</h2>
+
+        <div class="methodology">
+            <div class="method-item">
+                <div class="method-icon">1</div>
+                <div class="method-content">
+                    <h3>Visión 360° Instantánea</h3>
+                    <p>Nuestros sistemas de Ingesta Inteligente leen y consolidan automáticamente sus cartolas, estados de cuenta y posiciones en distintas instituciones financieras, entregándole una radiografía patrimonial neta, centralizada y sin sesgos comerciales.</p>
+                </div>
+            </div>
+
+            <div class="method-item">
+                <div class="method-icon">2</div>
+                <div class="method-content">
+                    <h3>Pruebas de Estrés Institucionales (Modelo Monte Carlo)</h3>
+                    <p>No predecimos el futuro; nos preparamos matemáticamente para él. Proyectamos su supervivencia financiera y sus flujos de caja frente a 10.000 escenarios de crisis económicas reales, asegurando que su estándar de vida sea inquebrantable hasta los 90+ años.</p>
+                </div>
+            </div>
+
+            <div class="method-item">
+                <div class="method-icon">3</div>
+                <div class="method-content">
+                    <h3>Ingeniería Tributaria y Sucesoria</h3>
+                    <p>Nuestro motor legal analiza constantemente oportunidades fiscales. Por ejemplo, estructuramos seguros con ahorro altamente eficientes para garantizar transmisiones patrimoniales de forma ágil y de libre designación, eficiencia en el impuesto a la herencia (Ley N° 16.271), y optimizando el uso de los recursos en vida en términos tributarios.</p>
+                </div>
+            </div>
+
+            <div class="method-item">
+                <div class="method-icon">4</div>
+                <div class="method-content">
+                    <h3>Monitoreo Competitivo Autónomo</h3>
+                    <p>Si otra institución le ofrece un producto, lo analizamos en segundos. Nuestros sistemas leen la letra chica de los folletos competidores y le entregamos una evaluación objetiva sobre sus verdaderos costos ocultos y riesgos.</p>
+                </div>
+            </div>
+
+            <div style="page-break-before: always; height: 20mm;"></div>
+            <div class="method-item">
+                <div class="method-icon">5</div>
+                <div class="method-content">
+                    <h3>Innovación y Evolución Continua (I+D+i)</h3>
+                    <p>El mercado financiero nunca duerme, y nosotros tampoco. Invertimos constantemente en investigar nuevas herramientas, vigilar a los actores más importantes del mercado global y desarrollar nuevos servicios tecnológicos para garantizar que su patrimonio siempre esté gestionado con la vanguardia de la industria.</p>
+                </div>
+            </div>
+        </div>
+
+        <h2>Nuestro Compromiso: Paz Mental</h2>
+
+        <p>Nuestro negocio no es venderle productos financieros transaccionales. Nuestro negocio es entregarle claridad, tiempo y tranquilidad.</p>
+
+        <p>Ser cliente de FV Asesorías significa tener la certeza de que existe un equipo de expertos cuidando su capital 24/7 con la mejor tecnología. Además, contamos con la solidez de ser distribuidores exclusivos de <strong>Principal Financial Group</strong>, una de las administradoras de inversiones y ahorro a largo plazo más grandes, antiguas y prestigiosas del mundo (Fortune 500). Este respaldo institucional internacional nos permite brindarle garantías de clase mundial, permitiéndole a usted enfocarse exclusivamente en disfrutar su vida y su familia.</p>
+
+        <div class="footer-box">
+            <h4>¿Está preparado para llevar su estructura financiera al siguiente nivel?</h4>
+            <p>contacto@fv-inversiones.com &nbsp;&nbsp;|&nbsp;&nbsp; +56 9 6677 9662</p>
+        </div>
+
+    </div>
+
+</body>
+</html>

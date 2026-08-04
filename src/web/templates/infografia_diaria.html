@@ -14,14 +14,18 @@
             --accent-red: #f87171; 
             --accent-green: #34d399;
             --border-color: #1e293b;
+        }        html {
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
         }
-        html, body {
+        body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             width: 1200px;
-            margin: 0;
-            padding: 50px;
+            margin: 0 auto;
+            padding: 40px 50px;
             box-sizing: border-box;
             overflow: hidden !important;
         }
@@ -168,11 +172,12 @@
             justify-content: space-between;
             align-items: center;
             margin-top: 40px;
+            box-sizing: border-box;
         }
         
-        .logo-fv { height: 60px; vertical-align: middle; }
-        .logo-altus { height: 55px; margin-left: 30px; vertical-align: middle; }
-        
+        /* Logo FV (110px) y Logo ALTUS AI (65px) equilibrados y centrados naturalmente */
+        .logo-fv { height: 110px; width: auto; object-fit: contain; margin: 0; }
+        .logo-altus { height: 65px; width: auto; object-fit: contain; opacity: 0.95; margin: 0; }
         .arrow { width: 14px; height: 14px; display: inline-block; vertical-align: middle; margin-right: 5px; }
         .flag-svg { width: 22px; height: 15px; display: inline-block; vertical-align: middle; margin-right: 8px; border-radius: 2px; }
     </style>
@@ -389,7 +394,7 @@
     <div style="display: flex; gap: 40px; margin-top: 50px; border-top: 1px solid var(--border-color); padding-top: 25px;">
         <div style="flex: 1; font-size: 11px; color: var(--text-muted); line-height: 1.5; text-align: justify; padding-right: 20px; border-right: 1px solid var(--border-color);">
             <strong style="color: #fff; font-size: 12px; display: block; margin-bottom: 8px;">Sobre FV Asesorías e Inversiones</strong>
-            Somos un Multi-Family Office Digital impulsado por Inteligencia Artificial. Combinamos la tecnología de una Startup WealthTech con la exclusividad de la banca privada para auditar portafolios de forma cuantitativa, cruzar normativas tributarias complejas (como el Estate Tax) y entregar estrategias patrimoniales hiper-personalizadas de grado institucional.
+            FV Asesorías e Inversiones somos un Multi-Family Office Digital impulsado por nuestro software cuantitativo privado de Inteligencia Artificial (ALTUS AI). Combinamos la agilidad tecnológica de una WealthTech con la exclusividad de una oficina patrimonial privada, auditando en 360° la situación tributaria, inmobiliaria, composición familiar, seguros e inversiones para proteger su legado a través de las generaciones.
         </div>
         
         <div style="flex: 1; font-size: 11px; color: var(--text-muted); line-height: 1.5; text-align: justify;">
@@ -399,7 +404,7 @@
     </div>
     
     <div class="footer">
-        <div>
+        <div style="display: flex; align-items: center; gap: 25px;">
             {% if json_data.logo_fv_base64 %}
             <img src="{{ json_data.logo_fv_base64 }}" class="logo-fv" alt="FV Asesorías">
             {% else %}

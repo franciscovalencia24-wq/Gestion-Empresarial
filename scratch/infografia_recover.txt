@@ -1,0 +1,59 @@
+Created At: 2026-07-14T13:14:19Z
+Completed At: 2026-07-14T13:14:19Z
+File Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/templates/infografia_diaria.html`
+Total Lines: 417
+Total Bytes: 25133
+Showing lines 210 to 260
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+210:                             {% endif %}
+211:                             {{ region }}
+212:                         </div>
+213:                         <table>
+214:                             <tr><th>Índice</th><th>Valor</th><th>Efecto</th><th>Relevancia</th></tr>
+215:                             {% for ind in json_data.impacto_global[region] %}
+216:                             <tr>
+217:                                 <td>{{ ind.nombre }}</td>
+218:                                 <td class="val">{{ ind.valor }}</td>
+219:                                 <td class="effect {% if ind.efecto == 'BAJA' %}baja{% elif ind.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}">
+220:                                     {% if ind.efecto == 'BAJA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17h10V7"/><path d="M7 7l10 10"/></svg>{% elif ind.efecto == 'ALZA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>{% else %}—{% endif %}
+221:                                 </td>
+222:                                 <td class="relevance {% if ind.relevancia == 'IMPORTANTE' %}baja{% elif ind.relevancia == 'MODERADA' %}alza{% else %}neutral{% endif %}">{{ ind.relevancia }}</td>
+223:                             </tr>
+224:                             {% endfor %}
+225:                         </table>
+226:                     </div>
+227:                     {% endif %}
+228:                     {% endfor %}
+229:                 </div>
+230:                 
+231:                 <!-- COLUMNA 2: EUROPA & MSCI -->
+232:                 <div>
+233:                     {% for region in ["EUROPA", "MSCI"] %}
+234:                     {% if json_data.impacto_global[region] %}
+235:                     <div class="region-card">
+236:                         <div class="region-title">
+237:                             {% if region == "EUROPA" %}<svg class="flag-svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#003399"/><circle cx="30" cy="20" r="10" fill="none" stroke="#FFCC00" stroke-width="4"/></svg>
+238:                             {% elif region == "MSCI" %}<svg class="flag-svg" viewBox="0 0 60 40"><rect width="60" height="40" fill="#111827"/><circle cx="30" cy="20" r="12" fill="#38bdf8"/></svg>
+239:                             {% endif %}
+240:                             {{ region }}
+241:                         </div>
+242:                         <table>
+243:                             <tr><th>Índice</th><th>Valor</th><th>Efecto</th><th>Relevancia</th></tr>
+244:                             {% for ind in json_data.impacto_global[region] %}
+245:                             <tr>
+246:                                 <td>{{ ind.nombre }}</td>
+247:                                 <td class="val">{{ ind.valor }}</td>
+248:                 <td class="effect {% if ind.efecto == 'BAJA' %}baja{% elif ind.efecto == 'ALZA' %}alza{% else %}neutral{% endif %}">
+249:                     {% if ind.efecto == 'BAJA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17h10V7"/><path d="M7 7l10 10"/></svg>
+250:                     {% elif ind.efecto == 'ALZA' %}<svg class="arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+251:                     {% else %}—{% endif %}
+252:                 </td>
+253:                 <td class="relevance {% if ind.relevancia == 'IMPORTANTE' %}baja{% elif ind.relevancia == 'MODERADA' %}alza{% else %}neutral{% endif %}">{{ ind.relevancia }}</td>
+254:                             </tr>
+255:                             {% endfor %}
+256:                         </table>
+257:                     </div>
+258:                     {% endif %}
+259:                     {% endfor %}
+260:                 </div>
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

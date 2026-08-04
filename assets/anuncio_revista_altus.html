@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Anuncio Revista - Altus AI</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700;900&display=swap');
+        
+        @page {
+            size: 2560px 1440px;
+            margin: 0;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            /* Formato de Diapositiva 16:9 (Alta Resolución) */
+            width: 2560px;
+            height: 1440px;
+            background: radial-gradient(circle at top right, #0F172A 0%, #0A2342 80%); /* Azul marino institucional FV */
+            font-family: 'Montserrat', sans-serif;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Elemento de diseño abstracto en el fondo - Estilo Altus */
+        .bg-glow {
+            position: absolute;
+            width: 1500px;
+            height: 1500px;
+            background: radial-gradient(circle, rgba(212, 175, 55, 0.08) 0%, rgba(212, 175, 55, 0) 60%);
+            top: -400px;
+            right: -200px;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .container {
+            z-index: 2;
+            padding: 80px 150px 80px 150px; /* Reducido para que todo quepa en 1440px */
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 60px; /* Reducido de 120 a 60 */
+        }
+
+        .logo-box {
+            background-color: transparent;
+            display: flex;
+            align-items: center; /* Alineación vertical */
+            justify-content: center;
+        }
+
+        .logo-box img.fv {
+            height: 450px;
+            width: auto;
+        }
+
+        .logo-box-altus {
+            background-color: transparent;
+            display: flex;
+            align-items: center; /* Alineado al centro vertical */
+            gap: 25px;
+            margin-top: 20px; /* Pequeño ajuste para alinear visualmente con FV si es necesario */
+        }
+
+        .logo-box-altus img {
+            width: 200px;
+            height: 200px;
+        }
+        
+        .logo-box-altus .powered-by {
+            font-size: 26px;
+            font-weight: 300;
+            color: #D4AF37;
+            letter-spacing: 3px;
+        }
+
+        .content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        h1 {
+            font-size: 130px;
+            font-weight: 900;
+            margin: 0 0 40px 0;
+            line-height: 1.1;
+            letter-spacing: -2px;
+            color: #ffffff;
+        }
+
+        h1 span {
+            color: #D4AF37; /* Dorado Altus */
+        }
+
+        h2 {
+            font-size: 55px;
+            font-weight: 300;
+            color: #e2e8f0;
+            margin: 0;
+            border-left: 8px solid #D4AF37;
+            padding-left: 40px;
+            max-width: 1700px;
+            line-height: 1.5;
+        }
+
+        h2 strong {
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .footer {
+            margin-top: auto;
+            border-top: 2px solid rgba(212, 175, 55, 0.3);
+            padding-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .contact-info {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .contact-item {
+            font-size: 40px;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .tag {
+            background: transparent;
+            color: #D4AF37;
+            padding: 20px 40px;
+            border-radius: 50px;
+            border: 3px solid #D4AF37;
+            font-size: 45px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-glow"></div>
+    <div class="container">
+        
+        <div class="header">
+            <div class="logo-box">
+                <!-- Ruta local logo FV -->
+                <img src="Logo_FV_Negativo.png" alt="FV Asesorías" class="fv">
+            </div>
+            
+            <div class="logo-box-altus">
+                <span class="powered-by">POWERED BY</span>
+                <img src="Logo_ALTUS AI_Negativo.png" alt="Altus AI">
+            </div>
+        </div>
+        
+        <div class="content">
+            <h1>MULTI-FAMILY OFFICE<br><span>IMPULSADO POR IA</span></h1>
+            <h2>Combinamos la exclusividad de la banca privada con <strong>Altus AI</strong>, nuestro Software Cuantitativo, para optimizar su patrimonio y proteger su legado con precisión algorítmica.</h2>
+        </div>
+
+        <div class="footer">
+            <div class="contact-info">
+                <div class="contact-item">
+                    <span>📧 contacto@fv-inversiones.com</span>
+                </div>
+                <div class="contact-item">
+                    <span>📞 +56 9 6677 9662</span>
+                </div>
+            </div>
+            <div class="tag">
+                GRADO INSTITUCIONAL
+            </div>
+        </div>
+        
+    </div>
+</body>
+</html>

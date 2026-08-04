@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Infografía Seguro de Vida (Carrusel)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;700;800&display=swap');
+        
+        :root {
+            --bg-color: #0b1016;
+            --card-bg: #111827;
+            --text-main: #f1f5f9;
+            --text-muted: #cbd5e1;
+            --accent-gold: #D4AF37;
+            --border-color: #1e293b;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body { 
+            width: 2160px;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', Arial, sans-serif; 
+            background: var(--bg-color); 
+            color: var(--text-main); 
+        }
+        .slide { 
+            width: 2160px; height: 2160px; 
+            position: relative; 
+            padding: 150px; 
+            display: flex; flex-direction: column; 
+            justify-content: center; 
+            border-bottom: 2px dashed transparent; /* invisible border */
+        }
+        .slide-bg {
+            background: #0F172A;
+            background: radial-gradient(circle at center, #0F172A 0%, #0A2342 100%);
+        }
+        .logos {
+            display: flex; align-items: center; justify-content: flex-end; gap: 40px;
+            width: 100%; margin-bottom: 80px;
+        }
+        .logos img { object-fit: contain; }
+        .logos img.fv, img.fv { height: 280px; }
+        .logos img.altus, img.altus { height: 140px; }
+        
+        .title-container { margin-top: 50px; }
+        .headline { font-size: 140px; font-weight: 800; line-height: 1.15; color: #fff; margin-bottom: 50px;}
+        .headline span { color: var(--accent-gold); }
+        .subtitle { font-size: 60px; font-weight: 600; color: var(--text-muted); line-height: 1.4; }
+        
+        /* Layout for Cards */
+        .cards-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 60px; margin-top: 40px;
+            width: 100%;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 4px solid rgba(212, 175, 55, 0.2);
+            border-radius: 40px;
+            padding: 80px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+        .card-header {
+            display: flex; align-items: center; gap: 40px; margin-bottom: 40px;
+        }
+        .card-icon {
+            width: 120px; height: 120px; background: rgba(212, 175, 55, 0.1); border-radius: 30px;
+            display: flex; justify-content: center; align-items: center; font-size: 60px; color: var(--accent-gold);
+        }
+        .card-title {
+            font-size: 70px; font-weight: 800; color: var(--accent-gold);
+        }
+        .card ul {
+            list-style: none; padding: 0; margin: 0;
+        }
+        .card li {
+            font-size: 45px; margin-bottom: 30px; padding-left: 60px; position: relative; line-height: 1.4; color: #fff;
+        }
+        .card li::before {
+            content: "\f00c"; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+            position: absolute; left: 0; color: var(--accent-gold);
+        }
+        
+        .disclaimer-box {
+            background: #1e293b; border: 4px solid #334155; border-radius: 40px; padding: 80px;
+            display: flex; flex-direction: column; gap: 60px; margin-top: auto;
+        }
+        .disclaimer-section {
+            font-size: 35px; color: var(--text-muted); line-height: 1.6; text-align: justify;
+        }
+        .disclaimer-title {
+            font-size: 32px; font-weight: 800; color: #fff; text-transform: uppercase; margin-bottom: 20px;
+        }
+        
+        .contact-box {
+            background: rgba(255, 255, 255, 0.05); border: 2px solid rgba(255,255,255,0.1); 
+            padding: 40px 60px; border-radius: 30px; font-size: 40px; font-weight: 700; 
+            display: flex; justify-content: center; gap: 80px; margin: 40px auto; width: 100%;
+        }
+        .contact-item { display: flex; align-items: center; justify-content: center; gap: 20px;}
+        
+        .page-number {
+            position: absolute; bottom: 80px; right: 100px; font-size: 40px; font-weight: 800; color: rgba(255,255,255,0.2);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- PORTADA -->
+    <div class="slide slide-bg" style="justify-content: flex-start; padding-top: 150px;">
+        <div style="display: flex; justify-content: flex-end; width: 100%; margin-bottom: 200px;">
+            <div style="display: flex; gap: 40px; align-items: center;">
+                <img class="fv" src="../../../assets/brand/fv_logo_blanco_negativo.png" alt="FV">
+                <img class="altus" src="../../../assets/Logo_ALTUS AI_Negativo.png" alt="Altus">
+            </div>
+        </div>
+        <div class="title-container" style="margin-top: 0; display: flex; flex-direction: column; gap: 60px;">
+            <div class="headline" style="margin-bottom: 0;">SEGURO DE VIDA<br>CON <span>AHORRO<br>PREFERENTE</span></div>
+            <div style="background: rgba(212, 175, 55, 0.1); border-left: 15px solid var(--accent-gold); padding: 50px 60px; border-radius: 30px;">
+                <div style="font-size: 80px; font-weight: 800; color: var(--accent-gold); margin-bottom: 15px;">8 Ventajas Estratégicas</div>
+                <div style="font-size: 55px; font-weight: 600; color: var(--text-main);">Para la Protección y Crecimiento de tu Patrimonio</div>
+            </div>
+        </div>
+        <div class="page-number">01</div>
+    </div>
+
+    <!-- SLIDE 2 -->
+    <div class="slide slide-bg">
+        <div class="logos">
+            <img class="fv" src="../../../assets/brand/fv_logo_blanco_negativo.png" alt="FV">
+        </div>
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fa-solid fa-users"></i></div>
+                    <div class="card-title">1. Sucesión</div>
+                </div>
+                <ul>
+                    <li>Rápida liquidez a Herederos o Terceros ante fin de la vida.</li>
+                    <li>Sin trámite de posesión efectiva (único en la industria).</li>
+                    <li>Complementario a un testamento.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fa-solid fa-wallet"></i></div>
+                    <div class="card-title">2. Desacumulación</div>
+                </div>
+                <ul>
+                    <li>Permite retirar "inversión en UF" antes que la utilidad.</li>
+                    <li>Ideal para programas de desacumulación eficiente.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fa-solid fa-file-invoice-dollar"></i></div>
+                    <div class="card-title">3. Tributación</div>
+                </div>
+                <ul>
+                    <li>No se debe presentar DDJJ N°1929 por inversiones en el exterior.</li>
+                    <li>Retiros de inversión no se registran en declaración de renta.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                    <div class="card-title">4. Pérdidas Tributarias</div>
+                </div>
+                <ul>
+                    <li>Permite compensar con ganancias tributarias otros instrumentos financieros.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="page-number">02</div>
+    </div>
+
+    <!-- SLIDE 3 -->
+    <div class="slide slide-bg">
+        <div class="logos">
+            <img class="fv" src="../../../assets/brand/fv_logo_blanco_negativo.png" alt="FV">
+        </div>
+        <div class="cards-grid">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                    <div class="card-title">5. Protección</div>
+                </div>
+                <ul>
+                    <li>Libre designación de beneficiarios.</li>
+                    <li>Inembargable según código de procedimiento civil.</li>
+                    <li>Bajos costos de administración.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fa-solid fa-earth-americas"></i></div>
+                    <div class="card-title">6. Inversión</div>
+                </div>
+                <ul>
+                    <li>Inversión en activos Chilenos o Extranjeros.</li>
+                    <li>Gran diversificación y mitigación de riesgos de mercado.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                    <div class="card-title">7. Acumulación</div>
+                </div>
+                <ul>
+                    <li>Reinversiones no generan hecho gravado de tributación.</li>
+                    <li>Otorga una administración activa del portafolio.</li>
+                </ul>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon"><i class="fa-solid fa-coins"></i></div>
+                    <div class="card-title">8. Ingreso No Renta</div>
+                </div>
+                <ul>
+                    <li>17 UTM sobre ganancia de capital (pólizas > 5 años).</li>
+                    <li>Opción de dejar utilidad para herencia.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="page-number">03</div>
+    </div>
+
+    <!-- SLIDE 6 (CIERRE) -->
+    <div class="slide slide-bg">
+        <div class="logos">
+            <img class="fv" src="../../../assets/brand/fv_logo_blanco_negativo.png" alt="FV">
+            <img class="altus" src="../../../assets/Logo_ALTUS AI_Negativo.png" alt="Altus">
+        </div>
+        
+        <div class="title-container" style="margin-top: 50px; text-align: center;">
+            <div class="headline"><span>Asegura</span> tu Futuro<br>y el de tu Familia</div>
+            <div class="subtitle" style="margin-top: 40px;">Conversemos sobre tu estrategia patrimonial</div>
+        </div>
+
+        <div class="contact-box">
+            <div class="contact-item">✉️ contacto@fv-inversiones.com</div>
+            <div class="contact-item"><img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" alt="WA" style="width: 48px; height: 48px;"> +56 9 6677 9662</div>
+        </div>
+
+        <div class="disclaimer-box" style="flex-direction: row; gap: 80px;">
+            <div class="disclaimer-section" style="flex: 1; border-right: 2px solid var(--border-color); padding-right: 80px;">
+                <div class="disclaimer-title">Sobre FV Asesorías e Inversiones</div>
+                FV Asesorías e Inversiones somos un Multi-Family Office Digital impulsado por nuestro software cuantitativo privado de Inteligencia Artificial (ALTUS AI). Combinamos la agilidad tecnológica de una WealthTech con la exclusividad de una oficina patrimonial privada, auditando en 360° la situación tributaria, inmobiliaria, composición familiar, seguros e inversiones para proteger su legado a través de las generaciones.
+            </div>
+            <div class="disclaimer-section" style="flex: 1;">
+                <div class="disclaimer-title">Aviso Legal</div>
+                Las visiones y proyecciones macroeconómicas presentadas han sido procesadas mediante inteligencia artificial (Altus AI). Este documento no constituye una recomendación de inversión vinculante, sino una herramienta de información estratégica. Los mercados son volátiles y las rentabilidades pasadas no garantizan retornos futuros.
+            </div>
+        </div>
+        <div class="page-number">04</div>
+    </div>
+
+</body>
+</html>

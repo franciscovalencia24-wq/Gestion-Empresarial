@@ -1,10 +1,20 @@
 import streamlit as st
 import pandas as pd
+import importlib
 from src.database.connection import SessionLocal
 from src.database.models import Prospect
-# from src.utils.pdf_generator import generate_pdf_report
 from src.utils.pdf_generator_reliquidacion import generate_reliquidacion_pdf
 from src.utils.simulators.reliquidacion_simulator import ReliquidacionSimulator
+
+import src.utils.excel_kyc_generator as excel_gen
+import src.utils.kyc_email_generator as email_gen
+
+# Recargar módulos por si Streamlit mantenía una versión previa en caché
+importlib.reload(excel_gen)
+importlib.reload(email_gen)
+
+from src.utils.excel_kyc_generator import generar_excel_apv_reliquidacion, generar_excel_kyc_corporativo
+from src.utils.kyc_email_generator import generar_comunicacion_apv_reliquidacion, generar_comunicacion_kyc
 import base64
 
 def get_base64_of_bin_file(bin_file):
@@ -13,6 +23,12 @@ def get_base64_of_bin_file(bin_file):
     return base64.b64encode(data).decode()
 
 def render_apv_simulator(uf_valor):
+    import importlib
+    import src.utils.excel_kyc_generator as excel_gen
+    import src.utils.kyc_email_generator as email_gen
+    importlib.reload(excel_gen)
+    importlib.reload(email_gen)
+
     st.markdown("## 📊 Altus AI: Simulador APV Inteligente")
     st.markdown("Herramienta de simulación para maximizar el beneficio fiscal y calcular bonificaciones estatales.")
     
@@ -37,6 +53,40 @@ def render_apv_simulator(uf_valor):
             
     nombre_final = c_nom.text_input("Nombre Completo", value=nombre_cliente, placeholder="Nombre del cliente")
     
+    with st.expander("📩 Generar Solicitud de Datos para este Cliente (Excel Corporativo & Correo sin asteriscos)", expanded=False):
+        solic_enfoque = st.radio(
+            "🎯 Selecciona el Enfoque de la Solicitud:",
+            options=["🎯 Aporte Mensual APV & Reliquidación (Recomendado aquí)", "🏛️ Auditoría Patrimonial 360° (KYC General)"],
+            key="sim_solic_enfoque"
+        )
+        
+        target_name = nombre_final.strip() if nombre_final else "Cliente"
+        
+        if "APV" in solic_enfoque:
+            val = excel_gen.generar_excel_apv_reliquidacion(client_name=target_name)
+            comm = email_gen.generar_comunicacion_apv_reliquidacion(client_name=target_name)
+            f_name = f"Formulario_APV_Reliquidacion_{target_name.replace(' ', '_')}.xlsx"
+            btn_txt = f"💾 Descargar Excel APV & Reliquidación para {target_name}"
+        else:
+            val = excel_gen.generar_excel_kyc_corporativo(client_name=target_name)
+            comm = email_gen.generar_comunicacion_kyc(client_name=target_name)
+            f_name = f"Altus_KYC_{target_name.replace(' ', '_')}.xlsx"
+            btn_txt = f"💾 Descargar Excel KYC Corporativo para {target_name}"
+            
+        st.download_button(
+            label=btn_txt,
+            data=val,
+            file_name=f_name,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
+        
+        st.markdown(f"**Asunto Sugerido:** `{comm['asunto']}`")
+        st.markdown("##### 📩 Texto para Correo (Sin asteriscos, listo para pegar en Outlook):")
+        st.code(comm['cuerpo_email'], language="text")
+        st.markdown("##### 📱 Mensaje Corto para WhatsApp:")
+        st.code(comm['mensaje_whatsapp'], language="text")
+
     st.divider()
     
     c1, c2 = st.columns(2)

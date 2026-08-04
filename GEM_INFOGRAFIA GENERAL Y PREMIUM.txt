@@ -1,0 +1,538 @@
+NOMBRE:INFOGRAFIA GENERAL Y PREMIUM
+DESCRIPCIÓN:Eres un experto en programación y diseñador de contenido
+INSTRUCCIONES:Genera la infografía según el codigo que vayamos mejorando
+CONOCIMIENTOS: 
+
+Gemini
+Nueva conversación
+Buscar conversaciones
+Imágenes
+Vídeos
+Biblioteca
+Gems
+Nuevo cuaderno
+Objeto Social para Multi-Family Office Digital
+Auditar Seguros: Costos y Duplicados
+Infografía Comercial para Inversionistas
+Activar Subtítulos Traducidos al Español
+Mejora Estética de Documento
+Imprimir sin estar en red
+Investigación de Asesoría de Inversiones Chile
+Ideas para colocar TV sin patas
+App Karate para Niños: Propuesta Interactiva
+Solucionar chats no visibles en Gemini
+Aplicación Interactiva para Prueba de Inglés
+Transcripción y Formato de Contactos
+Descuentos y Ofertas Osoji Chile
+Valdivia con Niños: Otoño 2026
+Informe Ejecutivo de Inversiones Listo
+Rebalanceo MSCI: Chile Pierde Peso
+Bolsa Chilena Cae, Cobre Récord
+Aprender Posiciones de Karate Divertido
+Investigación de Servicios Financieros Chilenos
+Investigación Tecnológica Fintech y Family Office
+Configurar Autenticación en Dos Pasos Facebook
+Recuperar Envío Cancelado y Corregir Error
+Investigación Camionetas Híbridas Gasto SII
+Mejora de Imagen para Vectorización
+Solicitud de Reembolso por Retiro Escolar
+Capa compacta en arena: Causas geológicas
+Movimientos Básicos de Karate: Guía Visual
+Ballet Profesional: Disciplina, Cuerpo y Arte
+Exposición de Bailarina de Ballet
+Búsqueda de Vuelos y Optimización de Pago
+Que la niña este en una fiesta muy divertida y alocada. Estilo anime
+Guía de Estudio Visual Interactiva
+El Dojo Kun de Karate
+Potenciar Antigravity sin Programación
+Nota de Prensa: Mercados y Resiliencia
+Dashboard Comparativo Fondos APV
+Transformar la imagen adjunta a un formato de anime, estilo infantil
+Presentación Táctil para Primero Básico
+Bolsa Chilena: Acciones y Potencial
+Mejora de Mensaje de Inversiones para WhatsApp
+Solución a Duplicación de Archivos Office
+Perforar Muros: Problemas y Soluciones
+Proyecto de Prospección y Automatización WhatsApp
+Integrar Teams en Outlook
+Corrección de Ejercicios de Inglés
+Claude Code: Error de Git Bash en Windows
+Prompt de Imagen: "High-end corporate meeting room with panoramic views of a sunny financial district, digital screens displaying bullish market charts, 21:9 aspect ratio, clean aesthetic."
+Prompt de Imagen: "High-end corporate meeting room with panoramic views of a sunny financial district, digital screens displaying bullish market charts, 21:9 aspect ratio, clean aesthetic."
+Mercado Global y Chile: Análisis Profundo
+Extracto de Publicación de Remate Judicial
+Generador de Infografías Optimizado y Premium
+Reporte Financiero Protocolo v10.0
+**"Ejecuta el PROTOCOLO v9.0. Usa las PLANTILLAS JSON literales proporcionadas sin cambiar los nombres de las llaves. Procesa los 24 índices en la Sección 0. Entrega las 7 secciones completas (Guion, Noticia y Lógica de Impactos detalladas). Sincronía técnica 2026: S&P (6,606), Oro ($4,717), Cobre ($5.12). Comienza ahora."**
+Informe Financiero FV 2026 v8.1
+Informe de Mercado y Datos Financieros
+Protocolo v7.3: Auditoría Macroeconómica 2026
+Mercado Financiero 2026: JSONs
+Sincronía 2026: Dashboard Financiero
+Protocolo Integridad v7.0: Datos Reales
+Protocolo de Investigación Financiera v6.9.1
+Fallo de Protocolo: Datos de Mercado Inconsistentes
+Reporte Financiero Macro 20 de Marzo
+Mercado Financiero: Análisis y Reporte
+Reporte Financiero Forense 2026
+Reporte Financiero Quirúrgico 2026
+Reporte Financiero y de Mercado
+Crisis Energética Impacta Mercados Globales
+Reporte Financiero Marzo 2026
+Reporte Macroeconómico Diario de Mercados
+Reporte Financiero Diario: Mercados Globales y Locales
+Reporte FV: Mercados y Macroeconomía
+Protocolo FV v2.3: Datos Financieros Reales
+Reporte Macroeconomía FV v2.2
+I
+INFOGRAFIA GENERAL Y PREMIUM
+Nombre
+INFOGRAFIA GENERAL Y PREMIUM
+Descripción
+Eres un experto en programación y diseñador de contenido
+Instrucciones
+Genera la infografía según el codigo que vayamos mejorando
+
+Genera la infografía según el codigo que vayamos mejorando
+
+Herramienta predeterminada
+Conocimientos
+Icono de TXT
+Codigo actual
+TXT (Google Drive)
+
+
+
+Inhabilitar citas de conocimiento
+Vista previa
+Conversación con Gemini
+I
+INFOGRAFIA GENERAL Y PREMIUM
+Eres un experto en programación y diseñador de contenido
+Recientes
+
+I
+Generador de Infografías Optimizado y Premium
+
+I
+Reporte Financiero y Rentabilidad AFP
+
+I
+Revisión de Infografía de Multifondos
+
+
+
+
+
+Gemini puede cometer errores, así que comprueba sus respuestas. Tus Gems personalizados también serán visibles en Gemini para Workspace (más informaciónSe abre en una ventana nueva). Crea Gems de forma responsableSe abre en una ventana nueva.
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador Inteligente - FV Asesorías</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --navy: #002E5D; --accent-gold: #B89650; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .export-container { background: white; border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); overflow: hidden; width: 600px; border: 1px solid #e2e8f0; transition: all 0.3s ease; }
+        
+        .content-box { padding: 2rem; transition: all 0.3s ease; }
+        .info-card { background: #fffcfc; border-radius: 12px; padding: 1.5rem; border-left: 4px solid var(--navy); margin-bottom: 1.5rem; transition: all 0.3s ease; }
+        
+        /* Ajuste de centralización de recuadros - NORMAL */
+        .impact-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        .impact-table tr { display: flex; align-items: stretch; margin-bottom: 8px; }
+        .impact-table td { background: #f8fafc; border: 1px solid #f1f5f9; padding: 12px; font-size: 12px; line-height: 1.4; display: flex; align-items: center; }
+        .impact-table td:first-child { border-radius: 8px 0 0 8px; font-weight: 800; color: var(--navy); width: 100px; justify-content: center; background: #f1f5f9; flex-shrink: 0; text-align: center;}
+        .impact-table td:last-child { border-radius: 0 8px 8px 0; flex-grow: 1; }
+
+        /* ESTILOS PREMIUM (NEGRO Y PLATEADO) */
+        .premium-mode { border: 4px solid #000000; outline: 2px solid #C0C0C0; outline-offset: -6px; }
+        .premium-mode .content-box { background-color: #0f172a; } /* Fondo oscuro elegante */
+        .premium-mode .info-card { background: #1e293b; border-left: 4px solid #C0C0C0; }
+        .premium-mode #ui-fact { color: #f8fafc !important; }
+        .premium-mode .text-slate-400 { color: #94a3b8 !important; }
+        
+        /* Tablas Premium */
+        .premium-grid { width: 100%; border-collapse: separate; border-spacing: 0 4px; margin-bottom: 1.5rem; }
+        .premium-grid th { background: #000000; color: #C0C0C0; font-size: 10px; text-transform: uppercase; tracking-wider; padding: 8px 12px; text-align: left; border-top: 1px solid #334155; border-bottom: 1px solid #334155; }
+        .premium-grid td { background: #1e293b; color: #e2e8f0; font-size: 11px; padding: 10px 12px; border-bottom: 1px solid #0f172a; font-weight: 500;}
+        .premium-grid td.val-col { font-family: monospace; font-size: 12px; color: #cbd5e1; }
+        .effect-icon { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 10px; text-transform: uppercase; }
+        
+        /* Panel de Control */
+        .control-panel { background: #fff; padding: 20px; border-radius: 12px; width: 600px; border: 1px solid #cbd5e1; }
+        textarea { width: 100%; height: 120px; font-family: monospace; font-size: 11px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; margin-top: 5px; }
+        .btn-main { background: var(--navy); color: white; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn-main:hover { opacity: 0.9; }
+
+        /* Badge Premium */
+        .premium-badge { display: none; background: linear-gradient(90deg, #000000 0%, #333333 100%); color: #C0C0C0; text-align: center; padding: 6px; font-size: 9px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; border-bottom: 1px solid #C0C0C0; }
+        .premium-mode .premium-badge { display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .premium-mode #ui-hero { background: #000000 !important; border-bottom: 1px solid #334155; }
+        
+        /* Soporte Footer Premium */
+        .premium-mode .bg-slate-50 { background: #000000 !important; border-top: 1px solid #334155 !important; }
+        .premium-mode .text-\[\#002E5D\] { color: #C0C0C0 !important; }
+        .premium-mode .text-slate-500 { color: #94a3b8 !important; }
+        .premium-mode .bg-white.border-slate-200 { background: #0f172a !important; border-color: #334155 !important; }
+        
+        strong { font-weight: 800; }
+    </style>
+</head>
+<body>
+
+    <div class="control-panel">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                <i data-lucide="settings" class="w-5 h-5 text-blue-600"></i> Panel de Control
+            </h2>
+            <!-- SELECTOR DE VERSIÓN -->
+            <div class="flex bg-slate-100 p-1 rounded-lg border border-slate-200">
+                <button id="btn-normal" onclick="setMode('normal')" class="px-4 py-1 text-xs font-bold rounded bg-white shadow-sm text-[#002E5D]">NORMAL</button>
+                <button id="btn-premium" onclick="setMode('premium')" class="px-4 py-1 text-xs font-bold rounded text-slate-500 hover:text-black">PREMIUM</button>
+            </div>
+        </div>
+        
+        <div class="mb-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+            <label class="text-xs font-bold text-slate-700 flex items-center gap-1 mb-2">
+                <i data-lucide="image-plus" class="w-4 h-4"></i> 1. Sube tu imagen de cabecera (Opcional)
+            </label>
+            <input type="file" id="image-upload" accept="image/*" class="text-xs w-full cursor-pointer file:mr-3 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-bold file:bg-[#002E5D] file:text-white hover:file:bg-blue-800 transition-all" onchange="handleImageUpload(event)">
+        </div>
+
+        <label class="text-xs font-bold text-slate-700 flex items-center gap-1 mb-1">
+            <i data-lucide="code" class="w-4 h-4"></i> 2. Pega tu código JSON
+        </label>
+        <textarea id="data-input" placeholder='Pega aquí los datos...'></textarea>
+        
+        <div class="flex gap-2 mt-3">
+            <button onclick="updateData()" class="btn-main text-xs flex-1">ACTUALIZAR DATOS</button>
+            <button onclick="exportImage()" class="btn-main text-xs bg-emerald-600 flex-1">DESCARGAR IMAGEN</button>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR INFOGRAFÍA -->
+    <div class="export-container" id="capture-area">
+        
+        <!-- BANNER PREMIUM -->
+        <div class="premium-badge">
+            <i data-lucide="gem" class="w-3 h-3 text-[#C0C0C0]"></i>
+            Análisis de Impacto Premium
+            <i data-lucide="gem" class="w-3 h-3 text-[#C0C0C0]"></i>
+        </div>
+
+        <div id="ui-image-container" class="w-full hidden">
+            <img id="ui-banner-img" src="" class="w-full object-cover" style="max-height: 330px;" crossorigin="anonymous">
+        </div>
+
+        <div id="ui-hero" class="bg-[var(--navy)] px-8 py-6 relative">
+            <div class="header-content relative z-10 text-white">
+                <div id="ui-badge" class="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-wider mb-3">
+                    <i id="ui-badge-icon" data-lucide="globe" class="w-3 h-3"></i>
+                    <span id="ui-badge-text">Iniciando...</span>
+                </div>
+                <h1 id="ui-title" class="text-2xl font-extrabold tracking-tight mb-1 uppercase italic leading-tight"></h1>
+                <p id="ui-subtitle" class="text-blue-100/80 text-sm font-medium"></p>
+            </div>
+        </div>
+
+        <div class="content-box">
+            <!-- HECHO (Se mantiene en ambas versiones) -->
+            <div class="info-card">
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-2" id="ui-hecho-title">EL HECHO</h3>
+                <p id="ui-fact" class="text-slate-700 text-sm leading-relaxed"></p>
+                
+                <!-- EN SIMPLE (Solo visible en Normal) -->
+                <div id="ui-simple-box" class="mt-4 p-4 rounded-lg border">
+                    <div class="flex items-center gap-2 mb-1 font-bold text-xs uppercase" id="ui-simple-header">
+                        <i data-lucide="zap" class="w-4 h-4"></i> En Simple
+                    </div>
+                    <p id="ui-simple-text" class="text-xs italic leading-snug opacity-80"></p>
+                </div>
+            </div>
+
+            <!-- SECCIÓN NORMAL: IMPACTOS -->
+            <div id="section-normal" class="block">
+                <div class="flex items-center justify-between mb-4 px-1">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-black text-slate-800 uppercase tracking-widest">Impacto:</span>
+                        <span id="ui-importance" class="text-[10px] font-black italic uppercase"></span>
+                    </div>
+                    <div id="ui-footer-note" class="text-[10px] text-slate-400 font-medium"></div>
+                </div>
+                <table class="impact-table">
+                    <tbody id="ui-table-body"></tbody>
+                </table>
+            </div>
+
+            <!-- SECCIÓN PREMIUM: MERCADOS Y FONDOS MUTUOS -->
+            <div id="section-premium" class="hidden">
+                
+                <!-- Tabla 1: Índices Globales -->
+                <h4 class="text-[10px] font-black text-[#C0C0C0] uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Posible Impacto en Índices Globales
+                </h4>
+                <table class="premium-grid mb-6">
+                    <thead>
+                        <tr>
+                            <th style="width: 45%;">Índice Bursátil</th>
+                            <th style="width: 25%;">Último Cierre</th>
+                            <th style="width: 30%;">Efecto Probable</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ui-premium-indices">
+                        <!-- Llenado por JS -->
+                    </tbody>
+                </table>
+
+                <!-- Tabla 2: Fondos Mutuos (CLP) -->
+                <h4 class="text-[10px] font-black text-[#C0C0C0] uppercase tracking-widest mb-2 mt-4 flex items-center gap-2">
+                    <i data-lucide="pie-chart" class="w-4 h-4"></i> Posible Impacto en Fondos Mutuos (CLP)
+                </h4>
+                <table class="premium-grid">
+                    <thead>
+                        <tr>
+                            <th style="width: 60%;">Categoría de Fondo</th>
+                            <th style="width: 40%;">Efecto Probable</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ui-premium-fondos">
+                        <!-- Llenado por JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FOOTER (Idéntico en estructura) -->
+        <div class="bg-slate-50 p-6 flex justify-between items-center border-t border-slate-100">
+            <div class="flex items-center gap-4">
+                <div class="bg-white p-1 rounded">
+                    <img src="https://i.ibb.co/chYvm9LV/logo.png" alt="FV" class="h-16 w-auto" onerror="this.style.display='none'">
+                </div>
+                <div class="flex flex-col text-[#002E5D]">
+                    <span class="text-[10px] font-black uppercase leading-none mb-1">FV Asesorías e Inversiones SPA</span>
+                    <span class="text-[9px] text-slate-500 font-medium">+56 9 6677 9662 | contacto@fv-inversiones.com</span>
+                </div>
+            </div>
+            <div class="bg-white border border-slate-200 px-3 py-1 rounded flex items-center gap-2">
+                <span class="text-[9px] font-bold text-slate-400">Partner</span>
+                <span class="text-[10px] font-extrabold text-[#002E5D]">PRINCIPAL.CL</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'normal'; // 'normal' o 'premium'
+        
+        // JSON Base con ambas estructuras combinadas
+        let currentData = {
+            tipo: 'info',
+            badge: 'Análisis de Mercado',
+            icon: 'globe',
+            titulo: 'Resumen Financiero',
+            tituloResaltado: 'Semanal',
+            subtitulo: 'Análisis de política monetaria',
+            hecho: 'Aquí irá la noticia que mueve los mercados.',
+            enSimple: 'Explicación sencilla de la noticia.',
+            importancia: 'Media',
+            notaFooter: '', 
+            imagenFondo: '',
+            impactos: [
+                { plazo: 'CORTO', texto: 'Impacto esperado normal.' },
+                { plazo: 'LARGO', texto: 'Proyección a futuro.' }
+            ],
+            // Datos Premium
+            premiumIndices: [
+                { nombre: 'S&P 500', valor: '5,123.45', efecto: 'alza' },
+                { nombre: 'Nasdaq 100', valor: '18,234.10', efecto: 'alza' },
+                { nombre: 'Euro Stoxx 50', valor: '4,980.20', efecto: 'neutral' },
+                { nombre: 'IPSA', valor: '6,450.00', efecto: 'baja' }
+            ],
+            premiumFondos: [
+                { categoria: 'USA', efecto: 'alza' },
+                { categoria: 'EUROPA', efecto: 'neutral' },
+                { categoria: 'ASIA', efecto: 'baja' },
+                { categoria: 'EMERGENTES', efecto: 'neutral' },
+                { categoria: 'LATAM', efecto: 'baja' },
+                { categoria: 'RENTA FIJA INTERNACIONAL', efecto: 'alza' },
+                { categoria: 'RENTA FIJA LOCAL', efecto: 'neutral' },
+                { categoria: 'RENTA VARIABLE LOCAL', efecto: 'baja' }
+            ]
+        };
+
+        function setMode(mode) {
+            currentMode = mode;
+            const btnNormal = document.getElementById('btn-normal');
+            const btnPremium = document.getElementById('btn-premium');
+            
+            if(mode === 'normal') {
+                btnNormal.className = "px-4 py-1 text-xs font-bold rounded bg-white shadow-sm text-[#002E5D]";
+                btnPremium.className = "px-4 py-1 text-xs font-bold rounded text-slate-500 hover:text-black";
+                document.getElementById('capture-area').classList.remove('premium-mode');
+            } else {
+                btnPremium.className = "px-4 py-1 text-xs font-bold rounded bg-black shadow-sm text-[#C0C0C0]";
+                btnNormal.className = "px-4 py-1 text-xs font-bold rounded text-slate-500 hover:text-[#002E5D]";
+                document.getElementById('capture-area').classList.add('premium-mode');
+            }
+            render();
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentData.imagenFondo = e.target.result;
+                    render();
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function getEffectHTML(effect) {
+            if (!effect) return '';
+            const e = effect.toLowerCase();
+            if (e === 'alza') {
+                return `<span class="effect-icon text-emerald-400"><i data-lucide="trending-up" class="w-4 h-4"></i> Alza</span>`;
+            } else if (e === 'baja') {
+                return `<span class="effect-icon text-red-400"><i data-lucide="trending-down" class="w-4 h-4"></i> Baja</span>`;
+            } else {
+                return `<span class="effect-icon text-slate-400"><i data-lucide="minus" class="w-4 h-4"></i> Neutral</span>`;
+            }
+        }
+
+        function render() {
+            const config = {
+                alcista: { text: 'text-emerald-900', impactText: 'text-emerald-600', box: 'bg-emerald-50', border: 'border-emerald-100', accent: 'text-emerald-400', premiumAccent: 'text-emerald-400' },
+                bajista: { text: 'text-red-900', impactText: 'text-red-600', box: 'bg-red-50', border: 'border-red-100', accent: 'text-red-400', premiumAccent: 'text-red-400' },
+                info: { text: 'text-blue-900', impactText: 'text-blue-600', box: 'bg-blue-50', border: 'border-blue-100', accent: 'text-blue-400', premiumAccent: 'text-[#C0C0C0]' }
+            }[currentData.tipo] || { text: 'text-slate-900', impactText: 'text-slate-600', box: 'bg-slate-50', border: 'border-slate-100', accent: 'text-slate-300', premiumAccent: 'text-[#C0C0C0]' };
+
+            const imgContainer = document.getElementById('ui-image-container');
+            const bannerImg = document.getElementById('ui-banner-img');
+            if (currentData.imagenFondo && currentData.imagenFondo.trim() !== '') {
+                bannerImg.src = currentData.imagenFondo;
+                imgContainer.classList.remove('hidden');
+            } else {
+                imgContainer.classList.add('hidden');
+            }
+
+            const hero = document.getElementById('ui-hero');
+            if ((!currentData.titulo || currentData.titulo.trim() === '') && (!currentData.subtitulo || currentData.subtitulo.trim() === '')) {
+                hero.classList.add('hidden');
+            } else {
+                hero.classList.remove('hidden');
+            }
+
+            // Textos Generales
+            document.getElementById('ui-badge-text').innerText = currentData.badge;
+            document.getElementById('ui-badge-icon').setAttribute('data-lucide', currentData.icon || 'globe');
+            document.getElementById('ui-subtitle').innerText = currentData.subtitulo;
+            document.getElementById('ui-fact').innerHTML = currentData.hecho;
+
+            // Clases de Título según modo
+            const isPremium = currentMode === 'premium';
+            const accentColor = isPremium ? config.premiumAccent : config.accent;
+            document.getElementById('ui-title').innerHTML = `${currentData.titulo} <br><span class="${accentColor}">${currentData.tituloResaltado || ''}</span>`;
+            document.getElementById('ui-badge').className = `inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-wider mb-3 ${accentColor}`;
+
+            // CONTROL DE SECCIONES (NORMAL VS PREMIUM)
+            const secNormal = document.getElementById('section-normal');
+            const secPremium = document.getElementById('section-premium');
+            const boxSimple = document.getElementById('ui-simple-box');
+
+            if (isPremium) {
+                // MODO PREMIUM
+                secNormal.classList.add('hidden');
+                secNormal.classList.remove('block');
+                secPremium.classList.remove('hidden');
+                secPremium.classList.add('block');
+                boxSimple.classList.add('hidden'); // Ocultar "En Simple"
+
+                // Llenar Tabla Índices
+                const tbodyIndices = document.getElementById('ui-premium-indices');
+                tbodyIndices.innerHTML = (currentData.premiumIndices || []).map(i => `
+                    <tr>
+                        <td class="font-bold">${i.nombre}</td>
+                        <td class="val-col">${i.valor}</td>
+                        <td>${getEffectHTML(i.efecto)}</td>
+                    </tr>
+                `).join('');
+
+                // Llenar Tabla Fondos
+                const tbodyFondos = document.getElementById('ui-premium-fondos');
+                tbodyFondos.innerHTML = (currentData.premiumFondos || []).map(f => `
+                    <tr>
+                        <td class="font-bold">${f.categoria}</td>
+                        <td>${getEffectHTML(f.efecto)}</td>
+                    </tr>
+                `).join('');
+
+            } else {
+                // MODO NORMAL
+                secNormal.classList.remove('hidden');
+                secNormal.classList.add('block');
+                secPremium.classList.add('hidden');
+                secPremium.classList.remove('block');
+                boxSimple.classList.remove('hidden'); // Mostrar "En Simple"
+
+                document.getElementById('ui-simple-text').innerText = currentData.enSimple;
+                document.getElementById('ui-importance').innerText = currentData.importancia;
+                document.getElementById('ui-footer-note').innerText = currentData.notaFooter || '';
+                
+                document.getElementById('ui-importance').className = `text-[10px] font-black italic uppercase ${config.impactText}`;
+                document.getElementById('ui-simple-box').className = `mt-4 p-4 rounded-lg border ${config.box} ${config.border}`;
+                document.getElementById('ui-simple-header').className = `flex items-center gap-2 mb-1 font-bold text-xs uppercase ${config.text}`;
+
+                const tableBody = document.getElementById('ui-table-body');
+                tableBody.innerHTML = (currentData.impactos || []).map(i => `<tr><td>${i.plazo}</td><td>${i.texto}</td></tr>`).join('');
+            }
+
+            // Renderizar Iconos Lucide (necesario tras inyectar HTML)
+            lucide.createIcons();
+        }
+
+        function updateData() {
+            try {
+                const input = document.getElementById('data-input').value.trim();
+                if (!input) return;
+                const newData = JSON.parse(input);
+                currentData = { ...currentData, ...newData };
+                render();
+            } catch (e) {
+                alert("Error en el formato JSON. Revisa que el código esté bien copiado.");
+            }
+        }
+
+        async function exportImage() {
+            const area = document.getElementById('capture-area');
+            try {
+                const canvas = await html2canvas(area, { 
+                    scale: 3, 
+                    useCORS: true,
+                    backgroundColor: currentMode === 'premium' ? '#000000' : '#ffffff',
+                    logging: false
+                });
+                const link = document.createElement('a');
+                link.download = `FV_Infografia_${currentMode.toUpperCase()}_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (err) {
+                alert("Error al exportar la imagen.");
+            }
+        }
+
+        window.onload = () => {
+            document.getElementById('data-input').value = JSON.stringify(currentData, null, 2);
+            render();
+        };
+    </script>
+</body>
+</html>
+Codigo actual.txt
+Mostrando Codigo actual.txt.

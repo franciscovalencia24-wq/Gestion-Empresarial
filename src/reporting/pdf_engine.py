@@ -12,7 +12,7 @@ class AuditReport(FPDF):
     def header(self):
         logo_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-            "src", "web", "assets", "NUEVO LOGO FV.png"
+            "assets", "brand", "fv_logo_principal_light.png"
         )
         if os.path.exists(logo_path):
             try:
@@ -26,7 +26,7 @@ class AuditReport(FPDF):
         self.set_font('Helvetica', '', 8)
         self.set_x(45)
         self.set_text_color(107, 114, 128)
-        self.cell(0, 5, 'FV Asesorías e Inversiones SpA — Documento Confidencial', 0, 1, 'L')
+        self.cell(0, 5, 'FV Asesorías e Inversiones SpA - Documento Confidencial', 0, 1, 'L')
         self.set_text_color(0, 0, 0)
         self.line(10, 28, 200, 28)
         self.ln(6)
@@ -36,7 +36,7 @@ class AuditReport(FPDF):
         self.set_font('Helvetica', 'I', 7)
         self.set_text_color(150, 150, 150)
         self.cell(0, 6,
-                  f'Página {self.page_no()} | Wealth 3.0 — Simulación Monte Carlo | '
+                  f'Página {self.page_no()} | Wealth 3.0 - Simulación Monte Carlo | '
                   f'Generado {datetime.now().strftime("%d/%m/%Y %H:%M")}',
                   0, 0, 'C')
 

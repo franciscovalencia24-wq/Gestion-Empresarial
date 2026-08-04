@@ -213,8 +213,8 @@ Este borrador inicial es un documento vivo que debe ser discutido y ratificado p
             import os
             try:
                 from openpyxl.drawing.image import Image
-                fv_path = os.path.abspath("src/web/assets/NUEVO LOGO FV.png")
-                altus_path = os.path.abspath("src/web/assets/ALTUS_AI_LOGO.png")
+                fv_path = os.path.abspath("assets/brand/fv_logo_principal_light.png")
+                altus_path = os.path.abspath("assets/brand/altus_ai_logo_dark.png")
                 
                 if os.path.exists(fv_path):
                     img_fv = Image(fv_path)
@@ -249,10 +249,10 @@ Este borrador inicial es un documento vivo que debe ser discutido y ratificado p
             # Celda del Cuerpo del Footer
             body_cell = worksheet['A16']
             body_text = (
-                "  Somos un Multi-Family Office Digital potenciado por Altus AI, nuestro Software Cuantitativo Privado. "
-                "Combinamos la precisión algorítmica de la Inteligencia Artificial con la exclusividad de la banca privada "
-                "para auditar portafolios, cruzar normativas tributarias complejas, incorporar información de valor para cada cliente "
-                "y diseñar estrategias patrimoniales hiper-personalizadas de grado institucional."
+                "  FV Asesorías e Inversiones somos un Multi-Family Office Digital impulsado por nuestro software cuantitativo privado de Inteligencia Artificial (ALTUS AI). "
+                "Combinamos la agilidad tecnológica de una WealthTech con la exclusividad de una oficina patrimonial privada, "
+                "auditando en 360° la situación tributaria, inmobiliaria, composición familiar, seguros e inversiones "
+                "para proteger su legado a través de las generaciones."
             )
             body_cell.value = body_text
             body_cell.font = Font(name='Arial', size=10, color="2A2A2A")

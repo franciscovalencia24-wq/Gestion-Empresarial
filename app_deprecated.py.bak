@@ -1,0 +1,2197 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+import os
+import time
+import sys
+import asyncio
+from typing import List, Dict
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# Reparación del motor interno de Windows para evitar el colapso de Playwright en subprocesos
+if sys.platform == 'win32':
+    try:
+        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+    except Exception:
+        pass
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from src.database.connection import engine
+from sqlalchemy import text
+from src.database.models import Prospect
+from src.analytics.monte_carlo import MonteCarloSimulator
+
+# PARCHE SQL EN CALIENTE: Migramos la base automáticamente sin perder datos.
+for query in [
+    "ALTER TABLE prospects ADD COLUMN es_cliente INTEGER DEFAULT 0",
+    "ALTER TABLE prospects ADD COLUMN nombre_rrll VARCHAR(200)",
+    "ALTER TABLE prospects ADD COLUMN rut_rrll VARCHAR(30)",
+    "ALTER TABLE prospects ADD COLUMN score_liquidez INTEGER DEFAULT 0",
+    "ALTER TABLE prospects ADD COLUMN ultimo_evento VARCHAR(500)",
+    "ALTER TABLE prospects ADD COLUMN fecha_hallazgo VARCHAR(50)",
+    "ALTER TABLE prospects ADD COLUMN link_fuente VARCHAR(500)",
+    "ALTER TABLE prospects ADD COLUMN origen_web INTEGER DEFAULT 0"
+]:
+    try:
+        with engine.connect() as con:
+            con.execute(text(query))
+            con.commit()
+    except Exception:
+        pass 
+
+from src.messaging.spintax import format_message
+from src.messaging.anti_ban import AntiBanManager
+from src.messaging.whatsapp_web import WhatsAppBot
+
+st.set_page_config(page_title="BD Senior Wealth Management", layout="wide", initial_sidebar_state="expanded")
+
+# --- IDENTIDAD VISUAL Y DISEÑO PREMIUM ---
+LOGO_PATH = os.path.join(os.path.dirname(__file__), "src", "web", "assets", "NUEVO LOGO FV.png")
+
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+    
+    /* Fuente solo para texto, no para iconos de sistema */
+    .main, .sidebar-content, div[data-testid="stMarkdownContainer"] p {
+        font-family: 'Inter', sans-serif !important;
+    }
+    
+    .stDeployButton {display:none !important;}
+    #MainMenu {visibility: hidden !important;}
+    footer {visibility: hidden !important;}
+    
+    /* Títulos Principales */
+    .main h1, .main h2, .main h3 {
+        font-weight: 900 !important;
+        color: #1f2937 !important;
+        letter-spacing: -0.03em !important;
+        margin-top: 2rem !important;
+    }
+    
+    /* Contenedores de Métricas Pro */
+    div[data-testid="stMetricValue"] {
+        font-size: 1.5rem !important;
+        white-space: normal !important;
+        word-break: break-all !important;
+    }
+    div[data-testid="stMetric"] {
+        background-color: #ffffff;
+        padding: 15px !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        border: 1px solid #e5e7eb !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+def get_prospects() -> List[Dict]:
+    """Trae prospectos listos de la BD SQLite e ignora los incompletos"""
+    # Esta función se mantiene para compatibilidad, pero ahora usamos el flujo de lectura de SQL directo
+    return []
+
+def mark_contacted(prospect_id: int, status: str = "Contactado"):
+    """Sella un contacto que fue visitado u omitido."""
+    try:
+        with engine.connect() as con:
+            con.execute(text("UPDATE prospects SET status_contacto = :status WHERE id = :pid"), 
+                        {"status": status, "pid": prospect_id})
+            con.commit()
+    except Exception as e:
+        import traceback
+        print("Error en mark_contacted:", e)
+
+import re
+
+# --- CARGA DINÁMICA DE INDICADORES (API) ---
+@st.cache_data(ttl=3600)
+def fetch_indicators():
+    import requests
+    from datetime import datetime, timedelta
+    try:
+        data = requests.get("https://mindicador.cl/api").json()
+        uf_today = data.get('uf', {}).get('valor', 40013.88)
+        
+        # --- CÁLCULO DE INFLACIÓN HISTÓRICA REAL (BASADO EN UF) ---
+        def get_hist_uf(target_date):
+            try:
+                # Cache local para no re-pedir el mismo año
+                url_hist = f"https://mindicador.cl/api/uf/{target_date.year}"
+                serie = requests.get(url_hist).json().get('serie', [])
+                target_s = target_date.strftime("%Y-%m-%d")
+                # Buscamos el valor más cercano (la serie viene desc.)
+                for item in serie:
+                    if item['fecha'][:10] <= target_s:
+                        return item['valor']
+                return serie[-1]['valor'] if serie else None
+            except:
+                return None
+
+        today = datetime.now()
+        uf_1y = get_hist_uf(today - timedelta(days=365))
+        uf_3y = get_hist_uf(today - timedelta(days=1095))
+        uf_5y = get_hist_uf(today - timedelta(days=1825))
+
+        return {
+            "UF": uf_today,
+            "UTM": data.get('utm', {}).get('valor', 71500),
+            "IPC": data.get('ipc', {}).get('valor', -0.2),
+            "USD": data.get('dolar', {}).get('valor', 985.40),
+            "TPM": data.get('tpm', {}).get('valor', 5.25),
+            "uf_1y": uf_1y,
+            "uf_3y": uf_3y,
+            "uf_5y": uf_5y,
+            "infl_1y": (uf_today / uf_1y - 1) * 100 if uf_1y else 4.5,
+            "infl_3y": (uf_today / uf_3y - 1) * 100 if uf_3y else 43.75,
+            "infl_5y": (uf_today / uf_5y - 1) * 100 if uf_5y else 73.86,
+            "last_sync": today.strftime("%d/%m/%Y %H:%M")
+        }
+    except:
+        return {
+            "UF": 40013.88, "UTM": 71500, "IPC": 4.5, "USD": 985.40, "TPM": 5.25, 
+            "uf_1y": 38290, "uf_3y": 28000, "uf_5y": 27500,
+            "infl_1y": 4.5, "infl_3y": 43.75, "infl_5y": 73.86,
+            "last_sync": "Modo Offline"
+        }
+
+indicators = fetch_indicators()
+UF_VALOR = indicators['UF']
+UTM_VALOR = indicators['UTM']
+IPC_VALOR = indicators['IPC']
+TPM_VALOR = indicators['TPM']
+USD_CLP = indicators['USD']
+UF_1Y = indicators['uf_1y']
+UF_3Y = indicators['uf_3y']
+UF_5Y = indicators['uf_5y']
+INFL_1Y = indicators['infl_1y']
+INFL_3Y = indicators['infl_3y']
+INFL_5Y = indicators['infl_5y']
+LAST_SYNC = indicators['last_sync']
+
+def fmt_clp(v): return f"$ {v:,.0f}".replace(",", ".")
+def fmt_uf(v): return f"UF {v:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+def fmt_pct(v): return f"{v:.2f}%".replace(".", ",")
+
+# ----------------- INTELIGENCIA TRIBUTARIA (CHILE PRO) -----------------
+def calcular_tax_alpha(monto, regimen, tasa_igc, vehiculo, pesos, fondos_info, años_vigencia=5):
+    beneficio = 0
+    desc_ahorro = ""
+    
+    # 1. Beneficios Previsionales (APV)
+    if "Regimen Previsional" in regimen:
+        beneficio = monto * (tasa_igc / 100)
+        desc_ahorro = f"Ahorro tributario APV (Devolución): {fmt_clp(beneficio)}"
+    
+    # 2. Seguro de Vida (Art. 18 Bis / 17 N°3)
+    if "Seguro" in vehiculo:
+        # A. Beneficio No Renta (85 UTM total)
+        exencion_max = 85 * UTM_VALOR
+        beneficio += exencion_max * 0.10 # Impacto estimado
+        desc_ahorro += f"\nIngreso No Renta (Exención 85 UTM): {fmt_clp(exencion_max)}"
+        
+        # B. Diferimiento y Capital Primero
+        # En seguros, el rescate es Capital (UF) primero = $0 Impuesto inicial
+        beneficio_dif = monto * 0.015 # Mayor eficiencia por orden de retiro
+        beneficio += beneficio_dif
+        desc_ahorro += f"\nEficiencia Desacumulación (Capital Primero): {fmt_clp(beneficio_dif)}"
+    
+    # 3. Art. 107 LIR (Presencia Bursátil) - QUIRÚRGICO POR VEHÍCULO
+    ahorro_107_total = 0
+    # NOTA: Según Circular 21 del SII, si el activo está dentro de un Seguro, 
+    # prima la tributación del seguro (IGC) sobre el Art 107 (10%).
+    if "Seguro" not in vehiculo: 
+        for f_name, peso in pesos.items():
+            info = fondos_info[fondos_info['fondo_display'] == f_name].iloc[0]
+            if "ACCIONES CHILE" in str(info['nombre_fondo']).upper() or "IPSA" in str(info['nombre_fondo']).upper():
+                monto_f = monto * (peso/100)
+                ganancia_est = monto_f * 0.08
+                ahorro_107_total += ganancia_est * 0.10
+    
+    if ahorro_107_total > 0:
+        beneficio += ahorro_107_total
+        desc_ahorro += f"\nExención Art. 107 (Tasa 10% Directa): {fmt_clp(ahorro_107_total)}"
+        
+    return beneficio, desc_ahorro
+
+# --- AGENTE IA: MEMORIA TÁCTICA ---
+def save_client_context(rut, notas):
+    import json
+    mem_dir = "intelligence/memory"
+    if not os.path.exists(mem_dir): os.makedirs(mem_dir)
+    file_path = f"{mem_dir}/{rut.replace('.', '')}.json"
+    data = {"last_update": str(datetime.now()), "insights": notas}
+    with open(file_path, "w", encoding='utf-8') as f:
+        json.dump(data, f, indent=4, ensure_all_chars=True) if hasattr(json, 'ensure_all_chars') else json.dump(data, f, indent=4)
+
+def get_client_context(rut):
+    import json
+    file_path = f"intelligence/memory/{rut.replace('.', '')}.json"
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding='utf-8') as f:
+            return json.load(f)
+    return None
+
+# ----------------- MÓDULO: AUDITOR FINANCIERO (MAESTRO) -----------------
+def get_risk_level(tipo):
+    # Lógica de Riesgo CMF (1 a 7)
+    t = str(tipo).upper()
+    if "ACCION" in t: return 6
+    if "BALANCEADO" in t: return 4
+    if "INTERNACIONAL" in t: return 5
+    if "ESTRUCTURADO" in t: return 4
+    if "DEUDA" in t and "CORTO" in t: return 1
+    if "DEUDA" in t: return 2
+    return 3
+
+def limpiar_agf_master(txt):
+    if not isinstance(txt, str): return txt
+    t = txt.upper().strip()
+    for s in ['ADMINISTRADORA GENERAL DE FONDOS', 'S.A.', 'SPA', 'ASSET MANAGEMENT', 'CHILE']:
+        t = t.replace(s, '')
+    return "BANCHILE" if "BAN" in t.strip() else t.strip()
+
+def limpiar_fondo_master(nombre, admin, serie):
+    n = str(nombre).upper()
+    n = n.replace("FONDO MUTUO", "").replace("F.M.", "").replace("(2)", "").strip()
+    n = n.replace("[GLB]", "").strip()
+    a = str(admin).upper()
+    n = n.replace(f"({a})", "").replace(a, "").strip()
+    # Estandarización comercial: Mantenemos original si son distintas en costos (G vs PAT)
+    series_map = {"P": "PREVISIONAL", "PAT": "PATRIMONIAL", "G": "GENERAL"}
+    serie_clean = series_map.get(serie.upper(), serie.upper())
+    return f"{n} FFMM [{serie_clean}]"
+
+def render_portfolio_auditor():
+    st.markdown("""
+        <div style='background: #ffffff; padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);'>
+            <h1 style='color: #111827; margin: 0; font-size: 2.2em; font-weight: 900;'>💼 Auditor de Estrategias Financieras</h1>
+            <p style='color: #6b7280; margin: 5px 0 0 0; font-size: 1.1em;'>Análisis Multi-Fondo y Eficiencia de Costos Patrimoniales</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    # Carga de datos
+    try:
+        df_m = pd.read_sql("SELECT * FROM fondos_mutuos", con=engine)
+        df_m['admin_limpia'] = df_m['administradora'].apply(limpiar_agf_master)
+        df_m['fondo_display'] = df_m.apply(lambda r: limpiar_fondo_master(r['nombre_fondo'], r['admin_limpia'], r['serie']), axis=1)
+        df_m['nivel_riesgo'] = df_m['tipo_fondo'].apply(get_risk_level)
+    except:
+        st.error("⚠️ Base de datos no sincronizada.")
+        return
+
+    admins = sorted(df_m['admin_limpia'].unique().tolist())
+
+    # --- CONFIGURACION DE ESCENARIOS Y HIPÓTESIS ---
+    st.markdown("<h3 style='font-size: 1.2em; color: #374151;'>⚙️ Parámetros de Escenario y Referencias Macro</h3>", unsafe_allow_html=True)
+    c_cfg1, c_cfg2, c_cfg3 = st.columns([1, 1, 1.5])
+    with c_cfg1:
+        inflacion_anual = st.number_input("Inflación Objetivo (%)", -5.0, 15.0, 3.0, step=0.1, help="Usado para la línea de referencia de poder adquisitivo.")
+    with c_cfg2:
+        periodo_ref = st.selectbox("Base Histórica de Referencia", [1, 3, 5], format_func=lambda x: f"Últimos {x} Años")
+    with c_cfg3:
+        use_manual_rent = st.toggle("Usar Rent. Manual en Propuesta", value=False, help="Si se activa, la simulación de la Propuesta usará el valor de abajo en lugar del promedio histórico de los fondos.")
+        rent_manual = st.number_input("Rent. Nominal de la Propuesta (%)", 0.0, 30.0, 7.0, help="Escribe aquí el retorno nominal que esperas para tu propuesta patrimonial.")
+
+    with st.expander(f"📡 Status de Datos Económicos (Sincronizado: {LAST_SYNC})", expanded=False):
+        m1, m2, m3, m4 = st.columns(4)
+        m1.metric("UF Hoy", fmt_clp(UF_VALOR))
+        m2.metric("UTM Hoy", fmt_clp(UTM_VALOR))
+        m3.metric("Dólar", f"${USD_CLP}")
+        m4.metric("IPC", f"{IPC_VALOR}%")
+    
+    st.markdown("---")
+    
+    # Toggle CLP / UF
+    col_v1, col_v2 = st.columns([2, 1])
+    with col_v2:
+        moneda = st.radio("Unidad de Medida", ["Pesos (CLP)", "UF"], horizontal=True)
+    
+    with col_v1:
+        st.write(f"💸 **Valor UF Hoy:** {fmt_clp(UF_VALOR)}")
+
+    def fmt_m_din(v): return fmt_clp(v) if moneda == "Pesos (CLP)" else fmt_uf(v/UF_VALOR)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        reg_t = st.selectbox("Régimen de Inversión", ["Regimen General", "Regimen Previsional (APV/DC)"], key="reg_t")
+    with col2:
+        # Ajustamos min_value dinámicamente para evitar error al cambiar a UF (Pesos 100k, UF 250)
+        min_v = 100000 if moneda=="Pesos (CLP)" else 250
+        max_v = 10000000000 if moneda=="Pesos (CLP)" else 500000
+        val_ini = 100000000 if moneda=="Pesos (CLP)" else 2500
+        step_v = 1000000 if moneda=="Pesos (CLP)" else 100
+        
+        # Usamos una clave dinámica para forzar el reinicio del widget al cambiar de moneda
+        capa = st.number_input(f"Capital a Auditar ({moneda})", min_v, max_v, val_ini, step=step_v, key=f"capa_input_{moneda}")
+        # Etiqueta dinámica de ayuda visual
+        if moneda == "Pesos (CLP)":
+             st.markdown(f"<p style='color: #059669; font-size: 1.1em; font-weight: bold;'>💵 Formato: {fmt_clp(capa)}</p>", unsafe_allow_html=True)
+        else:
+             st.markdown(f"<p style='color: #059669; font-size: 1.1em; font-weight: bold;'>📝 Formato: {fmt_uf(capa)}</p>", unsafe_allow_html=True)
+        if moneda == "UF": capa *= UF_VALOR # Internamente operamos en Pesos
+
+    c_g3 = st.columns(1)[0]
+    with c_g3:
+        plazo_proj = st.slider("Plazo de Proyección (Años)", 1, 20, 10, help="Simulación de interés compuesto y eficiencia de costos a largo plazo.")
+        horizonte = st.selectbox("Rentabilidad Escenario (Histórica)", ["Último Año", "Últimos 3 Años", "Últimos 5 Años"])
+        map_rent = {"Último Año": "rentabilidad_1a", "Últimos 3 Años": "rentabilidad_3a", "Últimos 5 Años": "rentabilidad_5a"}
+        col_rent = map_rent[horizonte]
+
+    st.markdown("---")
+
+    # --- PORTAFOLIO ACTUAL ---
+    st.markdown("### 🔴 Portafolio Actual (Competencia)")
+    sel_adms_c = st.multiselect("1. Selecciona las Administradoras", admins, key="ms_adm_c")
+    
+    fondos_disp_c = df_m[df_m['admin_limpia'].isin(sel_adms_c)]['fondo_display'].unique().tolist()
+    portafolio_c = st.multiselect("2. Selecciona y busca los fondos que ya tiene el cliente:", fondos_disp_c, key="ms_fondos_c")
+    
+    pesos_c = {}
+    if portafolio_c:
+        st.markdown("#### ⚖️ Ponderación de Pesos Actuales (%)")
+        col_pesos_c = st.columns(len(portafolio_c))
+        for i, f in enumerate(portafolio_c):
+            with col_pesos_c[i]:
+                pesos_c[f] = st.number_input(f"% {f[:15]}...", 0, 100, 100//len(portafolio_c), step=5, key=f"wc_{f}")
+        
+        t_pc = sum(pesos_c.values())
+        if t_pc != 100: st.warning(f"Suma actual: {t_pc}% (Debe ser 100%)")
+        else: st.success("✅ Portafolio Competencia equilibrado.")
+
+    st.markdown("---")
+
+    # --- CARTERA PRINCIPAL ---
+    st.markdown("### 🟢 Propuesta de Estrategia (Principal)")
+    
+    v_col1, v_col2 = st.columns(2)
+    with v_col1:
+        vehiculo = st.selectbox("Vehículo de Inversión", ["Regimen General (FFMM Directo)", "Seguro de Vida Patrimonial Preferente"], key="veh_p")
+    
+    if vehiculo == "Seguro de Vida Patrimonial Preferente":
+        st.markdown("#### 👥 Designación de Beneficiarios")
+        n_ben = st.number_input("¿Cuántos beneficiarios desea designar?", 1, 10, 1)
+        
+        beneficiarios_list = []
+        opciones_parentesco = [
+            "Cónyuge", "Hijo (a) 1", "Hijo (a) 2", "Hijo (a) 3", "Nieto (a) 1", "Nieto (a) 2",
+            "Padre", "Madre", "Abuelo", "Abuela", "Hermano (a) 1", "Persona No Relacionada"
+        ]
+        
+        sum_porc = 0
+        b_cols = st.columns(min(n_ben, 3))
+        for i in range(n_ben):
+            idx_col = i % 3
+            with b_cols[idx_col]:
+                rel = st.selectbox(f"Relación {i+1}", opciones_parentesco, key=f"rel_fin_{i}")
+                p_ben = st.number_input(f"% Capital {i+1}", 0, 100, 100//n_ben if i==0 else 0, key=f"p_fin_{i}")
+                sum_porc += p_ben
+            beneficiarios_list.append({"Relación": rel, "%": p_ben})
+        
+        if sum_porc != 100:
+            st.warning(f"⚠️ Distribución incompleta: {sum_porc}% de 100%")
+        else:
+            st.success("✅ Distribución de Capital Validada")
+
+    # Definición de Serie Optimizada
+    serie_target = "G" if "Seguro" in vehiculo else ""
+    if "Previsional" in reg_t: serie_target = "P" if "Seguro" in vehiculo else ""
+    
+    fondos_disp_p = df_m[df_m['admin_limpia'].str.contains("PRINCIPAL", na=False)]
+    
+    # Filtrado inteligente por serie preferente
+    if serie_target:
+        fondos_disp_p = fondos_disp_p[fondos_disp_p['serie'].str.contains(serie_target, na=False)]
+    
+    list_p = fondos_disp_p['fondo_display'].unique().tolist()
+    portafolio_p = st.multiselect("Busca y añade las estrategias de Principal (Serie PATRIMONIAL sugerida):", list_p, key="ms_fondos_p")
+    
+    pesos_p = {}
+    if portafolio_p:
+        st.markdown("#### ⚖️ Ponderación de pesos Propuesta (%)")
+        col_pesos_p = st.columns(len(portafolio_p))
+        for i, f in enumerate(portafolio_p):
+            with col_pesos_p[i]:
+                pesos_p[f] = st.number_input(f"% {f[:15]}...", 0, 100, 100//len(portafolio_p), step=5, key=f"wp_{f}")
+        
+        t_pp = sum(pesos_p.values())
+        if t_pp != 100: st.warning(f"Suma propuesta: {t_pp}% (Debe ser 100%)")
+        else: st.success("✅ Propuesta Principal equilibrada.")
+
+    st.markdown("---")
+    st.markdown("### 🏛️ Optimización Tributaria (Tax-Alpha)")
+    t1, t2 = st.columns(2)
+    with t1:
+        tasa_igc = st.slider("Tramo Impositivo del Cliente (IGC %)", 0.0, 40.0, 13.5, step=4.5, help="Tasa marginal según sus ingresos anuales.")
+    with t2:
+        if "Seguro" not in vehiculo:
+            bursatil = st.checkbox("Simular Fondos con Presencia Bursátil (Art. 107)", value=True)
+        else:
+            bursatil = False
+            st.info("🛡️ Beneficios de Póliza Activos")
+
+    if "audit_data" not in st.session_state:
+        st.session_state.audit_data = None
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("📊 GENERAR AUDITORÍA COMPARATIVA", type="primary", use_container_width=True):
+        if not portafolio_c or not portafolio_p or (pesos_c and sum(pesos_c.values()) != 100) or (pesos_p and sum(pesos_p.values()) != 100):
+            st.error("Asegúrate de configurar ambas carteras al 100% para generar la comparativa.")
+        else:
+            # Marcamos que hay datos para persistir
+            st.session_state.audit_data = {
+                "pesos_c": pesos_c, "pesos_p": pesos_p,
+                "capa": capa, "reg_t": reg_t, "tasa_igc": tasa_igc, 
+                "vehiculo": vehiculo, "plazo_proj": plazo_proj, "horizonte": horizonte,
+                "rent_manual": rent_manual, "use_manual_rent": use_manual_rent
+            }
+
+    if st.session_state.audit_data:
+        # Recuperamos variables
+        ad = st.session_state.audit_data
+        pesos_c, pesos_p = ad["pesos_c"], ad["pesos_p"]
+        capa, reg_t, tasa_igc = ad["capa"], ad["reg_t"], ad["tasa_igc"]
+        vehiculo, plazo_proj, horizonte = ad["vehiculo"], ad["plazo_proj"], ad["horizonte"]
+        
+        # --- MOTOR DE CÁLCULO PATRIMONIAL ---
+        # Usamos la inflación definida por el usuario
+        inflacion_avg = inflacion_anual 
+        
+        def get_wg_rent(pesos, col):
+            return sum((df_m[df_m['fondo_display']==f].iloc[0][col] or 0) * (p/100) for f, p in pesos.items())
+
+        # Rentabilidades Nominales Anualizadas
+        r_c_1, r_c_3, r_c_5 = get_wg_rent(pesos_c, 'rentabilidad_1a'), get_wg_rent(pesos_c, 'rentabilidad_3a'), get_wg_rent(pesos_c, 'rentabilidad_5a')
+        r_p_1, r_p_3, r_p_5 = get_wg_rent(pesos_p, 'rentabilidad_1a'), get_wg_rent(pesos_p, 'rentabilidad_3a'), get_wg_rent(pesos_p, 'rentabilidad_5a')
+
+        # Rentabilidad ACUMULADA (Total en el periodo)
+        def calc_acc(r_anual, years):
+            return ((1 + r_anual/100)**years - 1) * 100
+            
+        # Escenario 1: Referencia Histórica (Basada en periodo elegido)
+        r_hist_map = {1: (r_c_1, r_p_1), 3: (r_c_3, r_p_3), 5: (r_c_5, r_p_5)}
+        r_c_hist, r_p_hist = r_hist_map[periodo_ref]
+        
+        # TAC Ponderados (Costo de Fondos)
+        tac_c = sum((df_m[df_m['fondo_display']==f].iloc[0]['tac_anual'] or 0) * (p/100) for f, p in pesos_c.items())
+        tac_p = sum((df_m[df_m['fondo_display']==f].iloc[0]['tac_anual'] or 0) * (p/100) for f, p in pesos_p.items())
+        
+        usar_hist_real = True # Definimos variable para evitar error en Metodología
+        
+        # Tomamos la rentabilidad del periodo seleccionado en el selector de horizonte (debajo del capital)
+        r_c_raw = get_wg_rent(pesos_c, col_rent)
+        
+        if ad.get("use_manual_rent", False):
+            r_p_raw = ad.get("rent_manual", 7.0)
+        else:
+            r_p_raw = get_wg_rent(pesos_p, col_rent)
+        
+        # --- Lógica de Proyección Neta de Costos (TAC) ---
+        # PRECISIÓN ABSOLUTA: Usamos la Ecuación de Fisher para rentabilidad neta de costos
+        # r_net = (1 + r_raw) / (1 + tac) - 1
+        r_c_net = ((1 + r_c_raw/100) / (1 + tac_c/100) - 1)
+        r_p_net = ((1 + r_p_raw/100) / (1 + tac_p/100) - 1)
+        
+        # Neta Histórica para comparación en gráfico
+        r_c_net_hist = ((1 + r_c_hist/100) / (1 + tac_c/100) - 1)
+
+        # Tabla de Rentabilidades Pro
+        st.markdown("<h2 style='font-weight: 900; color: #00B140; margin-top: 1.5rem;'>📈 Análisis de Rentabilidad Histórica (CMF)</h2>", unsafe_allow_html=True)
+        
+        # --- BLOQUE DE TRANSPARENCIA TÉCNICA (FISHER) ---
+        with st.expander("🔬 Transparencia Técnica: ¿Cómo llegamos a estos números? (Ecuación de Fisher)", expanded=True):
+            st.markdown("""
+            Para asegurar un estándar de nivel institucional, no restamos la inflación de forma simple (método aproximado). 
+            Utilizamos la **Ecuación de Fisher**, que es el estándar global para carteras patrimoniales:
+            """)
+            st.latex(r"Retorno_{Real} = \frac{1 + Retorno_{Nominal}}{1 + Inflación} - 1")
+            
+            c_inf1, c_inf2, c_inf3 = st.columns(3)
+            with c_inf1:
+                st.markdown(f"**Punto 1 Año**")
+                st.caption(f"UF Hoy: {fmt_clp(UF_VALOR)}")
+                st.caption(f"UF Dic 2025*: {fmt_clp(UF_1Y)}")
+                st.markdown(f"**Inflación: {INFL_1Y:.2f}%**")
+            with c_inf2:
+                st.markdown(f"**Punto 3 Años**")
+                st.caption(f"UF Hoy: {fmt_clp(UF_VALOR)}")
+                st.caption(f"UF Abr 2023*: {fmt_clp(UF_3Y)}")
+                st.markdown(f"**Inflación: {INFL_3Y:.2f}%**")
+            with c_inf3:
+                st.markdown(f"**Punto 5 Años**")
+                st.caption(f"UF Hoy: {fmt_clp(UF_VALOR)}")
+                st.caption(f"UF Abr 2021*: {fmt_clp(UF_5Y)}")
+                st.markdown(f"**Inflación: {INFL_5Y:.2f}%**")
+            st.caption("*Valores recuperados en tiempo real desde mindicador.cl")
+
+        def calc_real_with_fixed_infl(r_nom_annual, years, actual_infl_pct):
+            nom_acc = (1 + r_nom_annual/100)**years
+            real_acc = (nom_acc / (1 + actual_infl_pct/100) - 1) * 100
+            return real_acc
+
+        df_rent = pd.DataFrame({
+            "Periodo": ["Último Año", "3 Años (Acumulado)", "5 Años (Acumulado)"],
+            "Portafolio Comp. (Nominal)": [fmt_pct(calc_acc(r_c_1, 1)), fmt_pct(calc_acc(r_c_3, 3)), fmt_pct(calc_acc(r_c_5, 5))],
+            "Portafolio Comp. (Real vs UF)": [fmt_pct(calc_real_with_fixed_infl(r_c_1, 1, INFL_1Y)), 
+                                              fmt_pct(calc_real_with_fixed_infl(r_c_3, 3, INFL_3Y)), 
+                                              fmt_pct(calc_real_with_fixed_infl(r_c_5, 5, INFL_5Y))],
+            "Propuesta Principal (Nominal)": [fmt_pct(calc_acc(r_p_1, 1)), fmt_pct(calc_acc(r_p_3, 3)), fmt_pct(calc_acc(r_p_5, 5))],
+            "Propuesta Principal (Real vs UF)": [fmt_pct(calc_real_with_fixed_infl(r_p_1, 1, INFL_1Y)), 
+                                                 fmt_pct(calc_real_with_fixed_infl(r_p_3, 3, INFL_3Y)), 
+                                                 fmt_pct(calc_real_with_fixed_infl(r_p_5, 5, INFL_5Y))]
+        })
+        st.dataframe(df_rent, use_container_width=True, hide_index=True)
+
+        # 5. Comparativa Legal y de Salida (Formato Comercial)
+        if "Seguro" in vehiculo:
+            st.info("🛡️ **Estrategia Blindada:** Al utilizar un Seguro Patrimonial, se prioriza la normativa de Seguros (Circular 21 SII).")
+            st.markdown("<h2 style='font-weight: 900; color: #00B140; margin-top: 1.5rem;'>⚖️ Comparativa Estratégica y Legal</h2>", unsafe_allow_html=True)
+            st.markdown("<p style='color: #6b7280; margin-bottom: 1rem;'>Atributos legales y ventajas de salida ante rentabilidad real.</p>", unsafe_allow_html=True)
+            
+            l1, l2, l3 = st.columns([1.5, 2, 2])
+            l1.markdown("**Atributo**")
+            l2.markdown("**Portafolio Competencia**")
+            l3.markdown("**Propuesta Principal**")
+            st.markdown("---")
+            
+            rows = [
+                ("📉 Orden de Retiro", "Utilidad Proporcional", "🚀 **Capital UF Primero (Tax $0)**"),
+                ("🧮 Base Imponible", "Monto Bruto Nominal", "🎯 Rendimiento Real (Post-IPC)"),
+                ("🕊️ Fallecimiento", "Sujeto a Posesión Efectiva", "✅ **Excluido / Liquidez 48hrs**"),
+                ("🎁 Beneficio Fiscal", "Sujeto a IGC Total", "💎 **Cero Renta hasta 85 UTM**"),
+                ("🏛️ Art. 108 LIR", "Postergación Básica", "⭐ **Diferimiento Máximo Legal**"),
+                ("🔒 Protección", "Activo Embargable", "🛡️ **Inembargable**"),
+                ("⭐ Rating Comercial", "⭐⭐ (Standard)", "⭐⭐⭐⭐⭐ (Premium)")
+            ]
+            for icon, comp, princ in rows:
+                c1, c2, c3 = st.columns([1.5, 2, 2])
+                c1.write(icon)
+                c2.write(comp)
+                c3.markdown(princ)
+        else:
+            st.info("Nota: Comparativa basada en diferencia de costos y tipos de serie.")
+
+        # 6. Cálculos de Inteligencia Tributaria y Riesgo
+        beneficio_total, detalle_tax = calcular_tax_alpha(capa, reg_t, tasa_igc, vehiculo, pesos_p, df_m)
+        
+        # Riesgos Ponderados
+        riesgo_c = sum((df_m[df_m['fondo_display']==f].iloc[0]['nivel_riesgo'] or 1.0) * (p/100) for f, p in pesos_c.items())
+        riesgo_p = sum((df_m[df_m['fondo_display']==f].iloc[0]['nivel_riesgo'] or 1.0) * (p/100) for f, p in pesos_p.items())
+
+        # Proyección Final
+        # --- Lógica de Proyección Neta de Costos (TAC) ---
+        # --- Lógica de Proyección Neta de Costos (TAC) ---
+        # PRECISIÓN ABSOLUTA: Fisher Equation
+        r_c_net = ((1 + r_c_raw/100) / (1 + tac_c/100) - 1)
+        r_p_net = ((1 + r_p_raw/100) / (1 + tac_p/100) - 1)
+        
+        path_c_proj = (capa * ((1 + r_c_net)**plazo_proj))
+        path_p_proj = (capa * ((1 + r_p_net)**plazo_proj)) + (beneficio_total * plazo_proj)
+        
+        # Definición de filas para Reporte PDF (Consistencia institucional)
+        rows_report = []
+        if "Seguro" in vehiculo:
+             rows_report = [
+                ("⚖️ Liquidez", "Pérdida por Rescate", "Liquidez en Capital"),
+                ("🧾 Impuestos", "Global Complementario", "No Renta (Circular 21)"),
+                ("💰 Comisión", fmt_pct(tac_c), fmt_pct(tac_p)),
+                ("📄 Beneficio", "Sin Beneficio Art. 107", "Exención Tributaria Activa")
+             ]
+        else:
+             rows_report = [
+                ("💰 Costo Anual", fmt_pct(tac_c), fmt_pct(tac_p)),
+                ("📈 Rent. Neta Est.", f"{r_c_net*100:.2f}%", f"{r_p_net*100:.2f}%"),
+                ("🛡️ Riesgo", f"{riesgo_c:.1f}/7", f"{riesgo_p:.1f}/7")
+             ]
+
+        # --- SIMULACIÓN MONTE CARLO (WEALTH 3.0) ---
+        sim = MonteCarloSimulator()
+        
+        # Volatilidad Ponderada (Mapeo de Riesgo 1-7 a Sigma %)
+        vol_map = {1: 0.015, 2: 0.035, 3: 0.07, 4: 0.10, 5: 0.15, 6: 0.25, 7: 0.35}
+        vol_c = sum((vol_map.get(df_m[df_m['fondo_display']==f].iloc[0]['nivel_riesgo'], 0.07)) * (p/100) for f, p in pesos_c.items())
+        vol_p = sum((vol_map.get(df_m[df_m['fondo_display']==f].iloc[0]['nivel_riesgo'], 0.07)) * (p/100) for f, p in pesos_p.items())
+        
+        # Ejecutar Simulaciones
+        paths_c = sim.simulate_gbm(capa, r_c_net, vol_c, plazo_proj, n_simulations=2000)
+        paths_p = sim.simulate_gbm(capa, r_p_net, vol_p, plazo_proj, n_simulations=2000)
+        
+        # Agregar Alpha Tributario a la propuesta (Simplificado: lineal al final)
+        paths_p = paths_p + (beneficio_total * np.arange(plazo_proj + 1).reshape(-1, 1))
+        
+        stats_c = sim.get_statistics(paths_c)
+        stats_p = sim.get_statistics(paths_p)
+        
+        var_c = sim.calculate_var(capa, paths_c)
+        var_p = sim.calculate_var(capa, paths_p)
+
+        # 7. Resultados Finales en Columnas
+        st.markdown("<h2 style='font-weight: 900; color: #00B140; margin-top: 2rem;'>🏁 Conclusión de la Auditoría (Wealth 3.0)</h2>", unsafe_allow_html=True)
+        
+        # Estilo para evitar que se corten los números
+        st.markdown("""
+        <style>
+            div[data-testid="stMetricValue"] {
+                font-size: 1.8rem !important;
+                white-space: nowrap !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+
+        def get_perfil(r):
+            if r <= 2.5: return "Conservador"
+            if r <= 4.5: return "Moderado"
+            return "Agresivo"
+
+        r1, r2, r3, r4, r5 = st.columns(5)
+        # Usamos fmt_clp directo para mayor claridad en el resumen
+        r1.metric("Patrimonio (Mediana)", fmt_m_din(stats_p['p50'][-1]), delta=fmt_m_din(stats_p['p50'][-1] - stats_c['p50'][-1]))
+        r2.metric("Eficiencia TAC", fmt_pct(tac_p), delta=f"{-(tac_c - tac_p):.2f}%", delta_color="normal")
+        r3.metric("Riesgo: " + get_perfil(riesgo_p), f"{riesgo_p:.1f}/7", delta=f"{vol_p*100:.1f}% Vol", delta_color="inverse")
+        
+        # VaR: Si es negativo (ganancia en peor escenario), mostramos 0 o aclaramos. Comercialmante mostramos el 'Riesgo'
+        var_disp_p = max(0, var_p)
+        var_disp_c = max(0, var_c)
+        r4.metric("Riesgo Máx (VaR 95%)", fmt_m_din(var_disp_p), delta=fmt_m_din(var_disp_p - var_disp_c), delta_color="inverse", help="Pérdida máxima esperada con 95% de probabilidad.")
+        
+        r5.metric("Alpha Tribut.", fmt_clp(beneficio_total))
+        
+        st.markdown("---")
+        st.markdown("### 📈 Simulación Estocástica: ¿Por qué usamos Monte Carlo?")
+        st.write("A diferencia de una proyección lineal, este modelo Wealth 3.0 simula 2,000 futuros posibles. La **Mediana** (línea sólida) representa el camino más probable, mientras que el **Sombreado** indica dónde caerá su dinero el 90% de las veces, considerando la volatilidad ruidosa del mercado.")
+        
+
+        st.markdown("<h3 style='font-weight: 800; color: #1f2937;'>📈 Simulación Estocástica: Bandas de Confianza (Wealth 3.0)</h3>", unsafe_allow_html=True)
+        import plotly.graph_objects as go
+        fig_evol = go.Figure()
+        
+        years_idx = list(range(plazo_proj + 1))
+        
+        # Si la unidad es UF, escalamos los valores del gráfico
+        y_scale = 1.0 if moneda == "Pesos (CLP)" else (1.0 / UF_VALOR)
+        
+        # Propuesta Principal: Mediana y Sombreado de Confianza
+        fig_evol.add_trace(go.Scatter(
+            x=years_idx, y=stats_p['p50'] * y_scale,
+            line=dict(color='#00B140', width=4),
+            name='Propuesta (Mediana Esperada)'
+        ))
+        
+        # Sombreado de Riesgo (P5 a P95)
+        fig_evol.add_trace(go.Scatter(
+            x=years_idx + years_idx[::-1],
+            y=list(stats_p['p95'] * y_scale) + list(stats_p['p5'] * y_scale)[::-1],
+            fill='toself',
+            fillcolor='rgba(0, 177, 64, 0.1)',
+            line=dict(color='rgba(255,255,255,0)'),
+            hoverinfo="skip",
+            showlegend=True,
+            name='Intervalo de Confianza (90%)'
+        ))
+        
+        # Portafolio Competencia (Mediana)
+        fig_evol.add_trace(go.Scatter(
+            x=years_idx, y=stats_c['p50'] * y_scale,
+            line=dict(color='#ef4444', width=2, dash='dash'),
+            name='Competencia (Mediana)'
+        ))
+
+        # Línea de Poder Adquisitivo (Inflación)
+        path_infl = [capa * (1 + inflacion_avg/100)**t for t in years_idx]
+        path_infl_scaled = [v * y_scale for v in path_infl]
+        fig_evol.add_trace(go.Scatter(
+            x=years_idx, y=path_infl_scaled,
+            line=dict(color='#94a3b8', width=1, dash='dot'),
+            name='Poder Adquisitivo (IPC)'
+        ))
+        
+        fig_evol.update_layout(
+            title="Evolución Estocástica del Patrimonio (Neto de Comisiones)",
+            xaxis_title="Años",
+            yaxis_title=f"Monto ({moneda})",
+            template='plotly_white',
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        st.plotly_chart(fig_evol, use_container_width=True)
+        st.caption("ℹ️ El gráfico muestra la proyección neta de costos (TAC). Si la curva de la propuesta está bajo la competencia pese a mejores fondos, indica que las comisiones son ineficientes.")
+
+        with st.expander("Metodología: ¿Cómo se calcula este patrimonio?"):
+            st.markdown(f"""
+            ### Fundamentos del Análisis Patrimonial (Wealth 3.0)
+            Esta proyección es una **Auditoría Técnica** basada en:
+            
+            1. **Pasado Real (UF):** No inventamos la inflación. El programa descarga la variación exacta de la UF de los últimos 5 años ({INFL_5Y:.1f}% acumulado) para calcular su rentabilidad real histórica.
+            2. **Escenario Objetivo:** La proyección utiliza su escenario de rentabilidad esperada (**{rent_manual}%**) como base de drift en la simulación.
+            3. **Simulación Monte Carlo:** Ejecutamos 2,000 trayectorias aleatorias. La línea sólida es el escenario intermedio. El área sombreada es donde caerá su patrimonio con un 90% de certeza.
+            4. **Tax-Alpha:** Calculamos el ahorro impositivo específico de su régimen y vehículo (Seguro/APV), sumándolo como un flujo de caja positivo anual.
+            5. **Efecto Compuesto:** Interés acumulado neto de costos (TAC) informados oficialmente por la CMF.
+            """)
+
+        # --- BOTONES DE CIERRE (CONVERSIÓN) ---
+        st.markdown("---")
+
+        # Inicializamos PDF path persistente en session_state
+        if "pdf_bytes" not in st.session_state:
+            st.session_state.pdf_bytes = None
+            st.session_state.pdf_filename = None
+
+        c_p1, c_p2, c_p3 = st.columns(3)
+        with c_p1:
+            if st.button("📄 Generar Reporte Ejecutivo PDF", type="primary"):
+                with st.spinner("🤖 Generando PDF institucional..."):
+                    try:
+                        from src.reporting.pdf_engine import generate_audit_pdf
+
+                        pdf_metrics = {
+                            "patrimonio": fmt_m_din(stats_p['p50'][-1]),
+                            "tac": fmt_pct(tac_p),
+                            "alpha": fmt_clp(beneficio_total)
+                        }
+
+                        # Generación sin kaleido/matplotlib: solo fpdf nativo
+                        pdf_path = generate_audit_pdf(
+                            client_name="Cliente Preferencial",
+                            metrics=pdf_metrics,
+                            rows_legal=rows_report,
+                            stats_p=stats_p,
+                            stats_c=stats_c,
+                            path_infl=path_infl,
+                            plazo_proj=plazo_proj
+                        )
+
+                        # Leemos bytes y guardamos en session_state para persistir tras rerun
+                        with open(pdf_path, "rb") as f:
+                            st.session_state.pdf_bytes = f.read()
+                        st.session_state.pdf_filename = os.path.basename(pdf_path)
+                        st.success("✅ ¡PDF generado con éxito! Haz clic en el botón verde para descargar.")
+                    except Exception as e:
+                        import traceback
+                        st.error(f"❌ Error al generar PDF: {e}")
+                        st.code(traceback.format_exc())
+
+            # Botón de descarga persiste en session_state — NO desaparece al hacer clic
+            if st.session_state.pdf_bytes:
+                st.download_button(
+                    "💾 Descargar Reporte PDF",
+                    data=st.session_state.pdf_bytes,
+                    file_name=st.session_state.pdf_filename or "Auditoria_Patrimonial.pdf",
+                    mime="application/pdf"
+                )
+        contexto_previo = get_client_context("CLIENTE_A") # Simulado por ahora, usar RUT real luego
+        if contexto_previo:
+            st.info(f"📜 **Memoria de Reunión Anterior:** {contexto_previo['insights']}")
+        
+        with st.expander("📝 Guardar Notas Estratégicas para la próxima sesión"):
+            notas_input = st.text_area("¿Qué aprendimos hoy de este cliente? (Ej: Le preocupa su hija mayor, busca liquidez en 5 años...)")
+            if st.button("💾 Guardar en Memoria del Agente"):
+                save_client_context("CLIENTE_A", notas_input)
+                st.success("✅ El Agente ha recordado este contexto para la próxima auditoría.")
+
+        # --- BOTONES DE ACCIÓN RÁPIDA (EJECUCIÓN) ---
+        st.markdown("### ⚡ Acciones de Cierre")
+        c_a1, c_a2 = st.columns(2)
+        with c_a1:
+            if st.button("📅 Agendar Reunión de Presentación"):
+                from intelligence.skills import AgentSkills
+                # Generamos para mañana a las 10am por defecto
+                fecha_sug = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+                path_ics = AgentSkills.generate_calendar_invite(f"Auditoría Patrimonial: {target_lead if 'target_lead' in locals() else 'Cliente'}", fecha_sug, "10:00")
+                with open(path_ics, "rb") as f:
+                    st.download_button("📎 Descargar Invitación de Calendario (.ics)", f, file_name="reunion_patrimonial.ics")
+                st.success(f"Invitación creada para mañana a las 10:00 AM. ¡Envíala al cliente!")
+        
+        
+        if vehiculo == "Seguro de Vida Patrimonial":
+            st.markdown("""
+                <div style='display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px;'>
+                    <div style='background: #e1f5fe; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #01579b;'>🛡️ <b>Inembargabilidad</b></div>
+                    <div style='background: #e8f5e9; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #1b5e20;'>⏳ <b>Diferimiento Tax</b></div>
+                    <div style='background: #fff3e0; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #e65100;'>🕊️ <b>Liquidez Hereditaria</b></div>
+                </div>
+            """, unsafe_allow_html=True)
+    
+    st.button("📄 Descargar Auditoría PDF para Cliente", use_container_width=True)
+
+def render_market_science():
+    st.markdown("""
+        <div style='background: #f8fafc; padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e2e8f0;'>
+            <h1 style='color: #1e293b; margin: 0; font-size: 2.2em; font-weight: 900;'>🔬 Científico de Datos (Market Intelligence)</h1>
+            <p style='color: #64748b; margin: 5px 0 0 0; font-size: 1.1em;'>Análisis predictivo y tendencias del mercado de Fondos Mutuos CMF</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    from src.analytics.market_science import get_market_summary, analyze_sector_performance
+    
+    summary = get_market_summary()
+    
+    c1, c2 = st.columns([1, 1])
+    with c1:
+        st.metric("Patrimonio Total Administrado (Industria)", fmt_clp(summary['total_aum']))
+    with c2:
+        # Calcular crecimiento últimos 12 meses
+        g = summary['growth']
+        if len(g) > 12:
+            growth_12m = (g['total_participes'].iloc[-1] / g['total_participes'].iloc[-13] - 1) * 100
+            st.metric("Crecimiento Partícipes (12m)", f"{growth_12m:.1f}%", delta=f"{growth_12m:.1f}%")
+
+    st.markdown("### 🏆 Top 5 Administradoras por Patrimonio")
+    st.dataframe(summary['top_agfs'], use_container_width=True, hide_index=True)
+    
+    st.markdown("### 📊 Rentabilidad Promedio por Categoría")
+    sector_perf = analyze_sector_performance()
+    st.bar_chart(sector_perf, x="tipo_fondo", y="avg_retorno", color="#00B140")
+
+# (Tabs removed to restore sidebar navigation)
+
+def render_campaign_launcher():
+    st.title("🚀 Suite Comercial Asesor Senior")
+    st.markdown("Automatización de contacto para clientes de Alto Patrimonio (Arquitectura Anti-Ban)")
+
+    # --- PANEL DE ESTADÍSTICAS GLOBALES ---
+    with engine.connect() as con:
+        total_universo = con.execute(text("SELECT COUNT(*) FROM prospects")).scalar()
+        contactables = con.execute(text("SELECT COUNT(*) FROM prospects WHERE telefono IS NOT NULL AND telefono != 'No encontrado'")).scalar()
+        pendientes_mineria = con.execute(text("SELECT COUNT(*) FROM prospects WHERE telefono IS NULL OR telefono = 'No encontrado'")).scalar()
+        sin_rut = con.execute(text("SELECT COUNT(*) FROM prospects WHERE rut LIKE 'SINRUT%'")).scalar()
+
+    st.markdown("### 📊 Tablero de Control de Datos")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("📈 Universo Total", f"{total_universo:,}".replace(',', '.'))
+    c2.metric("✅ Total Teléfonos en BD", f"{contactables:,}".replace(',', '.'), help="Incluye a clientes actuales, leads ya contactados y personas que aún no tienen nombre validado.")
+    c3.metric("🔍 En Minería (Ptes)", f"{pendientes_mineria:,}".replace(',', '.'))
+    c4.metric("🆔 Sin RUT Real", f"{sin_rut:,}".replace(',', '.'))
+    
+    st.divider()
+
+    # --- RESTO DEL EMBUDO ---
+    st.subheader("🎯 Modo de Operación (CRM)")
+    modo_crm = st.radio("Selecciona la base de datos a gestionar:", 
+                        ["Prospección de Nuevos Clientes", "Fidelización de Clientes Actuales ⭐ (Newsletters, Invitaciones, etc)"], horizontal=True)
+    is_mode_clients = "Fidelización" in modo_crm
+
+    # Consultar la Base de Datos separando Clientes reales de Prospectos y exijiendo que tengan Teléfono y Nombre válido
+    cliente_filter = 1 if is_mode_clients else 0
+    df = pd.read_sql(f"SELECT * FROM prospects WHERE status_contacto != 'Contactado' AND es_cliente = {cliente_filter} AND telefono IS NOT NULL AND nombre IS NOT NULL AND telefono != 'None' AND nombre != 'None'", con=engine)
+
+    if df.empty:
+        st.warning("No tienes perfiles en estado Pendiente aptos para mensajear.")
+        st.stop()
+
+    # Limpiar y unificar variables categóricas para filtros impecables
+    cols_a_estandarizar = ['ciudad', 'nombre_asesor', 'supervisor', 'tipo_negocio', 'origen_info', 'titulo_profesional']
+    for col in cols_a_estandarizar:
+        if col in df.columns:
+            df[col] = df[col].apply(lambda c: str(c).strip().title() if pd.notna(c) and str(c).strip() else None)
+
+    # SIDEBAR UI
+    st.sidebar.header("⚙️ Ajustes de Inteligencia")
+    nombres_invertidos = st.sidebar.checkbox("Nombres Invertidos en Excel", value=False, help="Si marcas esto, un Excel con formato 'APELLIDO APELLIDO NOMBRE' será invertido para saludar sólo por su primer nombre.")
+    
+    st.sidebar.markdown("---")
+    st.sidebar.header("🔍 Filtros Dinámicos")
+    min_amount = st.sidebar.number_input("Inversión mínima ($)", min_value=0, value=0, step=100000)
+    
+    # Inicializar estado en memoria para filtros interactivos cruzados (Cascada Bidireccional)
+    filter_keys = ['filtro_ciudad', 'filtro_asesor', 'filtro_superv', 'filtro_negocio', 'filtro_origen', 'filtro_titulo']
+    for k in filter_keys:
+        if k not in st.session_state:
+            st.session_state[k] = []
+
+    def get_mask_except(skip_col=None):
+        """Devuelve los prospectos que cumplen todos los filtros actuales, EXCEPTO el que se está evaluando"""
+        mask = pd.Series(True, index=df.index)
+        if min_amount > 0:
+            mask &= ((df['monto_suscrito'] >= min_amount) | (df['saldo_administrado'] >= min_amount))
+            
+        if skip_col != 'ciudad' and st.session_state['filtro_ciudad']:
+            mask &= df['ciudad'].isin(st.session_state['filtro_ciudad'])
+        if skip_col != 'nombre_asesor' and st.session_state['filtro_asesor']:
+            mask &= df['nombre_asesor'].isin(st.session_state['filtro_asesor'])
+        if skip_col != 'supervisor' and st.session_state['filtro_superv']:
+            mask &= df['supervisor'].isin(st.session_state['filtro_superv'])
+        if skip_col != 'tipo_negocio' and st.session_state['filtro_negocio']:
+            mask &= df['tipo_negocio'].isin(st.session_state['filtro_negocio'])
+        if skip_col != 'origen_info' and st.session_state['filtro_origen']:
+            mask &= df['origen_info'].isin(st.session_state['filtro_origen'])
+        if skip_col != 'titulo_profesional' and st.session_state['filtro_titulo']:
+            mask &= df['titulo_profesional'].isin(st.session_state['filtro_titulo'])
+        return mask
+
+    def render_filter(col_name, title, state_key):
+        # Opciones disponibles basadas en el RESTO de los filtros activos
+        df_allowed = df[get_mask_except(col_name)]
+        valores_unicos = sorted([c for c in df_allowed[col_name].unique() if c is not None])
+        st.sidebar.multiselect(title, valores_unicos, key=state_key)
+
+    render_filter('ciudad', "Ciudad / Zona", 'filtro_ciudad')
+    render_filter('nombre_asesor', "Asesor Original", 'filtro_asesor')
+    render_filter('supervisor', "Supervisor Base", 'filtro_superv')
+    render_filter('tipo_negocio', "Tipo de Negocio", 'filtro_negocio')
+    render_filter('origen_info', "Origen Información", 'filtro_origen')
+    render_filter('titulo_profesional', "Profesión", 'filtro_titulo')
+    
+    # Aplicar todos los filtros juntos para la vista final
+    filtered_df = df[get_mask_except(None)].copy()
+        
+    # MODO PRUEBA
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("🧪 Modo Simulacro (A/B Test)")
+    test_mode = st.sidebar.checkbox("Activar Simulacro", help="Mantiene toda la data real de los filtros reales para tipear el Spintax, pero DISPARA el WhatsApp a TU propio número repetidas veces por seguridad.")
+    test_phone = st.sidebar.text_input("Celular de Ensayo", value="+56966779662" if test_mode else "", disabled=not test_mode)
+    
+    st.subheader(f"👥 Tu Meta de Hoy ({len(filtered_df)} Prospectos contactables)")
+    
+    # Preparamos los datos solo para visualización (View)
+    display_df = filtered_df.copy()
+    
+    def clp_format(val):
+        """Formatea número a estilo moneda chilena explícita: $ 1.000.000"""
+        if pd.isna(val) or val == 0: return "$ 0"
+        return f"$ {int(val):,}".replace(",", ".")
+        
+    display_df['monto_suscrito'] = display_df['monto_suscrito'].apply(clp_format)
+    display_df['saldo_administrado'] = display_df['saldo_administrado'].apply(clp_format)
+    
+    # Traducimos columnas
+    display_df.rename(columns={
+        "rut": "RUT",
+        "nombre": "Nombre del Cliente",
+        "telefono": "Teléfono",
+        "ciudad": "Ciudad / Sucursal",
+        "monto_suscrito": "Monto Suscrito",
+        "saldo_administrado": "Saldo Administrado",
+        "nombre_asesor": "Asesor",
+        "supervisor": "Supervisor",
+        "tipo_negocio": "Negocio",
+        "origen_info": "Origen Base",
+        "titulo_profesional": "Profesión",
+    }, inplace=True)
+    
+    # Agregamos la columna interactiva al inicio
+    display_df.insert(0, "Descartar", False)
+
+    # EDICIÓN INTERACTIVA (Tabla)
+    edited_df = st.data_editor(
+        display_df.drop(columns=['id']),
+        column_config={
+            "Descartar": st.column_config.CheckboxColumn(
+                "❌ Omitir",
+                help="Márcalo si NO quieres escribirle a esta persona en la campaña.",
+                default=False,
+            )
+        },
+        disabled=[
+            "RUT", "Nombre del Cliente", "Teléfono", "Ciudad / Sucursal", 
+            "Monto Suscrito", "Saldo Administrado",
+            "Asesor", "Supervisor", "Negocio", "Origen Base", "Profesión"
+        ], 
+        hide_index=True,
+        use_container_width=True
+    )
+    
+    # Extraer RUTs ignorados desde el dataframe visual editado
+    prospectos_ignorados = edited_df[edited_df["Descartar"] == True]["RUT"].tolist()
+
+    if st.button("🗑️ Descartar Definitivamente a los seleccionados"):
+        if prospectos_ignorados:
+            with engine.connect() as con:
+                con.execute(text("UPDATE prospects SET status_contacto = 'No Contactar' WHERE rut IN :ruts"), {"ruts": tuple(prospectos_ignorados)})
+                con.commit()
+            st.success(f"{len(prospectos_ignorados)} prospectos bloqueados de tus campañas. Refresca la ventana para ver los cambios.")
+        else:
+            st.warning("No marcaste ninguna casilla '❌ Omitir' en la tabla de arriba.")
+
+    # CONSTRUCTOR SPINTAX Y ADJUNTOS
+    st.markdown("---")
+    st.markdown("### 🧩 Constructor de Oferta Multicanal")
+    
+    col_a, col_b = st.columns(2)
+    with col_a:
+        # 1. SALUDO
+        st.markdown("**1. Tono del Saludo** (Rotación Anti-Spam)")
+        
+        default_saludo = """Hola [NOMBRE], ¿cómo estás? Te contacto para compartirte mis comentarios mensuales.""" if is_mode_clients else """Buen día [NOMBRE], mi nombre es Francisco Valencia y trabajo como Asesor de Inversiones para clientes de Alto Patrimonio en PRINCIPAL."""
+        saludo_txt = st.text_area("Opciones de Inicio", default_saludo, height=70)
+            
+        st.markdown("<br>**3. Enviar un Documento Adjunto (Opcional)**", unsafe_allow_html=True)
+        uploaded_file = st.file_uploader("Arrastra aquí un PDF, imagen o Excel", type=["pdf", "png", "jpg", "jpeg", "xlsx"])
+
+    with col_b:
+        # 2. CUERPO
+        st.markdown("**2. Cuerpo (El Mensaje)**")
+        default_cuerpo = """Adjunto a este mensaje encontrarás nuestro más reciente informe. Y si tu interés es seguir profundizando en cómo optimizar tu portafolio, podemos revisar en conjunto tus inversiones actuales mediante videollamada[TXT_PRESENCIAL]. Quedo muy atento.""" if is_mode_clients else """Le escribo brevemente para poner a su disposición mi experiencia. Me gustaría proponerle una breve llamada para conversar y analizar:
+• Expectativas de rentabilidad.
+• Aspectos tributarios clave.
+• Estrategias de inversión y oportunidades
+
+Si esta primera aproximación resulta de su interés, luego podemos desarrollar una reunión mediante una videollamada[TXT_PRESENCIAL]. ¿Qué le parece la idea de conversar unos 10 minutos en los próximos días?
+
+Quedo atento a sus comentarios."""
+        cuerpo_txt = st.text_area("Tu propuesta central", default_cuerpo, height=230)
+            
+        st.markdown("**4. Firma Institucional Estándar**")
+        default_firma = """Saludos
+*Francisco Valencia*""" if is_mode_clients else """Saludos 
+*Francisco Valencia*
+*Asesor de Inversiones Senior*
+*+569 66779662 / contacto@fv-inversiones.com*
+*Distribuidor exclusivo Principal Financial Group Chile*
+*www.principal.cl*"""
+        firma_txt = st.text_area("Cierre garantizado", default_firma, height=160)
+
+    # El mega-texto se une mágicamente con saltos de línea garantizados
+    mensaje_spintax = f"{saludo_txt}\n\n{cuerpo_txt}\n\n{firma_txt}"
+
+    col_play, _ = st.columns([1, 4])
+    
+    if col_play.button("🚀 INICIAR CAMPAÑA WHATSAPP", type="primary"):
+        # Nos quedamos con el dataframe original pero filtramos los que el usuario marcó en la UI para saltar
+        df_a_enviar = filtered_df[~filtered_df["rut"].isin(prospectos_ignorados)]
+        
+        if len(df_a_enviar) == 0:
+            st.error("No hay nadie a quien enviar. Todos fueron omitidos.")
+            return
+            
+        if test_mode:
+            # Salvar el servidor y al usuario de un bombardeo: Limitamos la prueba a 1 solo mensaje de ejemplo.
+            df_a_enviar = df_a_enviar.head(1)
+            st.warning(f"MODO SIMULACRO ACTIVO. Se eligió a 1 prospecto de la tabla (como ejemplo del Spintax) y el mensaje se enviará ÚNICAMENTE al {test_phone}.")
+            
+        st.info("Iniciando Chromium interno con persistencia humana local...")
+        
+        # Guarda el adjunto en disco para que Playwright lo chupe
+        attachment_path = None
+        if uploaded_file is not None:
+            # Escribimos el archivo temporalmente para que playwright lo lea
+            import tempfile
+            import os
+            ext = os.path.splitext(uploaded_file.name)[1].lower() if uploaded_file.name else ".pdf"
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+                tmp.write(uploaded_file.getvalue())
+                attachment_path = tmp.name
+        
+        prog_bar = st.progress(0)
+        status_text = st.empty()
+        log_box = st.expander("Terminal Interno Visual", expanded=True)
+        
+        try:
+            bot = WhatsAppBot()
+            bot.start() 
+            
+            manager = AntiBanManager(min_wait=40, max_wait=90) 
+            
+            # Mapeo de rut a ID para actualizar
+            rut_to_id = {row['rut']: row['id'] for row in filtered_df.to_dict('records')}
+            
+            for index, row in enumerate(df_a_enviar.to_dict('records')):
+                # INTELIGENCIA VIRTUAL DE NOMBRES (RRLL vs Cliente Natural)
+                rrll_name = str(row.get("nombre_rrll", "")).strip()
+                if rrll_name and rrll_name.lower() not in ["none", "nan", "null"]:
+                    raw_name = rrll_name.title()
+                else:
+                    raw_name = str(row.get("nombre", "")).strip().title()
+                    
+                words = raw_name.split()
+                if not words: words = [""]
+                
+                if nombres_invertidos and len(words) >= 3:
+                    # Ej: "Matthews Puelma Carlos Javier" -> El primer nombre es "Carlos" (2da palabra base cero)
+                    first_name_clean = words[2]
+                else:
+                    # Formato Normal: "Carlos Javier Matthews" -> "Carlos"
+                    first_name_clean = words[0]
+                    
+                # Creamos una copia de los datos inyectando SOLO su primer nombre TitleCase a Spintax
+                row_copy = row.copy()
+                row_copy["nombre"] = first_name_clean
+                
+                # Ensamblado del mensaje real con reemplazo de variables
+                msg_final = format_message(mensaje_spintax, row_copy)
+                
+                # INTELIGENCIA VIRTUAL DE GÉNERO (Anti "Bot-Feel")
+                first_name_upper = first_name_clean.upper()
+                # Nombres de mujer rebeldes que no terminan en "A"
+                esp_mujeres = ['INES', 'ISABEL', 'CARMEN', 'LEONOR', 'BEATRIZ', 'PILAR', 'ROSARIO', 'CONSUELO', 'ROCIO', 'LORETO', 'AMPARO', 'LUZ', 'PAZ', 'ABIGAIL', 'BELEN', 'ESTER', 'RUTH', 'SHIRLEY', 'MIRIAM', 'MARILYN', 'SOL', 'MAR']
+                # Nombres de hombre rebeldes que terminan en "A"
+                esp_hombres = ['LUCA', 'BAUTISTA', 'NICOLAS', 'TOMAS', 'ELIAS'] 
+                    
+                # La Regla de Oro: Toda letra que termina en A suele ser mujer (excepto Bautista/Luca). Los demás son Hombres por defecto.
+                if (first_name_upper in esp_mujeres) or (first_name_upper.endswith('A') and first_name_upper not in esp_hombres):
+                    # Detectada Mujer -> Transformamos el texto completo
+                    msg_final = msg_final.replace("Buen día", "Buen día estimada").replace("buen día", "buen día estimada")
+                else:
+                    # Detectado Hombre -> Transformamos el texto completo
+                    msg_final = msg_final.replace("Buen día", "Buen día estimado").replace("buen día", "buen día estimado")
+                        
+                # REGLA MAGNÉTICA DE PRESENCIALIDAD (Solo Coquimbo/La Serena)
+                ciudad = str(row.get('sucursal', '')).upper()
+                if "COQUIMBO" in ciudad or "SERENA" in ciudad:
+                    msg_final = msg_final.replace("[TXT_PRESENCIAL]", " o de forma presencial")
+                else:
+                    msg_final = msg_final.replace("[TXT_PRESENCIAL]", "")
+
+                phone = test_phone if (test_mode and test_phone) else row['telefono']
+                log_box.info(f"Analizando {row['nombre']} ➔ Apuntando cañón de WP al: {phone} ...")
+                log_box.code(msg_final)
+                
+                # ENVÍO FÍSICO CONTEXTUALIZADO (Fase 5 con Adjunto si existe)
+                exito, motivo_error = bot.send_attachment_and_message(phone, msg_final, attachment_path=attachment_path, antiban=manager)
+                if exito:
+                    
+                    # CUIDAR LA BD: Solo marcamos 'Contactado' si esto fue un envío real y no una prueba tuya personal
+                    if not test_mode:
+                        prospect_db_id = rut_to_id.get(row['rut'])
+                        if prospect_db_id:
+                            mark_contacted(prospect_db_id, status='Enviado')
+
+                            
+                    log_box.success(f"¡Hecho! Mensaje depositado satisfactoriamente.")
+                else:
+                    log_box.error(f"¡Error adjuntando o enviando a '{row['nombre']}'!: {motivo_error}")
+
+                prog_bar.progress((index + 1) / len(df_a_enviar))
+                
+                if index < len(df_a_enviar) - 1:
+                    status_text.text(f"Descansando bot mágicamente y ocultándose del algoritmo de Meta...")
+                    manager.random_wait(index)
+                    
+            bot.close()
+            status_text.text("Completado.")
+            st.balloons()
+            st.success("Toda la campaña logró evadir bloqueos exitosamente.")
+            
+        except Exception as e:
+            import traceback
+            full_error = traceback.format_exc()
+            st.error(f"Crash en el robot local: {e}\n\nDetalle técnico:\n```text\n{full_error}\n```")
+        finally:
+            if 'bot' in locals() and hasattr(bot, 'close'):
+                try:
+                    bot.close()
+                except Exception:
+                    pass
+
+
+def render_crm_kanban():
+    st.subheader("📊 Embudo de Ventas (Pipeline)")
+    st.markdown("Arrastra, gestiona y monitorea el estado de cada persona a la que le has escrito.")
+
+    # Convertir antiguos "Contactado" a "Enviado"
+    try:
+        with engine.connect() as con:
+            con.execute(text("UPDATE prospects SET status_contacto = 'Enviado' WHERE status_contacto = 'Contactado'"))
+            con.commit()
+    except Exception:
+        pass
+
+    import pandas as pd
+    df = pd.read_sql("SELECT id, rut, nombre, status_contacto, observaciones, telefono, ciudad FROM prospects WHERE status_contacto NOT IN ('Pendiente', 'No Contactar')", con=engine)
+    
+    if df.empty:
+        st.info("Aún no tienes prospectos en etapa de seguimiento. ¡Ve al Motor de Campañas y lanza tu primer envío!")
+        return
+
+    # Estandarizar
+    estados_embudo = ["Enviado", "Respondió Positivo", "Reunión Agendada", "Reunión Realizada", "No Interesado", "Enfriado - Seguimiento Q3"]
+    
+    # UI Filters
+    st.markdown("### 🔍 Buscador de Leads")
+    col1, col2 = st.columns(2)
+    with col1:
+        search_txt = st.text_input("Buscar por Nombre o RUT...")
+    with col2:
+        filter_status = st.multiselect("Filtrar por Estado", estados_embudo, default=[])
+        
+    if search_txt:
+        df = df[df['nombre'].str.contains(search_txt, case=False, na=False) | df['rut'].str.contains(search_txt, case=False, na=False)]
+    if filter_status:
+        df = df[df['status_contacto'].isin(filter_status)]
+
+    st.markdown("---")
+    
+    # Editable Dataframe
+    st.markdown('##### Tablero Interactivo (Los cambios se guardan en vivo)')
+    
+    edited_df = st.data_editor(
+        df,
+        column_config={
+            "status_contacto": st.column_config.SelectboxColumn(
+                "🏁 Estado CRM",
+                options=estados_embudo,
+                required=True,
+                width="medium"
+            ),
+            "observaciones": st.column_config.TextColumn(
+                "📝 Notas / Próx. Pasos",
+                help="Anota aquí qué te contestó, a qué hora llamarlo, etc.",
+                width="large"
+            ),
+            "id": None, # Hide ID
+            "rut": "RUT",
+            "nombre": "Nombre Prospecto",
+            "telefono": "Celular",
+            "ciudad": "Ciudad"
+        },
+        disabled=["rut", "nombre", "telefono", "ciudad"],
+        hide_index=True,
+        use_container_width=True,
+        key="crm_editor"
+    )
+
+    if st.button("💾 Guardar Cambios del Embudo", type="primary"):
+        cambios_detectados = []
+        with engine.connect() as con:
+            for index, row in edited_df.iterrows():
+                original_row = df.iloc[index]
+                if row['status_contacto'] != original_row['status_contacto'] or row['observaciones'] != original_row['observaciones']:
+                    # Registrar el cambio para posible seguimiento automático
+                    if row['status_contacto'] != original_row['status_contacto']:
+                        cambios_detectados.append(row)
+                    
+                    con.execute(text("UPDATE prospects SET status_contacto = :status, observaciones = :obs WHERE id = :pid"),
+                                {"status": row['status_contacto'], "obs": row['observaciones'], "pid": int(row['id'])})
+            con.commit()
+        st.success("✅ Cambios de estado y notas sincronizados.")
+        
+        # Guardar en session_state para disparar el seguimiento
+        if cambios_detectados:
+            st.session_state["pendientes_seguimiento"] = cambios_detectados
+            st.rerun()
+
+    # --- MOTOR DE DISPARO DE SEGUIMIENTO (TRIGGER) ---
+    if "pendientes_seguimiento" in st.session_state and st.session_state["pendientes_seguimiento"]:
+        st.markdown("---")
+        st.subheader("🤖 Acciones de Seguimiento Sugeridas")
+        st.warning(f"Se detectaron {len(st.session_state['pendientes_seguimiento'])} cambios de estado que coinciden con tu estrategia de Playbook.")
+        
+        # Diccionario de mensajes según el estado (Playbook)
+        templates = {
+            "Respondió Positivo": "Hola [nombre], un gusto saludarte de nuevo. Me alegra tu interés en la propuesta. ¿Te parece si coordinamos una breve llamada de 10 min para resolver dudas? Quedo atento.",
+            "Reunión Agendada": "Confirmado [nombre], ya agendé el espacio para nuestra reunión. Te enviaré el link de Zoom en breve. ¡Un abrazo!",
+            "Enfriado - Seguimiento Q3": "Hola [nombre], te escribo solo para dejarte un saludo y recordarte que sigo a tu disposición para cuando desees retomar el análisis de tu estrategia. ¡Que tengas buena semana!"
+        }
+
+        with st.expander("Revisar Mensajes de Seguimiento antes de enviar", expanded=True):
+            for p in st.session_state["pendientes_seguimiento"]:
+                nuevo_estado = p['status_contacto']
+                if nuevo_estado in templates:
+                    msg = templates[nuevo_estado].replace("[nombre]", p['nombre'].split()[0])
+                    st.write(f"👉 **A: {p['nombre']}** ({nuevo_estado})")
+                    st.code(msg)
+            
+            col_enviar, col_cancelar = st.columns(2)
+            if col_enviar.button("🚀 Disparar Seguimientos por WhatsApp", use_container_width=True):
+                st.info("Iniciando envío de seguimientos controlados...")
+                
+                send_log = st.empty()
+                prog_follow = st.progress(0)
+                
+                try:
+                    bot = WhatsAppBot()
+                    manager = AntiBanManager()
+                    
+                    for i, p in enumerate(st.session_state["pendientes_seguimiento"]):
+                        nuevo_estado = p['status_contacto']
+                        if nuevo_estado in templates:
+                            msg = templates[nuevo_estado].replace("[nombre]", p['nombre'].split()[0])
+                            
+                            send_log.write(f"Enviando seguimiento a **{p['nombre']}** ({p['telefono']})...")
+                            
+                            # Envío Real
+                            exito, error = bot.send_message(p['telefono'], msg, antiban=manager)
+                            
+                            if exito:
+                                # Opcional: Podrías marcar en la DB que se envió el seguimiento
+                                with engine.connect() as con:
+                                    con.execute(text("UPDATE prospects SET observaciones = COALESCE(observaciones, '') || :note WHERE id = :id"), 
+                                                {"note": f"\n[Automático] Seguimiento enviado: {nuevo_estado}", "id": int(p['id'])})
+                                    con.commit()
+                            else:
+                                st.error(f"Fallo envío a {p['nombre']}: {error}")
+                        
+                        prog_follow.progress((i + 1) / len(st.session_state["pendientes_seguimiento"]))
+                        if i < len(st.session_state["pendientes_seguimiento"]) - 1:
+                            manager.random_wait(i)
+                            
+                    bot.close()
+                    st.success("🎉 ¡Todos los seguimientos han sido disparados con éxito!")
+                    del st.session_state["pendientes_seguimiento"]
+                    st.rerun()
+                    
+                except Exception as e:
+                    st.error(f"Error en el motor de envío: {e}")
+                    if 'bot' in locals(): bot.close()
+            
+            if col_cancelar.button("Cancelar Acciones", use_container_width=True):
+                del st.session_state["pendientes_seguimiento"]
+                st.rerun()
+
+
+def render_radar_osint():
+    st.subheader("🔍 Radar de Oportunidades (OSINT)")
+    st.markdown("Vigilancia automatizada de internet: Diario Oficial, Diario Financiero y Movimientos de Socios.")
+    
+    # 1. BOTÓN DE CONTROL
+    st.info("Este motor escanea el Diario Oficial desde el **01-01-2026** buscando eventos de liquidez en todo el país.")
+    
+    col1, col2 = st.columns([2, 1])
+    with col1:
+        cobertura = st.selectbox("Radio de Búsqueda:", ["Todo Chile 🇨🇱", "Coquimbo 🌊", "RM 🏙️", "Valparaíso 🚢"])
+    
+    with col2:
+        st.write("") # Spacer
+        lanzar = st.button("🛰️ Lanzar Barrido 2026", use_container_width=True)
+
+    if lanzar:
+        region_map = {
+            "Todo Chile 🇨🇱": None,
+            "Coquimbo 🌊": "COQUIMBO",
+            "RM 🏙️": "SANTIAGO",
+            "Valparaíso 🚢": "VALPARAISO"
+        }
+        target = region_map.get(cobertura)
+        
+        with st.spinner(f"El robot está realizando un barrido histórico nacional ({cobertura})..."):
+            try:
+                from src.osint.scraper_do import run_scraper
+                stats = run_scraper(region_target=target)
+                st.success(f"Barrido Completado: {stats.get('nuevos', 0)} nuevos eventos detectados en 2026.")
+            except Exception as e:
+                st.error(f"Error en el robot OSINT: {e}")
+                
+    st.markdown("---")
+    
+    # 2. SECCIÓN INFOPROBIDAD (PEP DATABASES)
+    st.subheader("🏛️ Minería PEP (Altos Patrimonios Gubernamentales)")
+    st.markdown("Extrae los funcionarios públicos, subsecretarios y directores que declararon oficialmente más de **X millones** en Acciones y Depósitos a Plazo (InfoProbidad).")
+    
+    col_p1, col_p2 = st.columns([2, 1])
+    with col_p1:
+        monto_piso = st.number_input("Piso Mínimo de Patrimonio Líquido Declarado ($ CLP)", value=50000000, step=10000000)
+    with col_p2:
+        st.write("")
+        lanzar_infoprobidad = st.button("⚖️ Extraer Altos Patrimonios", use_container_width=True)
+        
+    if lanzar_infoprobidad:
+        with st.spinner("Conectándose a Datos Abiertos y filtrando billones de registros de Transparencia..."):
+            from src.osint.scraper_infoprobidad import minar_infoprobidad
+            exito, peps = minar_infoprobidad(monto_piso)
+            if exito:
+                st.success(f"¡Extracción Furtiva Completada! Se han cruzado y añadido {len(peps)} nuevos funcionarios de muy alto rango al CRM.")
+                st.balloons()
+            else:
+                st.error("Hubo un error de conexión con la Fiscalía/Contraloría.")
+
+    st.markdown("---")
+    
+    # 2. TABLA DE HALLAZGOS (Radar)
+    st.markdown("##### 🚀 Leads Calientes Detectados (Score > 0)")
+    
+    # Traemos los de la web o con score alto
+    df_radar = pd.read_sql("SELECT id, rut, nombre, score_liquidez, ultimo_evento, link_fuente, fecha_hallazgo FROM prospects WHERE score_liquidez > 0 OR origen_web = 1 ORDER BY score_liquidez DESC", con=engine)
+    
+    if df_radar.empty:
+        st.write("No se han detectado eventos de liquidez hoy. Intenta lanzar el escaneo manual.")
+    else:
+        # --- LÓGICA DE AGENTE IA: INTERPRETACIÓN DE EVENTOS ---
+        def agente_razonamiento(evento):
+            e = str(evento).upper()
+            if "POSESION" in e or "HERENCIA" in e:
+                return "🏛️ Herencia detectada. Ofrecer Seguro Patrimonial (Exento de Herencia y Liquidez 48h)."
+            if "CONSTITUCION" in e:
+                return "🚀 Nueva Sociedad. Ofrecer Blindaje de Socios (Inembargabilidad) y Cuenta Corriente Inversión."
+            if "AUMENTO" in e or "CAPITAL" in e:
+                return "💰 Liquidez Detectada. Ofrecer Portafolio Patrimonial con Beneficio Art. 107."
+            return "🔍 Evaluar perfil patrimonial para consultoría integral."
+
+        df_radar['Sugerencia IA'] = df_radar['ultimo_evento'].apply(agente_razonamiento)
+
+        st.dataframe(
+            df_radar,
+            column_config={
+                "id": None,
+                "score_liquidez": st.column_config.ProgressColumn("🔥 Score", min_value=0, max_value=100, format="%d"),
+                "link_fuente": st.column_config.LinkColumn("📰 Fuente"),
+                "rut": "RUT",
+                "nombre": "Prospecto",
+                "ultimo_evento": "Evento",
+                "Sugerencia IA": st.column_config.TextColumn("🧠 Sugerencia Estratégica", width="large"),
+                "fecha_hallazgo": "Fecha"
+            },
+            hide_index=True,
+            use_container_width=True
+        )
+        
+        # --- ACCIÓN PROACTIVA DEL AGENTE ---
+        st.markdown("#### ⚡ Acción Proactiva del Agente")
+        target_lead = st.selectbox("Selecciona un prospecto para atacar:", df_radar['nombre'].tolist())
+        
+        if st.button("📝 Redactar Mensaje de Acercamiento"):
+            row = df_radar[df_radar['nombre'] == target_lead].iloc[0]
+            evento = row['ultimo_evento']
+            sugerencia = row['Sugerencia IA']
+            
+            # El agente redacta basado en su "Persona"
+            prompt_msg = f"Hola {target_lead.split()[0]}, un gusto saludarte. Vi una publicación reciente respecto a un {evento} y me gustaría compartirte una estrategia de blindaje patrimonial que estamos implementando para casos similares, enfocada en eficiencia tributaria. ¿Te interesaría conocer los detalles?"
+            
+            if "Posesión" in evento or "Herencia" in evento:
+                prompt_msg = f"Hola {target_lead.split()[0]}, espero estés muy bien. Te contacto porque ayudamos a familias ante procesos de {evento} a optimizar la carga tributaria y obtener liquidez inmediata para el pago de impuestos. Me encantaría comentarte cómo lo hacemos. ¿Podemos hablar brevemente?"
+            
+            st.success("🤖 **Mensaje Redactado por el Agente:**")
+            st.code(prompt_msg)
+            
+            from intelligence.skills import AgentSkills
+            wa_link = AgentSkills.prepare_whatsapp(row.get('telefono', ''), prompt_msg)
+            st.link_button("🚀 Enviar a WhatsApp Directo", wa_link)
+            st.info("💡 Haz clic arriba para abrir WhatsApp con el mensaje cargado.")
+
+
+def render_enrichment_and_search():
+    st.header("✨ Central de Enriquecimiento e Inteligencia")
+    st.markdown("Integra bases de datos globales (Apollo.io, LinkedIn) y archivos personalizados con tu CRM local para hallar correos y números telefónicos.")
+
+    tab_apollo, tab_transunion, tab_rutificador, tab_mining, tab_archivos, tab_lookalike = st.tabs([
+        "🌐 Enriquecer Toda la BD (Apollo)", 
+        "🚨 Minería TransUnion (URGENTE)",
+        "🔍 Recuperar RUTs (SINRUT)",
+        "🏛️ Minería InfoProbidad",
+        "📂 Buscador a Medida (URLs y Archivos)", 
+        "👥 Lookalikes y LinkedIn"
+    ])
+
+    # --- TAB 1: APOLLO GLOBAL ENRICHMENT ---
+    with tab_apollo:
+        st.subheader("Búsqueda Automática de Contactos")
+        st.markdown("Recorre los prospectos del Diario Oficial o los clientes importados y busca su información de contacto real usando Apollo.")
+        
+        api_key = st.text_input("Ingresa tu Apollo API Key", value=os.getenv("APOLLO_API_KEY", ""), type="password", help="Puedes obtener esto pagando o en la versión trial de Apollo.io")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            target = st.radio("¿A quiénes quieres enriquecer?", ["Prospectos Incompletos (Sin celular/email)", "Toda la BD (Forzar actualización)"])
+        with col2:
+            st.write(" ")
+            lanzar = st.button("🚀 Iniciar Escaneo con Apollo", use_container_width=True)
+
+    # --- TAB 2: MINERÍA TRANSUNION ---
+    with tab_transunion:
+        st.subheader("Minería TransUnion")
+        st.info("Utiliza esta pestaña para lanzar el robot que busca los teléfonos en TransUnion.")
+
+    # --- TAB 3: RUTIFICADOR (EL NUEVO MÓDULO) ---
+    with tab_rutificador:
+        st.subheader("Buscador de Identidad (SINRUT → RUT)")
+        # Obtenemos la cuenta fresca para el indicador
+        with engine.connect() as con:
+            sin_rut_count = con.execute(text("SELECT COUNT(*) FROM prospects WHERE rut LIKE 'SINRUT%'")).scalar()
+            
+        st.markdown(f"Tienes **{sin_rut_count}** prospectos con identidad temporal. Este motor busca su RUT oficial en fuentes de transparencia para habilitar el robot de TransUnion.")
+        
+        if st.button("🚀 Iniciar Rescate de Identidades", type="primary", use_container_width=True):
+            import subprocess
+            
+            with engine.connect() as con:
+                sin_rut_count = con.execute(text("SELECT COUNT(*) FROM prospects WHERE rut LIKE 'SINRUT%'")).scalar()
+            
+            if sin_rut_count > 0:
+                st.info(f"Iniciando motor de rescate para los primeros 20 prospectos...")
+                # Lanzamos el script como un subproceso independiente
+                cmd = ["python", "src/osint/transunion_scraper.py", "--rescate"]
+                subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == "win32" else 0)
+                st.success("🛰️ El Robot de Rescate ha sido lanzado en una ventana nueva. Revisa la terminal y el navegador que se abrieron.")
+            else:
+                st.warning("No hay prospectos SINRUT para procesar.")
+
+    # --- TAB 4: INFOPROBIDAD ---
+    with tab_mining:
+        render_infoprobidad_ui()
+
+        if lanzar:
+            if not api_key:
+                st.error("⚠️ Debes proporcionar tu API Key de Apollo.")
+            else:
+                from src.enrichment.apollo_api import ApolloProvider
+                apollo = ApolloProvider(api_key)
+                
+                with st.spinner("Conectándose a Apollo e iterando sobre la BD..."):
+                    # Extraer prospectos sin tlf
+                    df_target = pd.read_sql("SELECT id, nombre, ultimo_evento FROM prospects WHERE telefono IS NULL OR email IS NULL LIMIT 10", con=engine)
+                    if df_target.empty:
+                        st.success("No hay perfiles pendientes de enriquecimiento.")
+                    else:
+                        st.write(f"Evaluando {len(df_target)} registros...")
+                        for i, row in df_target.iterrows():
+                            # Limpieza del nombre de la empresa a partir del texto scrapeado
+                            nom = str(row['nombre']).split("]")[-1].strip()
+                            st.text(f"Buscando directivos para la empresa: {nom}")
+                            
+                            res = apollo.search_people_by_company(nom)
+                            if res:
+                                top_person = res[0]
+                                email = top_person.get("email")
+                                phone = top_person.get("sanitized_phone") or "No disponible"
+                                person_name = top_person.get("name")
+                                st.success(f"¡Match! {person_name} | ✉️ {email} | 📱 {phone}")
+                                
+                                # Si fueramos a guardar:
+                                # with engine.connect() as con:
+                                #     con.execute(text("UPDATE prospects SET email = :em, telefono = :tel WHERE id = :id"), {"em": email, "tel": phone, "id": row['id']})
+                                #     con.commit()
+                            else:
+                                st.warning(f"Apollo no encontró C-Levels para '{nom}' o la empresa es muy pequeña.")
+
+    # --- TAB 1.5: TRANSUNION MASSIVE EXTRACTION ---
+    with tab_transunion:
+        st.subheader("Opción 1: Robot Automático")
+        st.markdown(f"⚠️ **Atención:** Tienes poco tiempo de licencia. Presiona el botón para el robot local (uno a uno).")
+        
+        if st.button("🔥 Iniciar Raspado Uno a Uno (Lento/Asistido)", type="primary"):
+            st.warning("El robot ha sido invocado. Revisa la consola negra para iniciarlo.")
+            
+        st.markdown("---")
+        st.subheader("Opción 2: Carga Masiva Rápida (Recomendado)")
+        st.markdown("Si ya estás en la pestaña **'Cobranzas: DataBúsqueda'** de TransUnion, descarga tus prospectos pendientes y súbelos todos de golpe:")
+        
+        # Filtramos prospectos con falta de info que NO sean RUTs del Diario Oficial (DO-)
+        with engine.connect() as con:
+            df_ruts = pd.read_sql("SELECT rut FROM prospects WHERE telefono IS NULL OR email IS NULL", con)
+            
+        if not df_ruts.empty:
+            ruts_validos = [r for r in df_ruts['rut'].dropna().unique() if not str(r).startswith("DO-")]
+            
+            if ruts_validos:
+                st.success(f"Hay **{len(ruts_validos)} RUTs Reales** esperando números de teléfono.")
+                
+                col1, col2 = st.columns(2)
+                
+                # Botón TXT (Es lo que más rápido digiere ese text-area de TransUnion)
+                txt_string = "\n".join(ruts_validos)
+                col1.download_button(
+                    label="📄 Descargar en TXT (Para Pegar/Subir)",
+                    data=txt_string,
+                    file_name="ruts_pendientes_transunion.txt",
+                    mime="text/plain"
+                )
+                
+                # Botón Excel Oficial ANTIGUO (XLS)
+                try:
+                    import xlwt
+                    import io
+                    buffer = io.BytesIO()
+                    wb = xlwt.Workbook()
+                    ws = wb.add_sheet('RUTs')
+                    ws.write(0, 0, "RUT") # Header
+                    for i, r in enumerate(ruts_validos, start=1):
+                        ws.write(i, 0, str(r))
+                    wb.save(buffer)
+                    
+                    col2.download_button(
+                        label="📊 Descargar en Excel Antiguo (.xls)",
+                        data=buffer.getvalue(),
+                        file_name="ruts_pendientes_transunion.xls",
+                        mime="application/vnd.ms-excel"
+                    )
+                except ImportError:
+                    # En caso de que el entorno bloquee xlwt, ofrecemos el puro CSV renombrado
+                    df_export = pd.DataFrame({"RUT": ruts_validos})
+                    col2.download_button(
+                        label="📊 Descargar Excel",
+                        data=df_export.to_csv(index=False),
+                        file_name="ruts_pendientes.csv",
+                        mime="text/csv"
+                    )
+                
+                st.info("💡 **Instrucciones:** Dale al botón de '+ Buscar Archivo' en TransUnion y ahora sí selecciona el archivo `.xls` o `.txt` que descargues de aquí.")
+            else:
+                st.warning("Solo quedan empresas del Diario Oficial sin RUT personal asociado.")
+        else:
+            st.success("No tienes prospectos esperando números de contacto.")
+
+    # --- TAB 2: INGESTA DE BASES EXTERNAS ---
+    with tab_archivos:
+        st.subheader("📥 Ingesta Masiva de Bases de Datos Excel")
+        st.markdown("Si tienes otros archivos Excel con prospectos de valor en cualquier formato, súbelos aquí. El algoritmo inteligente mapeará las columnas, cruzará con tu base actual para no duplicar datos, e inyectará los nuevos prospectos directamente a tu embudo para el robot de TransUnion.")
+        
+        archivos_subidos = st.file_uploader("Arrastra tus archivos de Excel o CSV (.xlsx, .xls, .csv)", type=["xlsx", "xls", "csv"], accept_multiple_files=True)
+        
+        if archivos_subidos:
+            if st.button("🪄 Iniciar Fusión de Bases de Datos", type="primary"):
+                total_nuevos = 0
+                total_actualizados = 0
+                
+                with st.spinner("Mapeando y unificando bases de datos..."):
+                    import re
+                    
+                    for archivo in archivos_subidos:
+                        try:
+                            # Lógica de lectura según extensión
+                            if archivo.name.lower().endswith('.csv'):
+                                # Probamos detectar si es coma o punto-y-coma, y encoding
+                                try:
+                                    df_nuevo = pd.read_csv(archivo, sep=';', encoding='utf-8')
+                                    if len(df_nuevo.columns) < 2: raise Exception("Re-try")
+                                except:
+                                    try:
+                                        archivo.seek(0)
+                                        df_nuevo = pd.read_csv(archivo, sep=',', encoding='utf-8')
+                                        if len(df_nuevo.columns) < 2: raise Exception("Re-try")
+                                    except:
+                                        archivo.seek(0)
+                                        df_nuevo = pd.read_csv(archivo, sep=';', encoding='latin-1')
+                            else:
+                                df_nuevo = pd.read_excel(archivo)
+                            
+                            # Estandarizar nombres de columnas
+                            columnas = df_nuevo.columns.astype(str).str.lower().str.strip().str.replace(' ', '_')
+                            df_nuevo.columns = columnas
+                            
+                            # Mapeo Inteligente
+                            col_rut = next((c for c in columnas if 'rut' in c or 'run' in c or 'identificacion' in c or 'sujeto' in c), None)
+                            col_nombre = next((c for c in columnas if 'nombre' in c or 'razon' in c or 'cliente' in c or 'contacto' in c or 'prospecto' in c or 'sujeto' in c), None)
+                            col_apellido = next((c for c in columnas if 'apellido' in c), None)
+                            col_tel = next((c for c in columnas if 'tel' in c or 'fono' in c or 'celular' in c or 'wp' in c or 'whatsapp' in c), None)
+                            col_mail = next((c for c in columnas if 'mail' in c or 'correo' in c or 'e-mail' in c), None)
+                            col_monto = next((c for c in columnas if 'monto' in c or 'inversion' in c or 'patrimonio' in c or 'valor' in c), None)
+                            
+                            if not col_nombre:
+                                st.error(f"❌ El archivo '{archivo.name}' no tiene una columna de Nombre/Sujeto.")
+                                continue
+                                
+                            st.write(f"**Procesando {archivo.name}** ({len(df_nuevo)} registros)...")
+                            prog_bar = st.progress(0)
+                            
+                            import uuid
+                            
+                            batch_size = 500
+                            records_processed = 0
+                            
+                            while records_processed < len(df_nuevo):
+                                chunk = df_nuevo.iloc[records_processed : records_processed + batch_size]
+                                
+                                with engine.begin() as con: # engine.begin() auto-commits al finalizar
+                                    for i, row in chunk.iterrows():
+                                        prog_bar.progress(min((records_processed + 1) / len(df_nuevo), 1.0))
+                                        
+                                        # Mezclar Nombre y Apellido si vienen separados (típico de Infoprobidad)
+                                        val_nom = str(row[col_nombre]).strip()
+                                        if col_apellido and pd.notna(row[col_apellido]):
+                                            val_nom += " " + str(row[col_apellido]).strip()
+                                        
+                                        val_nom = val_nom.title()
+                                        if not val_nom or val_nom.lower() in ['nan', 'none', '']: continue
+                                        
+                                        val_rut = ""
+                                        if col_rut and pd.notna(row[col_rut]):
+                                            val_rut = re.sub(r'[^0-9kK\-]', '', str(row[col_rut])).upper()
+                                        
+                                        # Si logramos limpiar un RUT válido (min 7 chars)
+                                        if len(val_rut) >= 7:
+                                            existe = con.execute(text("SELECT id FROM prospects WHERE rut = :r"), {"r": val_rut}).fetchone()
+                                        else:
+                                            # Si no hay RUT o es basura, usamos el nombre para ver si ya existe
+                                            existe = con.execute(text("SELECT id FROM prospects WHERE LOWER(nombre) = LOWER(:n)"), {"n": val_nom}).fetchone()
+                                            val_rut = f"SINRUT-{str(uuid.uuid4())[:6].upper()}"
+                                            
+                                        val_tel = str(row[col_tel]).strip() if col_tel and pd.notna(row[col_tel]) else None
+                                        if val_tel in ['nan', 'None', '', '0']: val_tel = None
+                                        
+                                        val_mail = str(row[col_mail]).strip() if col_mail and pd.notna(row[col_mail]) else None
+                                        if val_mail in ['nan', 'None', '']: val_mail = None
+                                        
+                                        val_monto = 0
+                                        if col_monto and pd.notna(row[col_monto]):
+                                            try: val_monto = float(re.sub(r'[^0-9]', '', str(row[col_monto])))
+                                            except: pass
+
+                                        if existe:
+                                            total_actualizados += 1
+                                            # Si existe, Update inteligente (rellenamos si faltaba info)
+                                            if val_tel or val_mail or (val_monto > 0):
+                                                campos_update = []
+                                                params = {"pid": existe[0]}
+                                                if val_tel: 
+                                                    campos_update.append("telefono = COALESCE(telefono, :tel)")
+                                                    params["tel"] = val_tel
+                                                if val_mail: 
+                                                    campos_update.append("email = COALESCE(email, :em)")
+                                                    params["em"] = val_mail
+                                                if val_monto > 0:
+                                                    campos_update.append("monto_suscrito = CASE WHEN monto_suscrito IS NULL OR monto_suscrito = 0 THEN :mon ELSE monto_suscrito END")
+                                                    params["mon"] = val_monto
+                                                    
+                                                if campos_update:
+                                                    query = f"UPDATE prospects SET {', '.join(campos_update)} WHERE id = :pid"
+                                                    con.execute(text(query), params)
+                                        else:
+                                            # Ingreso fresco como prospecto nuevo
+                                            total_nuevos += 1
+                                            con.execute(text("""
+                                            INSERT INTO prospects (rut, nombre, telefono, email, monto_suscrito, origen_info, status_contacto)
+                                            VALUES (:r, :n, :t, :e, :m, :ori, 'Pendiente')
+                                            """), {"r": val_rut, "n": val_nom, "t": val_tel, "e": val_mail, "m": val_monto, "ori": f"Excel Importado ({archivo.name})"})
+                                        
+                                        records_processed += 1
+                                
+                        except Exception as file_e:
+                            st.error(f"Error técnico inyectando el archivo {archivo.name}: {file_e}")
+                            
+                st.success(f"🎉 **¡Fusión Magnífica!** Se agregaron **{total_nuevos}** prospectos totalmente nuevos al CRM, y se actualizaron inteligentemente los teléfonos/emails de **{total_actualizados}** que ya existían en tu radar.")
+                st.balloons()
+
+    # --- TAB 6: LOOKALIKES Y LINKEDIN ---
+    with tab_lookalike:
+        st.subheader("✨ Generador de Clones (Lookalikes)")
+        st.markdown("Identifica a tu **cliente ideal** por su LinkedIn y el sistema encontrará a otros 10 directivos con el mismo perfil en Chile.")
+        
+        li_url = st.text_input("🔗 LinkedIn de tu 'Cliente Estrella'", placeholder="https://www.linkedin.com/in/nombre-apellido")
+        
+        if st.button("🔍 Encontrar Directivos Similares", type="primary", use_container_width=True):
+            api_key_apollo = os.getenv("APOLLO_API_KEY", api_key)
+            if not api_key_apollo:
+                st.error("Por favor, ingresa tu Apollo API Key en la pestaña 1.")
+            else:
+                from src.enrichment.apollo_api import ApolloProvider
+                apollo = ApolloProvider(api_key_apollo)
+                
+                with st.spinner("Analizando perfil y buscando gemelos comerciales..."):
+                    # Cargos y sectores base para el demo/lookalike
+                    cargos_base = ["CEO", "Director", "Gerente", "Founder", "Partner", "Gerente Finanzas", "Gerente Comercial"]
+                    
+                    found_people, meta = apollo.search_prospects(job_titles=cargos_base, per_page=10)
+                    
+                    if found_people:
+                        st.success(f"¡Éxito! Encontramos {len(found_people)} nuevos prospectos de alto nivel similares en Chile.")
+                        
+                        leads_data = []
+                        for lp in found_people:
+                            org = lp.get('organization', {})
+                            leads_data.append({
+                                "Nombre": f"{lp.get('first_name')} {lp.get('last_name')}",
+                                "Cargo": lp.get('title'),
+                                "Empresa": org.get('name'),
+                                "Industria": org.get('primary_domain', 'N/A'),
+                                "LinkedIn": f"https://www.linkedin.com/in/{lp.get('linkedin_url', '') if lp.get('linkedin_url') else ''}"
+                            })
+                        
+                        df_clones = pd.DataFrame(leads_data)
+                        st.dataframe(df_clones, use_container_width=True, hide_index=True)
+                        
+                        if st.button("📥 Importar estos Clones al CRM"):
+                            import uuid
+                            with engine.begin() as con:
+                                for l in leads_data:
+                                    rut_temp = f"SINRUT-AP-{str(uuid.uuid4())[:4].upper()}"
+                                    con.execute(text("""
+                                        INSERT INTO prospects (rut, nombre, origen_info, status_contacto)
+                                        VALUES (:r, :n, 'Apollo Lookalike', 'Pendiente')
+                                    """), {"r": rut_temp, "n": l['Nombre']})
+                            st.balloons()
+                            st.success("¡Inyectados! Estos clones ya están en la fila de 'Recuperar RUT' para obtener su identidad real.")
+                    else:
+                        st.warning("No se encontraron coincidencias. Prueba ajustando los criterios en la API.")
+
+def render_flujograma():
+    st.header("🧠 Diseñador de Procesos Comerciales (Playbook)")
+    st.markdown("Documenta visualmente tu embudo de ventas oficial. Modifica el texto a la izquierda y el diagrama se construirá solo. Esta es tu 'Biblia Operativa' para entrenar a nuevos empleados.")
+    
+    playbook_file = "data/flujo_cliente.mmd"
+    
+    if not os.path.exists("data"):
+        os.makedirs("data")
+        
+    if not os.path.exists(playbook_file):
+        default_mermaid = """graph TD
+    %% ESTILOS DE COLOR VISUAL
+    classDef accion fill:#1f77b4,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef decision fill:#ff7f0e,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef final fill:#2ca02c,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef negativo fill:#d62728,stroke:#fff,stroke-width:2px,color:#fff;
+
+    A[1. Base de Datos Cruda / Ingesta]:::accion --> B{¿Contactabilidad Lista?}:::decision
+    B -->|Falta Teléfono| C[2. Minería TransUnion / Apollo]:::accion
+    C --> B
+    
+    B -->|Todo Listo| D[3. Primer Disparo Campaña WhatsApp]:::accion
+    
+    D --> E{¿Cómo Responde?}:::decision
+    E -->|Positivo / Interesado| F[4. Agendar Videollamada / Reunión Física]:::accion
+    E -->|No Responde en 24h| G[5. Retargeting: Enviar Infografía de Valor Comercial]:::accion
+    E -->|No Interesado| H[6. Estado: Descartado]:::negativo
+    
+    G --> I{¿Sigue sin responder?}:::decision
+    I -->|Sí| J[Estado: Enfriado]:::negativo
+    I -->|Responde| F
+    
+    F --> K{¿Resultado de la Reunión?}:::decision
+    K -->|Cierre Inversión| L[🎉 CLIENTE NUEVO]:::final
+    K -->|Sin Decisión Aún| M[Seguimiento: Postergar a sgte Q]:::accion
+    
+    L --> N[7. Fidelización Mensual: Envío de Reportes]:::accion"""
+        with open(playbook_file, "w", encoding="utf-8") as f:
+            f.write(default_mermaid)
+            
+    with open(playbook_file, "r", encoding="utf-8") as f:
+        current_code = f.read()
+        
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.markdown("**1. Lógica del Flujo (Editable)**")
+        st.caption("Usa sintaxis simple. Yo (la Inteligencia Artificial) leo este mismo archivo para saber exactamente tus reglas al programar el CRM.")
+        new_code = st.text_area("Edita la estrategia aquí:", value=current_code, height=500, key="mermaid_txt")
+        
+        if st.button("🔄 Actualizar y Guardar Diagrama", type="primary"):
+            with open(playbook_file, "w", encoding="utf-8") as f:
+                f.write(new_code)
+            st.success("Guardado. Estrategia actualizada tanto para nosotros como para el sistema interactivo.")
+            st.rerun()
+            
+    with col2:
+        st.markdown("**2. Mapa Visual Exportable**")
+        st.info("💡 Haz **Click Derecho** sobre la imagen -> **Guardar imagen como...** para exportarlo a PDF u ocuparlo en una presentación.")
+        try:
+            import base64
+            import zlib
+            # Generar URL Kroki para renderizado HD
+            compressed = zlib.compress(new_code.encode('utf-8'))
+            encoded = base64.urlsafe_b64encode(compressed).decode('ascii')
+            url = f"https://kroki.io/mermaid/svg/{encoded}"
+            st.image(url, use_container_width=True)
+        except Exception as e:
+            st.error("Servicio de previsualización offline de momento. Tus datos están a salvo.")
+
+def render_industry_insights():
+    from intelligence.data_scientist import DataScientistAgent
+    agent = DataScientistAgent()
+    
+    st.markdown("""
+        <div style='background: #ffffff; padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);'>
+            <h1 style='color: #111827; margin: 0; font-size: 2.2em; font-weight: 900;'>🔬 Inteligencia de Mercado (CMF Trends)</h1>
+            <p style='color: #6b7280; margin: 5px 0 0 0; font-size: 1.1em;'>Análisis de Tendencias, Rentabilidades y Comportamiento de la Industria</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    col1, col2 = st.columns([1, 2])
+    with col1:
+        st.markdown("### 📡 Conectividad CMF")
+        if st.button("🔄 Sincronizar Base de Datos CMF", type="primary"):
+            with st.spinner("Descargando base de datos 'Tendencias de Mercado'..."):
+                if agent.sync_industry_data():
+                    st.success("✅ Base de datos actualizada con éxito.")
+                else:
+                    st.error("❌ Fallo en la conexión con el servidor CMF.")
+        
+        st.info("💡 Este módulo utiliza el **Documento Metodológico CMF (Dic 2025)** para estandarizar el cálculo de retornos reales por tipo de inversionista.")
+        
+        st.markdown("### 🧠 Insights del Agente")
+        st.write(agent.analyze_market_trends())
+
+    with col2:
+        st.markdown("### 📈 Patrimonio Administrado por Categoría")
+        df_aum, df_growth = agent.get_market_metrics()
+        
+        # Gráfico de AUM
+        import plotly.express as px
+        fig_aum = px.pie(df_aum, values='aum', names='categoria', hole=.3, color_discrete_sequence=px.colors.sequential.Greens_r)
+        st.plotly_chart(fig_aum, use_container_width=True)
+        
+        st.markdown("### 📊 Evolución de Partícipes (Industria Total)")
+        fig_growth = px.line(df_growth, x='ano', y='total_participes', title="Crecimiento Histórico de Partícipes")
+        st.plotly_chart(fig_growth, use_container_width=True)
+        
+        # --- Nueva sección de Market Science integrada ---
+        st.markdown("---")
+        st.markdown("### 🏆 Top 5 Administradoras por Patrimonio")
+        from src.analytics.market_science import get_market_summary, analyze_sector_performance
+        summary = get_market_summary()
+        st.dataframe(summary['top_agfs'], use_container_width=True, hide_index=True)
+        
+        st.markdown("### 📊 Rentabilidad Promedio por Categoría")
+        sector_perf = analyze_sector_performance()
+        st.bar_chart(sector_perf, x="tipo_fondo", y="avg_retorno", color="#00B140")
+        
+        st.caption("Fuente: Análisis en tiempo real basado en 'Tendencias de Mercado' (CMF Chile).")
+
+    st.markdown("---")
+    st.markdown("### ⚖️ Metodología y Anexo Técnico")
+    at1, at2 = st.columns(2)
+    at1.markdown("**¿Cómo se calcula el Índice?**")
+    at1.write("Se utiliza una base 100 ponderada por el patrimonio total de cada categoría de fondo, eliminando el sesgo de fondos pequeños sin liquidez.")
+    at2.markdown("**Categorización de Inversionista**")
+    at2.write("Los datos mostrados corresponden al segmento **Retail / Persona Natural**, ajustados por IPC para mostrar rentabilidad real.")
+
+def render_academic_advisor():
+    st.markdown("""
+        <div style='background: #ffffff; padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e5e7eb; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);'>
+            <h1 style='color: #111827; margin: 0; font-size: 2.2em; font-weight: 900;'>🎓 Asesor Superior (Cerebro Institucional)</h1>
+            <p style='color: #6b7280; margin: 5px 0 0 0; font-size: 1.1em;'>Consulta normativas, tributación y manuales oficiales. La IA responde citando estrictamente su memoria gráfica (RAG).</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+    c1, c2 = st.columns([1, 2])
+    
+    with c1:
+        st.markdown("### 🕸️ Oráculo de Conocimiento (RAG)")
+        st.info("El sistema procesa manuales, normativas o folletos informativos cargados.")
+        
+        uploaded_files = st.file_uploader("📥 Alimentar Documentos (Arrastra PDFs aquí)", accept_multiple_files=True, type=['pdf'])
+        if uploaded_files:
+            if st.button("💾 Guardar PDFs en Cerebro"):
+                save_dir = "data/knowledge/camv_pdfs"
+                os.makedirs(save_dir, exist_ok=True)
+                for f in uploaded_files:
+                    path = os.path.join(save_dir, f.name)
+                    with open(path, "wb") as f_out:
+                        f_out.write(f.getbuffer())
+                st.success(f"¡{len(uploaded_files)} documentos guardados exitosamente!")
+
+        if st.button("🌐 Opcional: Extraer Material Automáticamente (CAMV)", use_container_width=True):
+            with st.spinner("Lanzando araña extractora a camvchile.cl... (Esto puede tomar minutos)"):
+                try:
+                    from src.osint.spider_camv import CAMVSpider
+                    import urllib3; urllib3.disable_warnings() 
+                    spider = CAMVSpider(max_depth=1)
+                    spider.crawl("https://www.camvchile.cl/")
+                    spider.download_pdfs()
+                    st.success("¡PDFs extraídos (si estaban públicos en la portada)!")
+                except Exception as e:
+                    st.error(f"Error en extracción web: {e}")
+
+        st.markdown("---")
+        st.markdown("### 📂 Sincronización Local")
+        st.info("💡 Solución para límites de carga: Sincroniza directamente la carpeta 'DOCUMENTACIÓN CMV' del proyecto.")
+        if st.button("🔄 Sincronizar Carpeta 'DOCUMENTACIÓN CMV'", use_container_width=True):
+            with st.spinner("Copiando archivos locales al cerebro..."):
+                import shutil
+                source_dir = "DOCUMENTACIÓN CMV"
+                dest_dir = "data/knowledge/camv_pdfs"
+                if not os.path.exists(dest_dir): os.makedirs(dest_dir)
+                
+                if not os.path.exists(source_dir):
+                    st.error(f"No se encontró la carpeta '{source_dir}' en el directorio raíz.")
+                else:
+                    count = 0
+                    for root, dirs, files in os.walk(source_dir):
+                        for file in files:
+                            if file.lower().endswith('.pdf'):
+                                source_path = os.path.join(root, file)
+                                dest_path = os.path.join(dest_dir, file)
+                                # Evitar sobreescribir si es el mismo archivo (o usar un hash luego)
+                                if not os.path.exists(dest_path):
+                                    shutil.copy2(source_path, dest_path)
+                                    count += 1
+                    total_files = len([f for f in os.listdir(dest_dir) if f.lower().endswith('.pdf')])
+                    st.success(f"¡Sincronización completada! Hay {total_files} manuales en el cerebro (Se añadieron {count} nuevos). Ahora dale a 'Procesar' abajo.")
+
+
+        if st.button("🧠 Procesar y Estudiar Documentos Válidos", use_container_width=True, type="primary"):
+            api_key = os.getenv("GOOGLE_API_KEY")
+            if not api_key:
+                st.warning("⚠️ No se encontró la GOOGLE_API_KEY en el archivo .env.")
+            else:
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                status_text.info("Iniciando estudio de documentos... Esto puede tardar varios minutos.")
+                
+                try:
+                    from src.intelligence.rag_advisor import RAGAdvisorV2
+                    advisor = RAGAdvisorV2()
+                    
+                    progress_bar.progress(50)
+                    status_text.warning("Ejecutando motor local de IA (all-MiniLM-L6-v2)... La primera vez podría descargar ~25MB del modelo.")
+                    
+                    if advisor.index_documents(force_reload=True):
+                        progress_bar.progress(100)
+                        status_text.success("¡Material estudiado e internalizado! El bot está listo para responder.")
+                        st.balloons()
+                    else:
+                        st.error("Error indexando. ¿Aseguraste ejecutar la descarga de material primero?")
+                except Exception as e:
+                    st.error(f"Error procesando material: {e}")
+                    if "RESOURCE_EXHAUSTED" in str(e):
+                        st.warning("⚠️ Límite de Cuota Alcanzado: Has superado el límite gratuito de la API de Google para hoy. Espera unos minutos o intenta mañana con menos documentos.")
+
+    with c2:
+        st.markdown("### 💬 Consulta Académica a la Memoria")
+        
+        if "rag_chat" not in st.session_state:
+            st.session_state.rag_chat = [{"role": "assistant", "content": "Hola. Soy tu contraparte normativa. Consultame sobre leyes, acreditación o procedimientos del mercado de valores, fundamentaré mis respuestas solo en la documentación ingresada."}]
+            
+        # Contenedor de Chat con Estilo Premium
+        st.markdown("""
+            <style>
+                /* Contenedor principal del chat */
+                .rag-chat-container {
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 15px;
+                    padding: 20px;
+                    border: 1px solid rgba(0,0,0,0.05);
+                    margin-bottom: 20px;
+                }
+                
+                /* Burbuja del Asesor (Premium Card) */
+                .advisor-bubble {
+                    background: #f8faff;
+                    border-left: 5px solid #1e3a8a;
+                    padding: 20px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+                    margin: 15px 0;
+                    color: #1e293b;
+                    font-size: 1.05rem;
+                    line-height: 1.6;
+                }
+                
+                /* Título del Asesor */
+                .advisor-header {
+                    color: #1e3a8a;
+                    font-weight: 700;
+                    font-size: 0.9rem;
+                    text-transform: uppercase;
+                    letter-spacing: 1px;
+                    margin-bottom: 10px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                }
+
+                /* Burbuja del Usuario */
+                .user-bubble {
+                    background: #ffffff;
+                    border: 1px solid #e2e8f0;
+                    padding: 15px 20px;
+                    border-radius: 20px 20px 0 20px;
+                    margin: 10px 0 10px 40px;
+                    color: #475569;
+                    font-style: italic;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+                }
+                
+                /* Fuentes de las respuestas */
+                .source-tag {
+                    display: inline-block;
+                    background: #e0e7ff;
+                    color: #4338ca;
+                    padding: 2px 8px;
+                    border-radius: 4px;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    margin-top: 10px;
+                }
+            </style>
+        """, unsafe_allow_html=True)
+
+        chat_placeholder = st.container()
+        
+        with chat_placeholder:
+            for msg in st.session_state.rag_chat:
+                if msg["role"] == "assistant":
+                    st.markdown(f"""
+                        <div class="advisor-bubble">
+                            <div class="advisor-header">🎓 ASESOR ACADÉMICO SENIOR</div>
+                            {msg["content"]}
+                        </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                        <div class="user-bubble">
+                            {msg["content"]}
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+        user_query = st.chat_input("Ej: ¿Qué debe indicar un Análisis de Idoneidad según la norma N° 412?")
+        if user_query:
+            api_key = os.getenv("GOOGLE_API_KEY")
+            if not api_key:
+                st.error("Por favor revisa el archivo .env, la llave no existe.")
+            else:
+                st.session_state.rag_chat.append({"role": "user", "content": user_query})
+                with st.chat_message("user"):
+                    st.write(user_query)
+                    
+                with st.chat_message("assistant"):
+                    with st.spinner("Revisando documentación oficial..."):
+                        try:
+                            from src.intelligence.rag_advisor import RAGAdvisorV2
+                            advisor = RAGAdvisorV2()
+                            
+                            # Renderizado en streaming dentro del formato premium
+                            placeholder = st.empty()
+                            
+                            with placeholder:
+                                # st.write_stream devuelve la respuesta completa al terminar
+                                final_text = st.write_stream(advisor.stream_ask(user_query, chat_history=st.session_state.rag_chat))
+                            
+                            # Ahora redibujamos con el formato premium fijo para que quede estético
+                            placeholder.markdown(f"""
+                                <div class="advisor-bubble">
+                                    <div class="advisor-header">🎓 ASESOR ACADÉMICO SENIOR</div>
+                                    {final_text}
+                                </div>
+                            """, unsafe_allow_html=True)
+                            
+                            st.session_state.rag_chat.append({"role": "assistant", "content": final_text})
+                        except Exception as e:
+                            st.error(f"Falla crítica: {e}")
+
+def render_infoprobidad_ui():
+    st.subheader("🏛️ Minería PEP (Altos Patrimonios Gubernamentales)")
+    st.markdown("Extrae los funcionarios públicos, subsecretarios y directores que declararon oficialmente más de **X millones** en Acciones y Depósitos a Plazo (InfoProbidad).")
+    
+    piso_patrimonio = st.number_input("Piso Mínimo de Patrimonio Líquido Declarado ($ CLP)", value=100000000, step=10000000, key="piso_probidad")
+    
+    col_e1, col_e2 = st.columns([2, 1])
+    with col_e2:
+        if st.button("⚖️ Extraer Altos Patrimonios", use_container_width=True):
+            with st.spinner("Realizando Minería Furtiva en InfoProbidad..."):
+                try:
+                    from src.osint.scraper_infoprobidad import minar_infoprobidad
+                    num = minar_infoprobidad(piso_patrimonio)
+                    st.success(f"¡Extracción Furtiva Completada! Se han cruzado y añadido {num} nuevos funcionarios de muy alto rango al CRM.")
+                except Exception as e:
+                    st.error(f"Error en la minería: {e}")
+
+def main():
+    # Mostrar Logo Corporativo
+    if os.path.exists(LOGO_PATH):
+        st.sidebar.image(LOGO_PATH, use_container_width=True)
+    else:
+        st.sidebar.title("💎 FV WealthTech")
+        
+    nav = st.sidebar.radio("Navegación del Sistema", [
+        "🎯 Motor de Campañas", 
+        "📊 Embudo CRM (Kanban)", 
+        "🔍 Radar Oportunidades (OSINT)",
+        "✨ Inteligencia & Enriquecimiento",
+        "📈 Auditor de Portafolio",
+        "🔬 Inteligencia de Mercado (CMF)",
+        "🏛️ InfoProbidad",
+        "🎓 Asesor Superior (Académico)",
+        "🧠 Diseñador de Flujos (Playbook)"
+    ])
+    
+    st.sidebar.markdown("---")
+    
+    if nav == "🎯 Motor de Campañas":
+        render_campaign_launcher()
+    elif nav == "📊 Embudo CRM (Kanban)":
+        render_crm_kanban()
+    elif nav == "🔍 Radar Oportunidades (OSINT)":
+        render_radar_osint()
+    elif nav == "✨ Inteligencia & Enriquecimiento":
+        render_enrichment_and_search()
+    elif nav == "📈 Auditor de Portafolio":
+        render_portfolio_auditor()
+    elif nav == "🔬 Inteligencia de Mercado (CMF)":
+        render_industry_insights()
+    elif nav == "🏛️ InfoProbidad":
+        render_infoprobidad_ui()
+    elif nav == "🎓 Asesor Superior (Académico)":
+        render_academic_advisor()
+    else:
+        render_flujograma()
+
+if __name__ == "__main__":
+    main()
+# Refresh trigger

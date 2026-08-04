@@ -256,7 +256,7 @@ def render_client_management_ui():
                             "RUT": h.rut, "Relación": h.relacion, "Nombre": h.nombre,
                             "Fecha de Nacimiento": h.fecha_nacimiento, "% Asignación": h.porcentaje_asignacion,
                             "¿Estudiante (18-24 años)?": bool(h.es_estudiante)
-                        } for h in heirs])
+                        } for h in heirs if h.nombre and h.nombre.strip() != "Extraído por IA"])
                     
                     props = db.query(ClientProperty).filter(ClientProperty.prospect_id == prospect.id).all()
                     if props:
@@ -284,7 +284,7 @@ def render_client_management_ui():
                             "Monto Inicial (UF)": p.hipoteca_monto_inicial,
                             "Saldo Actual (UF)": p.hipoteca_saldo_actual,
                             "Monto Asegurado (UF)": p.hipoteca_monto_asegurado,
-                            "Tasación (UF)": p.hipoteca_valor_tasacion,
+                            "Tasación (UF)": p.hipoteca_valor_tasacion or p.valor_comercial_estimado or 0.0,
                             "Tasa Interés (%)": p.hipoteca_tasa_interes,
                             "Tipo Tasa": p.hipoteca_tipo_tasa,
                             "Fecha Escritura": p.hipoteca_fecha_escritura,
@@ -299,6 +299,16 @@ def render_client_management_ui():
                             "Plusvalía Esperada (%)": p.plusvalia_esperada_anual,
                             "__fecha_act_cuota": p.hipoteca_fecha_ultima_actualizacion
                         } for p in props if p.rol and str(p.rol).strip() not in ["", "None", "nan"]])
+
+                    if df_prop.empty and prospect:
+                        try:
+                            from src.osint.property_lookup_engine import PropertyLookupEngine
+                            engine_p = PropertyLookupEngine()
+                            osint_init = engine_p.lookup_properties_by_rut(prospect.rut, prospect.nombre)
+                            if osint_init:
+                                df_prop = pd.DataFrame(osint_init)
+                        except Exception as e_init_prop:
+                            pass
                     
                     df_poliza = pd.DataFrame([{
                         "Aseguradora": p.compania,
@@ -839,13 +849,13 @@ def render_client_management_ui():
                                         if not new_props.empty:
                                             st.session_state[k_prop] = pd.concat([st.session_state[k_prop], new_props], ignore_index=True)
                                             st.success(f"{len(new_props)} propiedades nuevas importadas desde Carpeta Tributaria.")
+                                            for k_del in [f"editor_propiedades_{rut}", f"editor_propiedades_{rut}_v2"]:
+                                                if k_del in st.session_state:
+                                                    del st.session_state[k_del]
                                         else:
                                             st.info("Las propiedades de la Carpeta Tributaria ya estaban registradas (sin duplicados).")
                                     
-                                        if f"editor_propiedades_{rut}" in st.session_state:
-                                            del st.session_state[f"editor_propiedades_{rut}"]
-                        
-                                    # Guardar renta en base de datos temporalmente
+                                        # Guardar renta en base de datos temporalmente
                                     if renta > 0:
                                         db = SessionLocal()
                                         prospect = db.query(Prospect).filter(Prospect.rut == rut).first()
@@ -884,11 +894,27 @@ def render_client_management_ui():
                             engine_prop = PropertyLookupEngine()
                             df_p = st.session_state[k_prop].copy()
                             
-                            # 1. Eliminar filas ficticias de prueba previo (ROL 1420-0012, 1420-0055 o alias Catastro)
-                            if not df_p.empty and "ROL" in df_p.columns:
-                                df_p = df_p[~df_p["ROL"].astype(str).str.strip().isin(["1420-0012", "1420-0055"])]
-                            if not df_p.empty and "Nombre/Alias" in df_p.columns:
-                                df_p = df_p[~df_p["Nombre/Alias"].astype(str).str.contains("Catastro", case=False, na=False)]
+                            # 1. Búsqueda OSINT de propiedades en fuentes abiertas e indexadas del Catastro
+                            client_name = prospect.nombre if ('prospect' in locals() and prospect and prospect.nombre) else ""
+                            osint_props = engine_prop.lookup_properties_by_rut(rut, client_name)
+                            
+                            new_osint_count = 0
+                            if osint_props:
+                                existing_rols = [str(r).strip() for r in df_p["ROL"].tolist() if str(r).strip() not in ["", "nan", "None"]] if ("ROL" in df_p.columns and not df_p.empty) else []
+                                existing_dirs = [str(d).strip().upper() for d in df_p["Dirección"].tolist() if str(d).strip() not in ["", "nan", "None"]] if ("Dirección" in df_p.columns and not df_p.empty) else []
+                                
+                                nuevas_encontradas = []
+                                for op in osint_props:
+                                    rol_op = str(op.get("ROL", "")).strip()
+                                    dir_op = str(op.get("Dirección", "")).strip().upper()
+                                    if (rol_op and rol_op in existing_rols) or (dir_op and dir_op in existing_dirs):
+                                        continue
+                                    nuevas_encontradas.append(op)
+                                
+                                if nuevas_encontradas:
+                                    new_df_osint = pd.DataFrame(nuevas_encontradas)
+                                    df_p = pd.concat([df_p, new_df_osint], ignore_index=True)
+                                    new_osint_count = len(nuevas_encontradas)
                             
                             # 2. Recalcular Factor AI y Valor Sugerido AI (UF), preservando tasaciones reales ingresadas por el cliente
                             updated_count = 0
@@ -915,25 +941,26 @@ def render_client_management_ui():
                                     df_p.at[idx, "Factor Estimación"] = f"{factor_total:.2f}x"
                                     df_p.at[idx, "Valor Sugerido AI (UF)"] = val_sugerido_uf
                                     
-                                    # Verificar si el cliente ingresó una tasación personalizada (ej: 10.000 UF / 5.500 UF)
                                     val_actual_uf = float(row.get("Valor Com. (UF)", 0.0) or 0.0)
                                     origen_prev = str(row.get("Origen Tasación", "") or "").strip()
                                     
                                     if origen_prev == "Tasación Real / Cliente" or (val_actual_uf > 0 and abs(val_actual_uf - val_sugerido_uf) > 1.0):
-                                        # PRESERVAR VALORACIÓN PROPIA DEL CLIENTE
                                         df_p.at[idx, "Origen Tasación"] = "Tasación Real / Cliente"
                                     else:
-                                        # Asignar sugerido por AI por defecto
                                         df_p.at[idx, "Valor Com. (UF)"] = val_sugerido_uf
                                         df_p.at[idx, "Origen Tasación"] = "Sugerida por AI"
                                         
                                     updated_count += 1
                                         
                             st.session_state[k_prop] = df_p
-                            if f"editor_propiedades_{rut}" in st.session_state:
-                                del st.session_state[f"editor_propiedades_{rut}"]
+                            for k_del in [f"editor_propiedades_{rut}", f"editor_propiedades_{rut}_v2"]:
+                                if k_del in st.session_state:
+                                    del st.session_state[k_del]
                                 
-                            st.success(f"✅ Auditoría completada: Se actualizaron los factores de estimación AI para {updated_count} propiedades y se preservaron tus tasaciones reales del cliente.")
+                            if new_osint_count > 0:
+                                st.success(f"🔍 **Catastro OSINT:** Se encontraron e importaron **{new_osint_count}** nuevas propiedades desde fuentes públicas para el RUT {rut}. Se auditaron {updated_count} propiedades en total.")
+                            else:
+                                st.success(f"✅ **Auditoría completada:** Se auditaron {updated_count} propiedades para el RUT {rut} y se actualizaron sus factores de estimación AI.")
                             st.rerun()
                         except Exception as e:
                             st.error(f"Error consultando catastro inmobiliario: {e}")
@@ -1018,9 +1045,9 @@ def render_client_management_ui():
                         from src.osint.property_lookup_engine import PropertyLookupEngine
                         engine_prop = PropertyLookupEngine()
                         
-                        # 1. Filtrar filas totalmente vacías / None
-                        if "ROL" in df_props_curr.columns:
-                            valid_mask = ~df_props_curr["ROL"].fillna("").astype(str).str.strip().isin(["", "nan", "None"])
+                        # 1. Filtrar filas totalmente vacías
+                        if "ROL" in df_props_curr.columns and "Dirección" in df_props_curr.columns:
+                            valid_mask = (~df_props_curr["ROL"].fillna("").astype(str).str.strip().isin(["", "nan", "None"])) | (~df_props_curr["Dirección"].fillna("").astype(str).str.strip().isin(["", "nan", "None"])) | (~df_props_curr["Comuna"].fillna("").astype(str).str.strip().isin(["", "nan", "None"]))
                             df_props_curr = df_props_curr[valid_mask].reset_index(drop=True)
                         
                         if "Factor Estimación" not in df_props_curr.columns:
@@ -1053,9 +1080,9 @@ def render_client_management_ui():
                     # 2. Asignar columna explícita de Correlativo N° (1, 2, 3...)
                     df_display = st.session_state[k_prop].copy()
                     if not df_display.empty:
-                        # Eliminar filas None/vacías de la vista
-                        if "ROL" in df_display.columns:
-                            valid_m = ~df_display["ROL"].fillna("").astype(str).str.strip().isin(["", "nan", "None"])
+                        # Eliminar filas totalmente vacías de la vista
+                        if "ROL" in df_display.columns and "Dirección" in df_display.columns:
+                            valid_m = (~df_display["ROL"].fillna("").astype(str).str.strip().isin(["", "nan", "None"])) | (~df_display["Dirección"].fillna("").astype(str).str.strip().isin(["", "nan", "None"])) | (~df_display["Comuna"].fillna("").astype(str).str.strip().isin(["", "nan", "None"]))
                             df_display = df_display[valid_m].reset_index(drop=True)
                         df_display["N°"] = range(1, len(df_display) + 1)
                         cols_all = [c for c in df_display.columns if c != "N°"]
@@ -1637,11 +1664,45 @@ def render_client_management_ui():
                     if uploaded_form:
                         if st.button("Procesar Archivo y Actualizar Base de Datos", use_container_width=True):
                             with st.spinner("El Agente IA está extrayendo los datos de las tablas del documento..."):
-                                # Simulación de extracción estructurada
-                                if missing_herederos:
-                                    st.session_state[k_hered] = pd.DataFrame([{"Relación": "Hijo/a", "Nombre": "Extraído por IA", "Fecha de Nacimiento": datetime.date(1995, 1, 1), "% Asignación": 50}])
-                                if missing_propiedades:
-                                    st.session_state[k_prop] = pd.DataFrame([{"Nombre/Alias": "Casa Extraída", "ROL": "123-4", "Dirección": "Las Condes", "Avalúo (CLP)": 150000000, "Valor Com. (UF)": 10000, "Deuda Hipotecaria": True, "Dividendo": 40, "Cuota Actual": 12, "Total Cuotas": 240, "Arrendada": False}])
+                                try:
+                                    file_bytes = uploaded_form.read()
+                                    from src.utils.excel_kyc_parser import parse_excel_kyc_file
+                                    extracted = parse_excel_kyc_file(file_bytes)
+                                    
+                                    # 1. Herederos
+                                    if extracted.get("herederos"):
+                                        df_h_new = pd.DataFrame(extracted["herederos"])
+                                        st.session_state[k_hered] = df_h_new
+                                        for k_del in [f"editor_herederos_{rut}", f"editor_herederos_{rut}_v2"]:
+                                            if k_del in st.session_state: del st.session_state[k_del]
+                                            
+                                    # 2. Propiedades
+                                    if extracted.get("propiedades"):
+                                        df_p_new = pd.DataFrame(extracted["propiedades"])
+                                        if k_prop in st.session_state and not st.session_state[k_prop].empty:
+                                            st.session_state[k_prop] = pd.concat([st.session_state[k_prop], df_p_new], ignore_index=True)
+                                        else:
+                                            st.session_state[k_prop] = df_p_new
+                                        for k_del in [f"editor_propiedades_{rut}", f"editor_propiedades_{rut}_v2"]:
+                                            if k_del in st.session_state: del st.session_state[k_del]
+                                            
+                                    # 3. Pólizas / APV
+                                    if extracted.get("polizas"):
+                                        df_pol_new = pd.DataFrame(extracted["polizas"])
+                                        if k_poliza in st.session_state and not st.session_state[k_poliza].empty:
+                                            st.session_state[k_poliza] = pd.concat([st.session_state[k_poliza], df_pol_new], ignore_index=True)
+                                        else:
+                                            st.session_state[k_poliza] = df_pol_new
+                                        for k_del in [f"editor_polizas_{rut}", f"editor_polizas_{rut}_v2"]:
+                                            if k_del in st.session_state: del st.session_state[k_del]
+                                            
+                                    h_cnt = len(extracted.get("herederos", []))
+                                    p_cnt = len(extracted.get("propiedades", []))
+                                    pol_cnt = len(extracted.get("polizas", []))
+                                    st.success(f"✅ **Extracción IA Exitosa:** Se capturaron **{h_cnt} herederos**, **{p_cnt} propiedades** y **{pol_cnt} declaraciones de seguros/APV** del Excel cargado.")
+                                    st.rerun()
+                                except Exception as e_proc:
+                                    st.error(f"Error al procesar archivo Excel: {e_proc}")
                         
             st.markdown("---")
             col_save1, col_save2 = st.columns([0.5, 0.5])

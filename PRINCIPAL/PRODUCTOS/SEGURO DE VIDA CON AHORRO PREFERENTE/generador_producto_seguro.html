@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infografía Seguro de Vida con Ahorro Preferente</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --navy: #002E5D; --accent-gold: #B89650; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        .export-container { background: white; border-radius: 12px; box-shadow: 0 15px 40px rgba(0,0,0,0.1); overflow: hidden; width: 800px; border: 1px solid #e2e8f0; transition: all 0.3s ease; }
+        
+        .content-box { padding: 2rem; background-color: #0f172a; } /* Modo Dark Premium */
+        
+        .card { background: #1e293b; border-radius: 12px; padding: 1.5rem; border-top: 4px solid #B89650; position: relative; }
+        .card h3 { color: #f8fafc; font-size: 14px; font-weight: 800; margin-bottom: 12px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+        .card ul { list-style: none; padding: 0; margin: 0; }
+        .card li { color: #94a3b8; font-size: 11px; line-height: 1.5; margin-bottom: 8px; position: relative; padding-left: 14px; }
+        .card li::before { content: "•"; color: #B89650; position: absolute; left: 0; top: 0; font-size: 14px; }
+        
+        .btn-main { background: var(--navy); color: white; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
+        .btn-main:hover { opacity: 0.9; }
+
+        .premium-badge { display: flex; justify-content: center; align-items: center; gap: 8px; background: linear-gradient(90deg, #000000 0%, #1a1a1a 100%); color: #B89650; padding: 6px; font-size: 9px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; border-bottom: 1px solid #334155; }
+    </style>
+</head>
+<body>
+
+    <div class="bg-white p-4 rounded-lg shadow w-[800px] flex justify-between items-center">
+        <div>
+            <h2 class="text-sm font-bold text-slate-700">Generador de Infografía - Producto</h2>
+            <p class="text-xs text-slate-500">Seguro de Vida con Ahorro Preferente</p>
+        </div>
+        <button onclick="exportImage()" class="btn-main text-xs bg-emerald-600 flex items-center gap-2">
+            <i data-lucide="download" class="w-4 h-4"></i> DESCARGAR PARA WHATSAPP
+        </button>
+    </div>
+
+    <!-- CONTENEDOR INFOGRAFÍA -->
+    <div class="export-container" id="capture-area">
+        
+        <div class="premium-badge">
+            <i data-lucide="shield" class="w-3 h-3"></i>
+            Producto Estratégico
+            <i data-lucide="shield" class="w-3 h-3"></i>
+        </div>
+
+        <div class="bg-[var(--navy)] px-8 py-8 relative overflow-hidden border-b border-slate-700">
+            <div class="absolute right-0 top-0 opacity-10">
+                <i data-lucide="shield-check" class="w-64 h-64 -mt-10 -mr-10"></i>
+            </div>
+            <div class="relative z-10 text-white flex justify-between items-start">
+                <div>
+                    <div class="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-wider mb-3 text-[#B89650]">
+                        <i data-lucide="star" class="w-3 h-3"></i>
+                        <span>Soluciones Patrimoniales</span>
+                    </div>
+                    <h1 class="text-3xl font-extrabold tracking-tight mb-2 uppercase leading-tight">
+                        ¿Por qué tener un <br><span class="text-[#B89650]">Seguro de Vida con Ahorro?</span>
+                    </h1>
+                    <p class="text-blue-100/80 text-sm font-medium">Conoce las 8 ventajas estratégicas del Seguro de Vida Patrimonial Preferente</p>
+                </div>
+                <div class="flex flex-col items-end gap-3 mt-2">
+                    <img src="../../../assets/brand/fv_logo_blanco_negativo.png" alt="FV" class="h-16 w-auto">
+                    <img src="../../../assets/Logo_ALTUS AI_Negativo.png" alt="Altus AI" class="h-8 w-auto">
+                </div>
+            </div>
+        </div>
+
+        <div class="content-box">
+            <div class="grid grid-cols-2 gap-4">
+                
+                <div class="card">
+                    <h3><i data-lucide="users" class="w-5 h-5 text-[#B89650]"></i> 1. Sucesión</h3>
+                    <ul>
+                        <li>Rápida liquidez a los Herederos o Terceros ante fin de la vida del Contratante/Asegurado.</li>
+                        <li>Sin trámite de posesión efectiva, siendo único en la industria financiera.</li>
+                        <li>Complementario a un testamento.</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3><i data-lucide="wallet" class="w-5 h-5 text-[#B89650]"></i> 2. Desacumulación</h3>
+                    <ul>
+                        <li>Permite retirar "inversión en UF" antes que la utilidad o ganancia (cuenta caja).</li>
+                        <li>Ideal para complementar un programa de desacumulación eficiente.</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3><i data-lucide="file-text" class="w-5 h-5 text-[#B89650]"></i> 3. Tributación</h3>
+                    <ul>
+                        <li>No se debe presentar DDJJ N°1929 (Junio), por inversiones en el exterior.</li>
+                        <li>Retiros de la inversión no se registran en la declaración de renta.</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3><i data-lucide="scale" class="w-5 h-5 text-[#B89650]"></i> 4. Pérdidas Tributarias</h3>
+                    <ul>
+                        <li>Permite compensar con ganancias tributarias otros instrumentos financieros.</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3><i data-lucide="shield-half" class="w-5 h-5 text-[#B89650]"></i> 5. Protección</h3>
+                    <ul>
+                        <li>Tiene componente de Protección y Ahorro.</li>
+                        <li>Permite libre designación de beneficiarios.</li>
+                        <li>Inembargable según código de procedimiento civil.</li>
+                        <li>Bajos costos de administración.</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3><i data-lucide="globe-2" class="w-5 h-5 text-[#B89650]"></i> 6. Inversión</h3>
+                    <ul>
+                        <li>Inversión en activos Chilenos o Extranjeros.</li>
+                        <li>Permite gran diversificación en una cartera de inversión y mitigar riesgos del mercado.</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3><i data-lucide="trending-up" class="w-5 h-5 text-[#B89650]"></i> 7. Acumulación</h3>
+                    <ul>
+                        <li>Reinversiones de activos financieros dentro del seguro de vida no generan hecho gravado de tributación.</li>
+                        <li>Otorga una administración activa del portafolio.</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <h3><i data-lucide="coins" class="w-5 h-5 text-[#B89650]"></i> 8. Ingreso No Renta</h3>
+                    <ul>
+                        <li>17 UTM sobre la ganancia de capital, para pólizas desde 5 años y retiros totales.</li>
+                        <li>Opción de dejar utilidad para herencia.</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- PIE LEGAL -->
+        <div class="bg-[#0f172a] px-8 pb-8">
+            <div class="bg-[#1e293b] border-2 border-[#334155] rounded-xl p-5 flex gap-6 text-[10px] text-slate-400 leading-relaxed justify-between">
+                <div class="flex-1 text-justify">
+                    <div class="text-white font-extrabold uppercase mb-2 text-[11px]">Sobre FV Asesorías e Inversiones</div>
+                    FV Asesorías e Inversiones somos un Multi-Family Office Digital impulsado por nuestro software cuantitativo privado de Inteligencia Artificial (ALTUS AI). Combinamos la agilidad tecnológica de una WealthTech con la exclusividad de una oficina patrimonial privada, auditando en 360° la situación tributaria, inmobiliaria, composición familiar, seguros e inversiones para proteger su legado a través de las generaciones.
+                </div>
+                <div class="flex-1 text-justify">
+                    <div class="text-white font-extrabold uppercase mb-2 text-[11px]">Aviso Legal</div>
+                    Este informe es generado por ALTUS AI y tiene fines exclusivamente informativos y educativos. La conveniencia de adquirir deuda o rescatar inversiones depende de la situación financiera, perfil de riesgo y objetivos de cada cliente.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        async function exportImage() {
+            const area = document.getElementById('capture-area');
+            try {
+                const canvas = await html2canvas(area, { 
+                    scale: 3, 
+                    useCORS: true,
+                    backgroundColor: '#000000',
+                    logging: false
+                });
+                const link = document.createElement('a');
+                link.download = `FV_Producto_Seguro_Vida_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            } catch (err) {
+                alert("Error al exportar la imagen.");
+            }
+        }
+    </script>
+</body>
+</html>

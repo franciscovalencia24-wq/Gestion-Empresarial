@@ -1,0 +1,27 @@
+graph TD
+    %% ESTILOS DE COLOR VISUAL
+    classDef accion fill:#1f77b4,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef decision fill:#ff7f0e,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef final fill:#2ca02c,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef negativo fill:#d62728,stroke:#fff,stroke-width:2px,color:#fff;
+
+    A[1. Base de Datos Cruda / Ingesta]:::accion --> B{¿Contactabilidad Lista?}:::decision
+    B -->|Falta Teléfono| C[2. Minería TransUnion / Apollo]:::accion
+    C --> B
+    
+    B -->|Todo Listo| D[3. Primer Disparo Campaña WhatsApp]:::accion
+    
+    D --> E{¿Cómo Responde?}:::decision
+    E -->|Positivo / Interesado| F[4. Agendar Videollamada / Reunión Física]:::accion
+    E -->|No Responde en 24h| G[5. Retargeting: Enviar Infografía de Valor Comercial]:::accion
+    E -->|No Interesado| H[6. Estado: Descartado]:::negativo
+    
+    G --> I{¿Sigue sin responder?}:::decision
+    I -->|Sí| J[Estado: Enfriado]:::negativo
+    I -->|Responde| F
+    
+    F --> K{¿Resultado de la Reunión?}:::decision
+    K -->|Cierre Inversión| L[🎉 CLIENTE NUEVO]:::final
+    K -->|Sin Decisión Aún| M[Seguimiento: Postergar a sgte Q]:::accion
+    
+    L --> N[7. Fidelización Mensual: Envío de Reportes]:::accion

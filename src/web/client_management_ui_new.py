@@ -5,6 +5,34 @@ from sqlalchemy import text
 import io
 import datetime
 import os
+import importlib
+import src.utils.excel_kyc_generator as excel_gen
+import src.utils.kyc_email_generator as email_gen
+importlib.reload(excel_gen)
+importlib.reload(email_gen)
+
+def safe_int(val, default=0):
+    if pd.isna(val) or val is None:
+        return default
+    try:
+        val_str = str(val).strip().lower()
+        if val_str in ["", "none", "nan", "null"]:
+            return default
+        return int(float(val_str))
+    except Exception:
+        return default
+
+def safe_float(val, default=0.0):
+    if pd.isna(val) or val is None:
+        return default
+    try:
+        val_str = str(val).strip().lower()
+        if val_str in ["", "none", "nan", "null"]:
+            return default
+        return float(val_str)
+    except Exception:
+        return default
+
 from src.database.models import Prospect, ClientProfile, ClientHeir, ClientProperty, ClientInsurance, ClientDebt, ClientCompany, CompanyShareholder, CompanyRepresentative
 
 def calculate_inheritance_chile(df, has_testament):
@@ -1068,37 +1096,77 @@ def render_client_management_ui():
                     if not req_fields:
                         st.info("El perfil está completo. No se requiere solicitar más datos por ahora.")
                     else:
-                        df_req = pd.DataFrame({
-                            "Dato Requerido por Altus AI": req_fields,
-                            "¿Por qué lo necesitamos?": req_reasons,
-                            "Respuesta del Cliente": [""] * len(req_fields)
-                        })
-                
-                        output = io.BytesIO()
-                        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                            df_req.to_excel(writer, index=False, sheet_name='Formulario_KYC')
-                        val = output.getvalue()
-                
-                        st.download_button(
-                            label="💾 Descargar Excel KYC para Cliente",
-                            data=val,
-                            file_name=f"Altus_KYC_{st.session_state.current_client_name.replace(' ', '_')}.xlsx",
-                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        client_name_str = st.session_state.get('current_client_name', 'Cliente')
+                        
+                        solicitud_tipo = st.radio(
+                            "🎯 Selecciona el Enfoque de la Solicitud para el Cliente:",
+                            options=["🏛️ Auditoría Patrimonial 360° (KYC General)", "🎯 Aporte Mensual APV & Reliquidación de Impuestos"],
+                            key=f"rad_solic_tipo_{rut}"
                         )
+                        
+                        if "APV" in solicitud_tipo:
+                            from src.utils.excel_kyc_generator import generar_excel_apv_reliquidacion
+                            from src.utils.kyc_email_generator import generar_comunicacion_apv_reliquidacion
+                            
+                            val = generar_excel_apv_reliquidacion(client_name=client_name_str)
+                            comm = generar_comunicacion_apv_reliquidacion(client_name=client_name_str)
+                            file_out_name = f"Formulario_APV_Reliquidacion_{client_name_str.replace(' ', '_')}.xlsx"
+                            btn_label = "💾 Descargar Excel APV & Reliquidación para Cliente"
+                        else:
+                            from src.utils.excel_kyc_generator import generar_excel_kyc_corporativo
+                            from src.utils.kyc_email_generator import generar_comunicacion_kyc
+                            
+                            val = generar_excel_kyc_corporativo(
+                                client_name=client_name_str,
+                                missing_herederos=missing_herederos,
+                                missing_propiedades=missing_propiedades,
+                                missing_polizas=missing_polizas
+                            )
+                            comm = generar_comunicacion_kyc(
+                                client_name=client_name_str,
+                                missing_herederos=missing_herederos,
+                                missing_propiedades=missing_propiedades,
+                                missing_polizas=missing_polizas
+                            )
+                            file_out_name = f"Altus_KYC_{client_name_str.replace(' ', '_')}.xlsx"
+                            btn_label = "💾 Descargar Excel KYC Corporativo para Cliente"
+                    
+                        st.download_button(
+                            label=btn_label,
+                            data=val,
+                            file_name=file_out_name,
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True
+                        )
+                        
+                        with st.expander("✉️ Ver y Copiar Texto de Correo (Sin Asteriscos para Outlook) & WhatsApp", expanded=False):
+                            st.markdown(f"**Asunto Sugerido:** `{comm['asunto']}`")
+                            st.markdown("##### 📩 Texto del Correo Electrónico (Listo para pegar en Outlook):")
+                            st.code(comm['cuerpo_email'], language="text")
+                            st.markdown("##### 📱 Mensaje Corto para WhatsApp:")
+                            st.code(comm['mensaje_whatsapp'], language="text")
                 
                 with c_form2:
                     uploaded_form = st.file_uploader("📤 Subir Excel/PDF completado por el cliente", type=["xlsx", "xls", "pdf"])
                     if uploaded_form:
                         if st.button("Procesar Archivo y Actualizar Base de Datos", use_container_width=True):
                             with st.spinner("El Agente IA está extrayendo los datos de las tablas del documento..."):
-                                # Simulación de extracción estructurada
-                                if missing_herederos:
-                                    st.session_state[k_hered] = pd.DataFrame([{"Relación": "Hijo/a", "Nombre": "Extraído por IA", "Fecha de Nacimiento": datetime.date(1995, 1, 1), "% Asignación": 50}])
-                                if missing_propiedades:
-                                    st.session_state[k_prop] = pd.DataFrame([{"Nombre/Alias": "Casa Extraída", "ROL": "123-4", "Dirección": "Las Condes", "Avalúo (CLP)": 150000000, "Valor Com. (UF)": 10000, "Deuda Hipotecaria": True, "Dividendo": 40, "Cuota Actual": 12, "Total Cuotas": 240, "Arrendada": False}])
-                        
-                                st.success("¡Datos extraídos con éxito y tablas actualizadas!")
-                                st.rerun()
+                                try:
+                                    file_bytes = uploaded_form.read()
+                                    from src.utils.excel_kyc_parser import parse_excel_kyc_file
+                                    extracted = parse_excel_kyc_file(file_bytes)
+                                    
+                                    if extracted.get("herederos"):
+                                        st.session_state[k_hered] = pd.DataFrame(extracted["herederos"])
+                                    if extracted.get("propiedades"):
+                                        st.session_state[k_prop] = pd.DataFrame(extracted["propiedades"])
+                                    if extracted.get("polizas"):
+                                        st.session_state[k_poliza] = pd.DataFrame(extracted["polizas"])
+                                        
+                                    st.success("¡Datos del Excel KYC extraídos con éxito y tablas actualizadas!")
+                                    st.rerun()
+                                except Exception as e_proc:
+                                    st.error(f"Error procesando el Excel KYC: {e_proc}")
             if st.button("💾 Guardar y Actualizar Perfil Integral", type="primary"):
                 # Sincronizamos la base de datos con las ediciones finales
                 if "edited_herederos" in locals():
@@ -1233,14 +1301,6 @@ def render_client_management_ui():
                         if "edited_deudas" in locals():
                             db.query(ClientDebt).filter(ClientDebt.prospect_id == prospect.id).delete()
                             for _, row in edited_deudas.iterrows():
-                                def safe_float(val):
-                                    if pd.isna(val) or str(val).strip().lower() in ["none", "nan", ""]:
-                                        return 0.0
-                                    try:
-                                        return float(val)
-                                    except:
-                                        return 0.0
-                                        
                                 kwargs = {
                                     "prospect_id": prospect.id,
                                     "institucion": str(row.get("Institución", "")) if pd.notna(row.get("Institución")) and str(row.get("Institución")) != "None" else "",

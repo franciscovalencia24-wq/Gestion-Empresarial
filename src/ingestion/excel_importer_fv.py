@@ -202,6 +202,14 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
                         added_count += 1
 
         db.commit()
+        
+        # Respaldar automáticamente la BD en la nube (GCS)
+        try:
+            from src.utils.gcs_sync import upload_db_to_gcs
+            upload_db_to_gcs()
+        except Exception:
+            pass
+
         return {
             "status": "success",
             "message": f"Se importaron exitosamente {added_count} movimientos contables reales desde '{excel_path}' para {company_name}."

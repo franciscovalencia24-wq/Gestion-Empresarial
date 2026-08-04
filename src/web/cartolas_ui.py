@@ -227,16 +227,32 @@ def render_cartolas_ui():
                                     activos = json.loads(raw_json)
                                     
                                     for a in activos:
-                                        existente = db.query(ClientPortfolio).filter(ClientPortfolio.prospect_id == prospect.id, ClientPortfolio.activo == a.get('activo')).first()
-                                        if existente:
-                                            db.delete(existente)
+                                        inst_new = a.get('institucion', 'Desconocido')
+                                        act_new = a.get('activo', 'Activo N/A')
+                                        tipo_new = a.get('tipo_activo', 'Otro')
+                                        monto_new = float(a.get('monto_clp', 0.0))
+                                        
+                                        # Buscar activo existente por coincidencia parcial de nombre o mismo tipo/institución
+                                        existentes = db.query(ClientPortfolio).filter(
+                                            ClientPortfolio.prospect_id == prospect.id,
+                                            ClientPortfolio.institucion == inst_new
+                                        ).all()
+                                        
+                                        for ex in existentes:
+                                            # Si el activo tiene el mismo nombre base o el mismo tipo y monto similar, eliminar duplicado viejo
+                                            clean_ex = ex.activo.replace(" - ", " ").replace("-", " ").strip().lower()
+                                            clean_new = act_new.replace(" - ", " ").replace("-", " ").strip().lower()
+                                            if clean_ex in clean_new or clean_new in clean_ex or (ex.tipo_activo == tipo_new and abs((ex.monto_original or ex.monto_clp or 0) - monto_new) < 1000):
+                                                db.delete(ex)
                                         
                                         nuevo_activo = ClientPortfolio(
                                             prospect_id=prospect.id,
-                                            institucion=a.get('institucion', 'Desconocido'),
-                                            activo=a.get('activo', 'Activo N/A'),
-                                            tipo_activo=a.get('tipo_activo', 'Otro'),
-                                            monto_clp=float(a.get('monto_clp', 0.0))
+                                            institucion=inst_new,
+                                            activo=act_new,
+                                            tipo_activo=tipo_new,
+                                            monto_original=monto_new if a.get('moneda_original', 'CLP') == 'CLP' else float(a.get('monto_original', 0.0)),
+                                            moneda_original=a.get('moneda_original', 'CLP'),
+                                            monto_clp=monto_new
                                         )
                                         db.add(nuevo_activo)
                                         
