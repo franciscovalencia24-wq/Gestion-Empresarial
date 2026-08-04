@@ -1400,7 +1400,7 @@ def render_client_management_ui():
                             "Activo": st.column_config.TextColumn(width="large"),
                             "Tipo": st.column_config.SelectboxColumn(
                                 "Tipo",
-                                options=["Cotización Obligatoria", "APV-A", "APV-B", "Depósito Convenido (DC-R)", "Depósito Convenido (DC-L)", "Cuenta 2", "Fondo Mutuo", "Acciones", "Depósito a Plazo", "Otro"]
+                                options=["Cotización Obligatoria", "APV-A", "APV-B", "APV con Póliza", "Depósito Convenido (DC-R)", "Depósito Convenido (DC-L)", "Cuenta 2", "Fondo Mutuo", "Acciones", "Depósito a Plazo", "Otro"]
                             ),
                             "Monto": st.column_config.NumberColumn("Monto Original", format="$ %,d"),
                             "Moneda": st.column_config.TextColumn(width="small"),

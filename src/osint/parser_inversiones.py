@@ -30,7 +30,7 @@ def parse_investment_files(file_bytes_list, file_names):
     Para cada posición, extrae:
     1. institucion: El banco, AFP, o corredora (ej. 'Banco de Chile', 'AFP Habitat', 'Fintual').
     2. activo: Nombre del fondo o instrumento (ej. 'Fondo Mutuo A', 'Cuenta Corriente', 'Acciones Apple').
-    3. tipo: Clasifícalo estrictamente en una de estas categorías: ["Cotización Obligatoria", "APV-A", "APV-B", "Depósito Convenido (DC-R)", "Depósito Convenido (DC-L)", "Cuenta 2", "Fondo Mutuo", "Acciones", "Depósito a Plazo", "Otro"]
+    3. tipo: Clasifícalo estrictamente en una de estas categorías: ["Cotización Obligatoria", "APV-A", "APV-B", "APV con Póliza", "Depósito Convenido (DC-R)", "Depósito Convenido (DC-L)", "Cuenta 2", "Fondo Mutuo", "Acciones", "Depósito a Plazo", "Otro"]
     4. monto: El monto total (saldo) en número (sin comas ni formato).
     5. moneda: La moneda del activo (ej. 'CLP', 'UF', 'USD').
     6. monto_clp: El monto convertido a CLP en número (si está en CLP, es el mismo que 'monto').

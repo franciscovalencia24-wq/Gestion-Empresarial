@@ -246,7 +246,7 @@ class ClientPortfolio(Base):
     
     institucion = Column(String(100), nullable=True) # Ej: Consorcio, Principal, AFP Habitat
     activo = Column(String(150), nullable=True) # Ej: AAPL, Fondo Mutuo X, Ahorro Obligatorio, APV
-    tipo_activo = Column(String(50), nullable=True) # Cotización Obligatoria, APV-A, APV-B, Depósito Convenido (DC-R), Depósito Convenido (DC-L), Cuenta 2, Fondo Mutuo, Acciones, Depósito a Plazo, Otro
+    tipo_activo = Column(String(50), nullable=True) # Cotización Obligatoria, APV-A, APV-B, APV con Póliza, Depósito Convenido (DC-R), Depósito Convenido (DC-L), Cuenta 2, Fondo Mutuo, Acciones, Depósito a Plazo, Otro
     
     monto_original = Column(Float, default=0.0)
     moneda_original = Column(String(10), default="CLP") # CLP, USD, UF
