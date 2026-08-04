@@ -41,23 +41,23 @@ def _parse_md_tables_to_html(md_text):
 def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path: str):
     fecha_actual = datetime.now().strftime("%d/%m/%Y")
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    
-    # Cargar logo FV oficial fv_logo_principal en alta definición PNG 4K libre de distorsiones de fuente
     root_assets = os.path.join(root_dir, "assets")
-    fv_logo_path = os.path.join(root_assets, "brand", "fv_logo_principal_trimmed.png")
-    if not os.path.exists(fv_logo_path):
-        fv_logo_path = os.path.join(root_assets, "brand", "fv_logo_principal.png")
+    
+    # Cargar logo FV oficial en vector puro SVG 100% libre de distorsiones
+    fv_svg_path = os.path.join(root_assets, "brand", "fv_logo_vector_pure.svg")
+    if not os.path.exists(fv_svg_path):
+        fv_svg_path = os.path.join(root_assets, "brand", "fv_logo_vector_principal.svg")
 
-    with open(fv_logo_path, "rb") as img_f:
-        fv_b64 = f"data:image/png;base64,{base64.b64encode(img_f.read()).decode('utf-8')}"
+    with open(fv_svg_path, "rb") as img_f:
+        fv_b64 = f"data:image/svg+xml;base64,{base64.b64encode(img_f.read()).decode('utf-8')}"
 
-    # Cargar logo ALTUS AI en alta definición PNG libre de distorsiones
-    altus_logo_path = os.path.join(root_assets, "brand", "altus_logo_trimmed.png")
-    if not os.path.exists(altus_logo_path):
-        altus_logo_path = os.path.join(root_assets, "brand", "altus_ai_logo_principal.png")
+    # Cargar logo ALTUS AI en vector puro SVG
+    altus_svg_path = os.path.join(root_assets, "brand", "altus_ai_logo_principal.svg")
+    if not os.path.exists(altus_svg_path):
+        altus_svg_path = os.path.join(root_assets, "Logo_ALTUS AI_Principal.svg")
 
-    with open(altus_logo_path, "rb") as alt_f:
-        altus_b64 = f"data:image/png;base64,{base64.b64encode(alt_f.read()).decode('utf-8')}"
+    with open(altus_svg_path, "rb") as alt_f:
+        altus_b64 = f"data:image/svg+xml;base64,{base64.b64encode(alt_f.read()).decode('utf-8')}"
 
     # Reemplazar marcadores manuales de salto de página y convertir tablas
     markdown_processed = _parse_md_tables_to_html(contenido_markdown)
