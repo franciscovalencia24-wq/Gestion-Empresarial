@@ -1584,8 +1584,7 @@ def main():
         "👤 1. Gestión de Clientes",
         "📊 2. Análisis de Inversiones",
         "💼 3. Gestión Comercial",
-        "📥 4. Ingesta de Datos",
-        "📱 5. Chat Remoto Antigravity"
+        "📥 4. Ingesta de Datos"
     ], key="main_nav")
     
     st.sidebar.markdown("---")
@@ -1667,9 +1666,7 @@ def main():
 
         st.markdown("---")
 
-        # SEC 5: CHAT REMOTO
-        st.markdown("#### 📱 5. Control Remoto de Antigravity")
-        st.button("🤖 Abrir Chat Remoto Antigravity & Motor de Aprobaciones (PIN 2026)", on_click=set_nav, args=("📱 5. Chat Remoto Antigravity",), use_container_width=True)
+
 
     # ----------------------------------------------------
     # 👤 1. GESTIÓN DE CLIENTES
@@ -1904,12 +1901,7 @@ def main():
         from src.web.app import render_unified_vault
         render_unified_vault()
 
-    # ----------------------------------------------------
-    # 📱 5. CHAT REMOTO ANTIGRAVITY
-    # ----------------------------------------------------
-    elif nav == "📱 5. Chat Remoto Antigravity":
-        from src.web.mobile_chat_ui import render_mobile_chat_ui
-        render_mobile_chat_ui()
+
 
     # Pie de página en sidebar
     st.sidebar.markdown("---")
