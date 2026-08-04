@@ -1596,9 +1596,20 @@ def main():
     # 🏠 0. INICIO - LANDING PRINCIPAL CON TODOS LOS HUBS
     # ----------------------------------------------------
     if nav == "🏠 Inicio":
-        st.markdown("""
+        import base64
+        altus_logo_b64 = ""
+        altus_logo_path = os.path.join(root_path, "assets", "brand", "altus_ai_logo_dark.png")
+        if not os.path.exists(altus_logo_path):
+            altus_logo_path = os.path.join(root_path, "assets", "Logo_ALTUS AI_Principal_Fondo oscuro.png")
+        if os.path.exists(altus_logo_path):
+            with open(altus_logo_path, "rb") as f_alt:
+                altus_logo_b64 = f"data:image/png;base64,{base64.b64encode(f_alt.read()).decode('utf-8')}"
+
+        img_banner = f'<img src="{altus_logo_b64}" height="75" style="margin-bottom: 15px;"/>' if altus_logo_b64 else ''
+
+        st.markdown(f"""
         <div style='background: radial-gradient(circle at top right, #3a3a3a 0%, #050505 80%); padding: 45px; border-radius: 15px; margin-bottom: 25px; color: white; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.4); border: 1px solid #D4AF37;'>
-            <img src="https://img.icons8.com/color/96/000000/artificial-intelligence.png" width="70" style="margin-bottom: 10px;"/>
+            {img_banner}
             <h1 style='color: white; margin: 0; font-size: 3em; font-weight: 700;'>Bienvenido a <span style="color: #D4AF37;">Altus AI</span></h1>
             <p style='color: #ffffff; margin: 10px 0 0 0; font-size: 1.3em;'>Tu Motor Cuantitativo Patrimonial & Asesoría Integrada 360°</p>
         </div>
