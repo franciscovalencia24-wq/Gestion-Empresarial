@@ -42,17 +42,17 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
     fecha_actual = datetime.now().strftime("%d/%m/%Y")
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     
-    # Cargar logo FV oficial fv_logo_vector_principal en alta definición PNG renderizado desde el SVG original
+    # Cargar logo FV oficial fv_logo_principal en alta definición PNG 4K libre de distorsiones de fuente
     root_assets = os.path.join(root_dir, "assets")
-    fv_logo_path = os.path.join(root_assets, "brand", "fv_logo_vector_principal_rendered.png")
+    fv_logo_path = os.path.join(root_assets, "brand", "fv_logo_principal_trimmed.png")
     if not os.path.exists(fv_logo_path):
-        fv_logo_path = os.path.join(root_assets, "brand", "fv_logo_vector_principal.png")
+        fv_logo_path = os.path.join(root_assets, "brand", "fv_logo_principal.png")
 
     with open(fv_logo_path, "rb") as img_f:
         fv_b64 = f"data:image/png;base64,{base64.b64encode(img_f.read()).decode('utf-8')}"
 
-    # Cargar logo ALTUS AI en alta definición PNG
-    altus_logo_path = os.path.join(root_assets, "Logo_ALTUS AI_Principal.png")
+    # Cargar logo ALTUS AI en alta definición PNG libre de distorsiones
+    altus_logo_path = os.path.join(root_assets, "brand", "altus_logo_trimmed.png")
     if not os.path.exists(altus_logo_path):
         altus_logo_path = os.path.join(root_assets, "brand", "altus_ai_logo_principal.png")
 

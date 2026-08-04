@@ -73,7 +73,7 @@ Base.metadata.create_all(bind=engine)
 st.set_page_config(page_title="Altus AI - FV Asesorías", layout="wide", initial_sidebar_state="expanded")
 
 # --- IDENTIDAD VISUAL Y DISEÑO PREMIUM ---
-LOGO_PATH = os.path.join(root_path, "src", "web", "assets", "brand", "fv_logo_vector_principal.svg")
+LOGO_PATH = os.path.join(root_path, "assets", "brand", "fv_logo_principal_trimmed.png")
 ALTUS_LOGO_PATH = os.path.join(root_path, "assets", "Logo_ALTUS AI_Principal_Fondo oscuro.png")
 
 st.markdown("""
