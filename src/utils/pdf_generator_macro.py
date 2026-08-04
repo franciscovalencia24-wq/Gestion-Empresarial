@@ -45,15 +45,8 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
     # Logos vectoriales / HD de marca oficial
     from src.utils.pdf_generator import _get_logo_base64
     
-    # Cargar logo FV oficial en alta definición PNG/SVG
-    root_assets = os.path.join(root_dir, "assets")
-    fv_logo_path = os.path.join(root_assets, "NUEVO LOGO FV.png")
-    if os.path.exists(fv_logo_path):
-        with open(fv_logo_path, "rb") as img_f:
-            fv_b64 = f"data:image/png;base64,{base64.b64encode(img_f.read()).decode('utf-8')}"
-    else:
-        fv_b64 = _get_logo_base64("NUEVO LOGO FV.svg")
-        
+    # Cargar logo FV oficial en alta definición SVG
+    fv_b64 = _get_logo_base64("fv_logo_vector_principal.svg")
     altus_b64 = _get_logo_base64("Logo_ALTUS AI_Principal.svg")
 
     # Reemplazar marcadores manuales de salto de página y convertir tablas

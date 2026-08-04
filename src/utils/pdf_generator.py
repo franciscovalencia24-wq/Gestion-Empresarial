@@ -13,13 +13,13 @@ def _get_logo_base64(filename="Logo_FV_Principal.svg"):
     candidates.append(filename)
     
     name_map = {
-        "fv_logo_principal_light.png": "NUEVO LOGO FV.svg",
-        "fv_logo_principal_hd.png": "NUEVO LOGO FV.svg",
-        "fv_emblem_3d_metallic.png": "NUEVO LOGO FV.svg",
+        "fv_logo_principal_light.png": "fv_logo_vector_principal.svg",
+        "fv_logo_principal_hd.png": "fv_logo_vector_principal.svg",
+        "fv_emblem_3d_metallic.png": "fv_logo_vector_principal.svg",
         "altus_logo_minimalist_1780936005587.png": "Logo_ALTUS AI_Principal.svg",
         "altus_ai_logo_dark.svg": "Logo_ALTUS AI_Negativo.svg",
-        "fv_logo_vector_principal.svg": "NUEVO LOGO FV.svg",
-        "Logo_FV_Principal.svg": "NUEVO LOGO FV.svg"
+        "NUEVO LOGO FV.svg": "fv_logo_vector_principal.svg",
+        "Logo_FV_Principal.svg": "fv_logo_vector_principal.svg"
     }
     if filename in name_map:
         candidates.insert(0, name_map[filename])
