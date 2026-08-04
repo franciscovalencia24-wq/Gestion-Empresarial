@@ -51,10 +51,10 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
     with open(fv_svg_path, "rb") as img_f:
         fv_b64 = f"data:image/svg+xml;base64,{base64.b64encode(img_f.read()).decode('utf-8')}"
 
-    # Cargar logo ALTUS AI en vector puro SVG
-    altus_svg_path = os.path.join(root_assets, "brand", "altus_ai_logo_principal.svg")
+    # Cargar logo ALTUS AI oficial con fondo oscuro en vector puro SVG
+    altus_svg_path = os.path.join(root_assets, "brand", "altus_ai_logo_dark.svg")
     if not os.path.exists(altus_svg_path):
-        altus_svg_path = os.path.join(root_assets, "Logo_ALTUS AI_Principal.svg")
+        altus_svg_path = os.path.join(root_assets, "Logo_ALTUS AI_Principal_Fondo oscuro.svg")
 
     with open(altus_svg_path, "rb") as alt_f:
         altus_b64 = f"data:image/svg+xml;base64,{base64.b64encode(alt_f.read()).decode('utf-8')}"
