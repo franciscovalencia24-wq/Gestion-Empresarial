@@ -143,7 +143,31 @@ class MacroAnalystAgent:
 
         try:
             response = self.model.generate_content(prompt)
-            return response.text
+            consenso_texto = response.text
+
+            # Guardar/Actualizar en DB para memoria a largo plazo
+            try:
+                db_save = SessionLocal()
+                existing_c = db_save.query(MarketVision).filter_by(institucion="Consenso IA", periodo=periodo).first()
+                if existing_c:
+                    existing_c.resumen_extendido = consenso_texto
+                    existing_c.fecha_ingesta = datetime.now()
+                else:
+                    new_c = MarketVision(
+                        institucion="Consenso IA",
+                        periodo=periodo,
+                        fuente="Altus AI Engine",
+                        resumen_corto="Consenso Institucional Definitivo del Mes",
+                        resumen_extendido=consenso_texto,
+                        fecha_ingesta=datetime.now()
+                    )
+                    db_save.add(new_c)
+                db_save.commit()
+                db_save.close()
+            except Exception as e_save:
+                pass
+
+            return consenso_texto
         except Exception as e:
             return f"Error en el LLM: {e}"
 

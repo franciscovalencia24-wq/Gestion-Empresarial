@@ -62,13 +62,20 @@ def render_macro_chat_ui():
                     with st.expander("Ver Visión Extendida"):
                         st.write(v.resumen_extendido)
 
-        # Mostrar Consenso si fue disparado o si existe en memoria
+        # Cargar Consenso guardado desde DB o procesar nuevo si fue disparado
         if getattr(st.session_state, "trigger_consensus", False):
             st.session_state.trigger_consensus = False
             with st.spinner(f"Altus AI Macro está leyendo las visiones de {periodo_actual} y debatiendo el consenso..."):
                 agent = MacroAnalystAgent()
                 consenso_text = agent.generate_monthly_consolidation(periodo_actual)
                 st.session_state[f"last_consensus_{periodo_actual}"] = consenso_text
+
+        if not st.session_state.get(f"last_consensus_{periodo_actual}"):
+            db_c = SessionLocal()
+            c_saved = db_c.query(MarketVision).filter_by(institucion="Consenso IA", periodo=periodo_actual).first()
+            if c_saved and c_saved.resumen_extendido:
+                st.session_state[f"last_consensus_{periodo_actual}"] = c_saved.resumen_extendido
+            db_c.close()
 
         current_consensus = st.session_state.get(f"last_consensus_{periodo_actual}")
         if current_consensus:
@@ -80,11 +87,13 @@ def render_macro_chat_ui():
             st.markdown("### 📥 Descargar Informe Institucional Exportable")
             col_pdf, col_docx = st.columns(2)
             
+            import tempfile
+            temp_dir = tempfile.gettempdir()
+
             with col_pdf:
                 try:
-                    import tempfile
                     from src.utils.pdf_generator_macro import generate_macro_pdf
-                    pdf_path = os.path.join(tempfile.gettempdir(), f"Consenso_Institucional_{periodo_actual}.pdf")
+                    pdf_path = os.path.join(temp_dir, f"Consenso_Institucional_{periodo_actual}.pdf")
                     generate_macro_pdf(
                         cliente_nombre="Comité de Inversiones / Clientes FV",
                         contenido_markdown=current_consensus,
@@ -103,9 +112,8 @@ def render_macro_chat_ui():
 
             with col_docx:
                 try:
-                    import tempfile
                     from src.utils.docx_generator_macro import generate_macro_docx
-                    docx_path = os.path.join(tempfile.gettempdir(), f"Consenso_Institucional_{periodo_actual}.docx")
+                    docx_path = os.path.join(temp_dir, f"Consenso_Institucional_{periodo_actual}.docx")
                     generate_macro_docx(
                         cliente_nombre="Comité de Inversiones / Clientes FV",
                         contenido_markdown=current_consensus,
