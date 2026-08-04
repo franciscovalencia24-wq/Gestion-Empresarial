@@ -1,5 +1,5 @@
 import os
-import datetime
+from datetime import datetime
 import json
 import google.generativeai as genai
 from dotenv import load_dotenv
@@ -107,7 +107,10 @@ class MacroAnalystAgent:
             return "Error: GOOGLE_API_KEY no configurada."
 
         db = SessionLocal()
-        visiones = db.query(MarketVision).filter_by(periodo=periodo).all()
+        visiones = db.query(MarketVision).filter(
+            MarketVision.periodo == periodo,
+            MarketVision.institucion != "Consenso IA"
+        ).all()
         db.close()
 
         if not visiones:
