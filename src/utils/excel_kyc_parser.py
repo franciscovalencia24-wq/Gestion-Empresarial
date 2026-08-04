@@ -73,6 +73,9 @@ def parse_excel_kyc_file(file_bytes):
 
                     # Limpiar nombre removiendo paréntesis, RUT y fechas
                     name_clean = re.sub(r'\([^)]*\)', '', entry_str)
+                    if rut_extracted:
+                        name_clean = name_clean.replace(rut_extracted, "")
+                    name_clean = re.sub(r'(\d{1,2}(?:\.\d{3}){2}-[\dkK]|\d{7,8}-[\dkK])', '', name_clean)
                     name_clean = re.sub(r'RUT\s*[:\s]*[\d\.-]+[kK\d]?', '', name_clean, flags=re.IGNORECASE)
                     name_clean = re.sub(r'(?:Fecha\s*Nac|Nacimiento|Fec\s*Nac)\s*[:\s]*[\d\/\.-]+', '', name_clean, flags=re.IGNORECASE)
                     name_clean = re.sub(r'\b\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4}\b', '', name_clean)

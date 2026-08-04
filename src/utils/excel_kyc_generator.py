@@ -103,9 +103,9 @@ def generar_excel_kyc_corporativo(client_name="Cliente", missing_herederos=True,
     else:
         if missing_herederos:
             kyc_items.append((
-                "Detalle de Herederos (Parentesco, RUT, Fecha de Nacimiento y Composición Familiar)",
-                "Requerido para la planificación de sucesión, cálculo de exenciones tributarias de herencia (Ley N° 16.271) y tabla actuarial.",
-                "Escriba Nombres, Parentesco, RUT y Fecha de Nacimiento. Ej: María González (Cónyuge; RUT 9.017.656-0; Fecha Nac: 15/05/1955), Pedro Pérez (Hijo; RUT 10.870.820-4; Fecha Nac: 20/10/1985)."
+                "Detalle de Herederos (Parentesco, RUT, Fecha de Nacimiento y Nombre Completo)",
+                "Requerido para la planificación de sucesión, cálculo de exenciones tributarias de herencia (Ley N° 16.271) y tabla actuarial de distribución.",
+                "Indique RUT, Nombre Completo, Fecha de Nacimiento (DD/MM/AAAA) y Parentesco. Ej: 9.017.656-0 Rosa Henríquez Contreras (Fecha Nac: 15/05/1958 - Cónyuge - 50%), 15.870.820-4 Ignacio González Henríquez (Fecha Nac: 20/10/1985 - Hijo - 25%), 18.234.567-1 Isidora González Henríquez (Fecha Nac: 04/12/1992 - Hija - 25%). NO responder solo 'Sí'."
             ))
         if missing_propiedades:
             kyc_items.append((
@@ -123,7 +123,7 @@ def generar_excel_kyc_corporativo(client_name="Cliente", missing_herederos=True,
         if not kyc_items:
             kyc_items = [
                 ("Nombres, Apellidos y RUT del Titular", "Identificación legal del titular para la elaboración del informe patrimonial.", "Ej: Nelson Moraga Benavides | RUT: 12.345.678-9 | Fecha Nac: 15/08/1980."),
-                ("Detalle de Herederos, RUT y Fecha de Nacimiento", "Planificación de sucesión y cálculo de exenciones tributarias de herencia.", "Ej: María González (Cónyuge; RUT 9.017.656-0; Fecha Nac: 15/05/1955), Pedro Pérez (Hijo; RUT 10.870.820-4; Fecha Nac: 20/10/1985)."),
+                ("Detalle de Herederos (RUT, Nombre Completo, Fecha de Nacimiento y Parentesco)", "Planificación de sucesión y cálculo de exenciones tributarias de herencia.", "Indique RUT, Nombre Completo, Fecha de Nacimiento (DD/MM/AAAA) y Parentesco. Ej: 9.017.656-0 Rosa Henríquez Contreras (Fecha Nac: 15/05/1958 - Cónyuge - 50%), 15.870.820-4 Ignacio González Henríquez (Fecha Nac: 20/10/1985 - Hijo - 25%)."),
                 ("Bienes Raíces (ROL, Comuna y Deudas)", "Consolidación patrimonial en UF y auditoría de garantías.", "Ej: ROL 1234-5 Las Condes, ~10.000 UF, Hipoteca $50M."),
                 ("Pólizas de Vida / APV (Régimen A/B)", "Análisis de inembargabilidad y franquicias tributarias (Art. 57 LIR).", "Ej: Principal APV Régimen B ($25M), MetLife Seguro Vida (5.000 UF).")
             ]
