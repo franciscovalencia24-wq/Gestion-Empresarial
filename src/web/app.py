@@ -73,8 +73,8 @@ Base.metadata.create_all(bind=engine)
 st.set_page_config(page_title="Altus AI - FV Asesorías", layout="wide", initial_sidebar_state="expanded")
 
 # --- IDENTIDAD VISUAL Y DISEÑO PREMIUM ---
-LOGO_PATH = os.path.join(root_path, "assets", "brand", "fv_logo_principal_trimmed.png")
-ALTUS_LOGO_PATH = os.path.join(root_path, "assets", "Logo_ALTUS AI_Principal_Fondo oscuro.png")
+LOGO_PATH = os.path.join(root_path, "assets", "brand", "fv_logo_vector_pure.svg")
+ALTUS_LOGO_PATH = os.path.join(root_path, "assets", "brand", "altus_ai_logo_dark.svg")
 
 st.markdown("""
 <style>
@@ -1560,8 +1560,19 @@ def main():
         </style>
     """, unsafe_allow_html=True)
     
-    # Mostrar Logo Corporativo Oficial FV
-    if os.path.exists(LOGO_PATH):
+    # Mostrar Logo Corporativo Oficial FV en Vector Nativo Puro SVG
+    svg_sidebar_path = os.path.join(root_path, "assets", "brand", "fv_logo_vector_pure.svg")
+    if os.path.exists(svg_sidebar_path):
+        with open(svg_sidebar_path, "r", encoding="utf-8") as f_side:
+            svg_side_code = f_side.read()
+        st.sidebar.markdown(f"""
+        <div style="text-align: center; margin-bottom: 15px; width: 100%;">
+            <div style="width: 100%; max-width: 230px; margin: 0 auto;">
+                {svg_side_code}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    elif os.path.exists(LOGO_PATH):
         st.sidebar.image(LOGO_PATH, use_container_width=True)
     else:
         st.sidebar.title("💎 FV WealthTech")
