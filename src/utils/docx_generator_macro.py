@@ -19,7 +19,18 @@ def generate_macro_docx(cliente_nombre: str, contenido_markdown: str, output_pat
         section.left_margin = Inches(1)
         section.right_margin = Inches(1)
         
-    # Encabezado Principal
+    # Encabezado con Logo Oficial FV
+    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+    fv_logo_path = os.path.join(root_dir, "assets", "NUEVO LOGO FV.png")
+    if os.path.exists(fv_logo_path):
+        try:
+            p_logo = doc.add_paragraph()
+            p_logo.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            run_logo = p_logo.add_run()
+            run_logo.add_picture(fv_logo_path, width=Inches(1.8))
+        except Exception:
+            pass
+
     title_p = doc.add_paragraph()
     title_p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     run_sub = title_p.add_run("DIGITAL FAMILY OFFICE ANALYTICS | FV ASESORÍAS & ALTUS AI\n")

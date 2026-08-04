@@ -5,23 +5,66 @@ from datetime import datetime
 from xhtml2pdf import pisa
 import markdown
 
+def _parse_md_tables_to_html(md_text):
+    lines = md_text.split('\n')
+    in_table = False
+    html_lines = []
+    
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith('|') and stripped.endswith('|'):
+            parts = [p.strip() for p in stripped.split('|')[1:-1]]
+            if all(set(p) <= set(':- ') for p in parts if p):
+                continue
+            if not in_table:
+                in_table = True
+                html_lines.append('<table style="width:100%; border-collapse:collapse; margin:10px 0 14px 0; font-size:9pt; page-break-inside:avoid;"><thead><tr style="background-color:#0A2342; color:#ffffff;">')
+                for h in parts:
+                    html_lines.append(f'<th style="padding:6px 8px; border:1px solid #cbd5e1; text-align:left; font-weight:bold;">{h}</th>')
+                html_lines.append('</tr></thead><tbody>')
+            else:
+                html_lines.append('<tr style="page-break-inside:avoid;">')
+                for c in parts:
+                    html_lines.append(f'<td style="padding:5px 8px; border:1px solid #cbd5e1; text-align:left; vertical-align:top;">{c}</td>')
+                html_lines.append('</tr>')
+        else:
+            if in_table:
+                in_table = False
+                html_lines.append('</tbody></table>')
+            html_lines.append(line)
+            
+    if in_table:
+        html_lines.append('</tbody></table>')
+        
+    return '\n'.join(html_lines)
+
 def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path: str):
     fecha_actual = datetime.now().strftime("%d/%m/%Y")
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     
-    # Logos vectoriales (Regla de oro: usar SVG de assets/)
+    # Logos vectoriales / HD de marca oficial
     from src.utils.pdf_generator import _get_logo_base64
-    fv_b64 = _get_logo_base64("Logo_FV_Principal.svg")
+    
+    # Cargar logo FV oficial en alta definición PNG/SVG
+    root_assets = os.path.join(root_dir, "assets")
+    fv_logo_path = os.path.join(root_assets, "NUEVO LOGO FV.png")
+    if os.path.exists(fv_logo_path):
+        with open(fv_logo_path, "rb") as img_f:
+            fv_b64 = f"data:image/png;base64,{base64.b64encode(img_f.read()).decode('utf-8')}"
+    else:
+        fv_b64 = _get_logo_base64("NUEVO LOGO FV.svg")
+        
     altus_b64 = _get_logo_base64("Logo_ALTUS AI_Principal.svg")
 
-    # Reemplazar marcadores manuales de salto de página
-    markdown_processed = contenido_markdown.replace("[SALTO]", "<pdf:nextpage />")
+    # Reemplazar marcadores manuales de salto de página y convertir tablas
+    markdown_processed = _parse_md_tables_to_html(contenido_markdown)
+    markdown_processed = markdown_processed.replace("[SALTO]", "<pdf:nextpage />")
     markdown_processed = markdown_processed.replace("---", "<pdf:nextpage />")
 
     # Convertir markdown a HTML
     contenido_html = markdown.markdown(markdown_processed, extensions=['extra', 'nl2br'])
 
-    # HTML TEMPLATE
+    # HTML TEMPLATE CON ESTILOS INSTITUCIONALES Y TABLAS COMPACTAS
     html_content = f"""
     <!DOCTYPE html>
     <html lang="es">
@@ -30,64 +73,96 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
         <style>
             @page {{
                 size: A4 portrait;
-                margin: 2cm;
+                margin: 1.8cm;
                 margin-bottom: 2cm;
                 @frame footer_frame {{
                     -pdf-frame-content: footer_content;
-                    left: 2cm; right: 2cm; bottom: 0.5cm; height: 1cm;
+                    left: 1.8cm; right: 1.8cm; bottom: 0.5cm; height: 1cm;
                 }}
             }}
             body {{
                 font-family: Helvetica, Arial, sans-serif;
                 color: #333333;
-                line-height: 1.5;
-                font-size: 11pt;
+                line-height: 1.45;
+                font-size: 10pt;
             }}
             h1 {{
-                color: #104b3c;
-                font-size: 20px;
+                color: #0A2342;
+                font-size: 18px;
                 text-align: center;
                 margin-top: 15px;
+                font-weight: bold;
             }}
             h2 {{
-                color: #1a202c;
-                font-size: 16px;
-                border-bottom: 1px solid #e2e8f0;
-                padding-bottom: 5px;
-                margin-top: 25px;
+                color: #104b3c;
+                font-size: 14px;
+                border-bottom: 1.5px solid #0A2342;
+                padding-bottom: 4px;
+                margin-top: 20px;
+                font-weight: bold;
             }}
             h3 {{
                 color: #1a202c;
-                font-size: 14px;
-                margin-top: 20px;
+                font-size: 12px;
+                margin-top: 15px;
+                font-weight: bold;
             }}
             p {{
                 text-align: justify;
-                margin-bottom: 10px;
+                margin-bottom: 8px;
             }}
             ul, ol {{
-                margin-bottom: 15px;
-                margin-top: 5px;
+                margin-bottom: 10px;
+                margin-top: 4px;
+                padding-left: 18px;
             }}
             li {{
-                margin-bottom: 5px;
+                margin-bottom: 4px;
                 text-align: justify;
             }}
+            table {{
+                width: 100%;
+                border-collapse: collapse;
+                margin-top: 10px;
+                margin-bottom: 14px;
+                font-size: 9pt;
+                page-break-inside: avoid;
+            }}
+            th, td {{
+                border: 1px solid #cbd5e1;
+                padding: 5px 8px;
+                text-align: left;
+                vertical-align: top;
+            }}
+            th {{
+                background-color: #0A2342;
+                color: #ffffff;
+                font-weight: bold;
+                font-size: 9pt;
+            }}
+            tr {{
+                page-break-inside: avoid;
+            }}
+            tr:nth-child(even) {{
+                background-color: #f8fafc;
+            }}
             .disclaimer {{
-                font-size: 10px;
+                font-size: 8.5pt;
                 color: #64748b;
                 text-align: justify;
                 border-top: 1px solid #e2e8f0;
-                padding-top: 10px;
-                margin-top: 30px;
+                padding-top: 8px;
+                margin-top: 20px;
+                page-break-inside: avoid;
             }}
             .corp-desc {{
                 background-color: #f8fafc;
                 border-left: 3px solid #D4AF37; /* Altus Gold */
-                padding: 12px;
-                font-size: 9pt;
-                margin-top: 20px;
+                padding: 10px;
+                font-size: 8.5pt;
+                margin-top: 12px;
                 color: #374151;
+                page-break-inside: avoid;
             }}
             strong, b {{
                 color: #0f172a;

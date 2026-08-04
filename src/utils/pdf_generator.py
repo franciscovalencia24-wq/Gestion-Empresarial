@@ -4,25 +4,53 @@ from io import BytesIO
 from xhtml2pdf import pisa
 import base64
 
-def _get_logo_base64(filename="Logo_FV_Negativo.png"):
+def _get_logo_base64(filename="Logo_FV_Principal.svg"):
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    logo_path = os.path.join(root_dir, "assets", filename)
-    if not os.path.exists(logo_path):
-        logo_path = os.path.join(root_dir, "logo_flat.jpg")
-    if os.path.exists(logo_path):
-        with open(logo_path, "rb") as image_file:
-            encoded = base64.b64encode(image_file.read()).decode('utf-8')
-            ext = "svg+xml" if filename.endswith(".svg") else "png"
-            return f"data:image/{ext};base64,{encoded}"
+    
+    candidates = []
+    if filename.endswith(".png") or filename.endswith(".jpg"):
+        candidates.append(os.path.splitext(filename)[0] + ".svg")
+    candidates.append(filename)
+    
+    name_map = {
+        "fv_logo_principal_light.png": "NUEVO LOGO FV.svg",
+        "fv_logo_principal_hd.png": "NUEVO LOGO FV.svg",
+        "fv_emblem_3d_metallic.png": "NUEVO LOGO FV.svg",
+        "altus_logo_minimalist_1780936005587.png": "Logo_ALTUS AI_Principal.svg",
+        "altus_ai_logo_dark.svg": "Logo_ALTUS AI_Negativo.svg",
+        "fv_logo_vector_principal.svg": "NUEVO LOGO FV.svg",
+        "Logo_FV_Principal.svg": "NUEVO LOGO FV.svg"
+    }
+    if filename in name_map:
+        candidates.insert(0, name_map[filename])
+        
+    search_dirs = [
+        os.path.join(root_dir, "assets"),
+        os.path.join(root_dir, "assets", "brand"),
+        os.path.join(root_dir, "src", "web", "assets"),
+        os.path.join(root_dir, "src", "web", "assets", "brand"),
+    ]
+    
+    for cand in candidates:
+        for d in search_dirs:
+            p = os.path.join(d, cand)
+            if os.path.exists(p):
+                with open(p, "rb") as image_file:
+                    encoded = base64.b64encode(image_file.read()).decode('utf-8')
+                    ext = "svg+xml" if cand.endswith(".svg") else ("png" if cand.endswith(".png") else "jpeg")
+                    return f"data:image/{ext};base64,{encoded}"
     return ""
 
 def generate_kyc_manual(cliente_nombre: str) -> bytes:
     """
     Genera el Manual de Onboarding (KYC) en PDF con instrucciones 
-    para obtener Carpeta Tributaria, CMF Seguros y CMF Deudas.
+    para obtener Carpeta Tributaria, CMF Seguros y CMF Deudas,
+    usando el logo oficial corporativo de FV Asesorías e Inversiones.
     """
-    logo_src = _get_logo_base64("Logo_FV_Negativo.png")
-    img_tag = f'<img src="{logo_src}" width="160" style="margin-bottom: 20px;"/>' if logo_src else '<h2>FV Asesorías</h2>'
+    logo_src = _get_logo_base64("fv_logo_principal_light.png")
+    if not logo_src:
+        logo_src = _get_logo_base64("fv_emblem_3d_metallic.png")
+    img_tag = f'<img src="{logo_src}" width="200" style="margin-bottom: 15px;"/>' if logo_src else '<h2>FV Asesorías e Inversiones</h2>'
 
     html_content = f"""
     <html>
@@ -30,30 +58,39 @@ def generate_kyc_manual(cliente_nombre: str) -> bytes:
         <style>
             @page {{
                 size: a4 portrait;
-                margin: 2cm;
+                margin: 1.8cm;
             }}
             body {{
                 font-family: Helvetica, Arial, sans-serif;
-                font-size: 11pt;
-                color: #333333;
+                font-size: 10.5pt;
+                color: #2d3748;
                 line-height: 1.5;
             }}
-            h1 {{ color: #1a365d; font-size: 18pt; text-align: center; border-bottom: 1px solid #1a365d; padding-bottom: 10px; }}
-            h2 {{ color: #2b6cb0; font-size: 14pt; margin-top: 20px; }}
-            h3 {{ color: #4a5568; font-size: 12pt; }}
-            .step {{ background-color: #f7fafc; padding: 10px; border-left: 4px solid #3182ce; margin-bottom: 15px; }}
-            .footer {{ text-align: center; font-size: 9pt; color: #718096; margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 10px; }}
+            .header-box {{ text-align: center; margin-bottom: 20px; }}
+            h1 {{ color: #0f172a; font-size: 18pt; text-align: center; border-bottom: 2px solid #e5b154; padding-bottom: 8px; margin-top: 10px; }}
+            h2 {{ color: #0A2342; font-size: 13pt; margin-top: 18px; margin-bottom: 8px; }}
+            .kyc-intro {{ background-color: #f8fafc; padding: 12px 15px; border-left: 4px solid #e5b154; margin-bottom: 18px; border-radius: 4px; font-size: 10pt; }}
+            .step {{ background-color: #f1f5f9; padding: 10px 14px; border-left: 4px solid #0A2342; margin-bottom: 12px; border-radius: 4px; line-height: 1.6; }}
+            .security-box {{ background-color: #ecfdf5; border: 1px solid #a7f3d0; padding: 12px 15px; border-radius: 6px; margin-top: 20px; font-size: 9.5pt; color: #065f46; }}
+            .legal-box {{ background-color: #f0f9ff; border: 1px solid #bae6fd; padding: 12px 15px; border-radius: 6px; margin-top: 12px; font-size: 9.5pt; color: #0369a1; }}
+            .footer {{ text-align: center; font-size: 8.5pt; color: #64748b; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 8px; }}
         </style>
     </head>
     <body>
-        <div style="text-align: center;">
+        <div class="header-box">
             {img_tag}
         </div>
         
-        <h1>Manual de Recopilación de Antecedentes</h1>
+        <h1>Manual de Recopilación de Antecedentes (KYC)</h1>
+        
         <p>Estimado/a <strong>{cliente_nombre}</strong>,</p>
-        <p>Para brindarle una asesoría patrimonial de excelencia y estructurar una planificación integral, necesitamos recopilar información oficial sobre su situación tributaria, financiera y de seguros. 
-        Este manual le guiará paso a paso para descargar los documentos requeridos desde los portales oficiales del Estado (SII y CMF).</p>
+        
+        <div class="kyc-intro">
+            <strong>💡 ¿Qué es el KYC (Know Your Customer)?</strong><br>
+            Es el estándar internacional de debida diligencia patrimonial. Nos permite conocer con precisión la estructura de su patrimonio, grupo familiar e historial financiero para diseñar una estrategia integral 360° a la medida, exenta de sesgos y ajustada al marco tributario vigente en Chile.
+        </div>
+        
+        <p>Este manual le guiará paso a paso para descargar los documentos oficiales requeridos desde los portales institucionales del Estado (SII y CMF):</p>
         
         <h2>1. Carpeta Tributaria Regular (Servicio de Impuestos Internos - SII)</h2>
         <div class="step">
@@ -61,14 +98,14 @@ def generate_kyc_manual(cliente_nombre: str) -> bytes:
             <b>Paso 2:</b> Ingrese con su RUT y Clave Tributaria o Clave Única.<br>
             <b>Paso 3:</b> Vaya a <b>"Situación Tributaria"</b> > <b>"Carpeta Tributaria Electrónica"</b> > <b>"Generar Carpeta Tributaria"</b>.<br>
             <b>Paso 4:</b> Seleccione la opción <b>"Regular para Solicitar Créditos"</b>.<br>
-            <b>Paso 5:</b> Haga clic en <b>"Generar PDF"</b>. Guarde el archivo descargado.
+            <b>Paso 5:</b> Haga clic en <b>"Generar PDF"</b> y guarde el archivo descargado.
         </div>
         
         <h2>2. Informe de Deudas (Comisión para el Mercado Financiero - CMF)</h2>
         <div class="step">
-            <b>Paso 1:</b> Ingrese al portal de la CMF en <a href="https://conocetudeuda.cmfchile.cl/">https://conocetudeuda.cmfchile.cl/</a>.<br>
-            <b>Paso 2:</b> Ingrese con su RUT y Clave Única.<br>
-            <b>Paso 3:</b> Presione <b>"Descargar CSV"</b> o "Exportar a Excel".
+            <b>Paso 1:</b> Ingrese al portal oficial CMF en <a href="https://conocetudeuda.cmfchile.cl/">conocetudeuda.cmfchile.cl</a>.<br>
+            <b>Paso 2:</b> Inicie sesión con su RUT y Clave Única.<br>
+            <b>Paso 3:</b> Presione <b>"Descargar CSV / PDF"</b> para obtener su informe oficial de obligaciones consolidadas.
         </div>
         
         <h2>3. Certificado de Seguros (Comisión para el Mercado Financiero - CMF)</h2>
@@ -76,9 +113,19 @@ def generate_kyc_manual(cliente_nombre: str) -> bytes:
             <b>Paso 1:</b> Ingrese a <a href="https://www.conocetuseguro.cl/">www.conocetuseguro.cl</a>.<br>
             <b>Paso 2:</b> Inicie sesión con su Clave Única y presione <b>"Descargar Certificado (PDF)"</b>.
         </div>
+
+        <div class="security-box">
+            <strong>🔒 Resguardo de Información & Protocolos de Ciberseguridad:</strong><br>
+            En FV Asesorías e Inversiones sus datos están protegidos bajo estándares de grado bancario (Cifrado AES-256 en reposo y TLS 1.3 en tránsito). Garantizamos confidencialidad absoluta bajo Secreto Patrimonial y estricto cumplimiento de la Ley N° 19.628 sobre Protección de la Vida Privada. Sus datos no son compartidos con terceros bajo ninguna circunstancia.
+        </div>
+
+        <div class="legal-box">
+            <strong>⚖️ Validez Legal del Formulario KYC (Ley N° 19.799):</strong><br>
+            Conforme a la Ley N° 19.799 sobre Documentos Electrónicos en Chile, la entrega de antecedentes y respuestas enviadas desde su correo electrónico personal o corporativo constituye una <strong>Firma Electrónica Simple (FES)</strong> válida y vinculante como declaración jurada de antecedentes de onboarding.
+        </div>
         
         <div class="footer">
-            Generado automáticamente por FV Asesorías e Inversiones - Sistema Integral de Asesoría Patrimonial
+            FV Asesorías e Inversiones SpA • Multi-Family Office Digital impulsado por Altus AI
         </div>
     </body>
     </html>
