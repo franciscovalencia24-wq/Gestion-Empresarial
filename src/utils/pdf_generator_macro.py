@@ -42,11 +42,11 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
     fecha_actual = datetime.now().strftime("%d/%m/%Y")
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
     
-    # Cargar logo FV oficial en alta definición PNG para xhtml2pdf
+    # Cargar logo FV oficial fv_logo_vector_principal en alta definición PNG renderizado desde el SVG original
     root_assets = os.path.join(root_dir, "assets")
-    fv_logo_path = os.path.join(root_assets, "NUEVO LOGO FV.png")
+    fv_logo_path = os.path.join(root_assets, "brand", "fv_logo_vector_principal_rendered.png")
     if not os.path.exists(fv_logo_path):
-        fv_logo_path = os.path.join(root_assets, "brand", "fv_logo_principal_light.png")
+        fv_logo_path = os.path.join(root_assets, "brand", "fv_logo_vector_principal.png")
 
     with open(fv_logo_path, "rb") as img_f:
         fv_b64 = f"data:image/png;base64,{base64.b64encode(img_f.read()).decode('utf-8')}"
