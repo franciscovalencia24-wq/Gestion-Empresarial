@@ -92,7 +92,11 @@ def render_macro_chat_ui():
 
             with col_pdf:
                 try:
+                    import importlib
+                    import src.utils.pdf_generator_macro
+                    importlib.reload(src.utils.pdf_generator_macro)
                     from src.utils.pdf_generator_macro import generate_macro_pdf
+
                     pdf_path = os.path.join(temp_dir, f"Consenso_Institucional_{periodo_actual}.pdf")
                     generate_macro_pdf(
                         cliente_nombre="Comité de Inversiones / Clientes FV",
@@ -112,7 +116,11 @@ def render_macro_chat_ui():
 
             with col_docx:
                 try:
+                    import importlib
+                    import src.utils.docx_generator_macro
+                    importlib.reload(src.utils.docx_generator_macro)
                     from src.utils.docx_generator_macro import generate_macro_docx
+
                     docx_path = os.path.join(temp_dir, f"Consenso_Institucional_{periodo_actual}.docx")
                     generate_macro_docx(
                         cliente_nombre="Comité de Inversiones / Clientes FV",
