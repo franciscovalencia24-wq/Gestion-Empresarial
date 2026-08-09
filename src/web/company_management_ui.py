@@ -96,12 +96,11 @@ def render_company_management_ui():
             CompanyFinancialMovement.monto_total == 2500000.0
         ).first()
         if not check_nat:
-            import datetime
             mov_nat = CompanyFinancialMovement(
                 empresa=empresa_sel,
                 tipo_movimiento="PRESTAMO_SOCIO",
                 categoria="PRESTAMO SOCIO",
-                fecha=datetime.date(2026, 7, 28),
+                fecha=datetime(2026, 7, 28).date(),
                 periodo="2026-07",
                 rut_contraparte="",
                 razon_social="NATALIA TAPIA (SOCIA)",
@@ -660,11 +659,15 @@ def render_company_management_ui():
                         mov_db = db.query(CompanyFinancialMovement).filter_by(id=m_int).first()
                         if mov_db:
                             f_val = row.get("Fecha")
-                            if f_val:
+                            if pd.notna(f_val):
                                 try:
                                     if isinstance(f_val, str): f_dt = datetime.strptime(f_val, "%Y-%m-%d").date()
                                     elif hasattr(f_val, "date"): f_dt = f_val.date()
                                     else: f_dt = f_val
+                                    
+                                    if pd.isna(f_dt): 
+                                        f_dt = datetime.today().date()
+                                        
                                     mov_db.fecha = f_dt
                                     mov_db.periodo = f_dt.strftime("%Y-%m")
                                 except: pass
@@ -688,11 +691,16 @@ def render_company_management_ui():
 
                         if tot_val > 0 or row.get("Concepto / Detalle") or row.get("Razón Social / Proveedor"):
                             f_val = row.get("Fecha")
-                            try:
-                                if isinstance(f_val, str): f_dt = datetime.strptime(f_val, "%Y-%m-%d").date()
-                                elif hasattr(f_val, "date"): f_dt = f_val.date()
-                                else: f_dt = datetime.today().date()
-                            except:
+                            f_dt = datetime.today().date()
+                            if pd.notna(f_val):
+                                try:
+                                    if isinstance(f_val, str): f_dt = datetime.strptime(f_val, "%Y-%m-%d").date()
+                                    elif hasattr(f_val, "date"): f_dt = f_val.date()
+                                    else: f_dt = f_val
+                                except:
+                                    pass
+                            
+                            if pd.isna(f_dt):
                                 f_dt = datetime.today().date()
 
                             cat_val = str(row.get("Categoría", "ARRIENDO")).strip() or "ARRIENDO"
