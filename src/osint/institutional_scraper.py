@@ -54,8 +54,8 @@ class InstitutionalScraper:
         {raw_text[:8000]}
         
         OBJETIVO:
-        1. Confirma o asigna el período en formato YYYY-MM (usar {periodo} por defecto si no es explícito).
-        2. Resume la visión corta (1 párrafo contundente de 2-3 oraciones).
+        1. VALIDADOR DE PERÍODO: Extrae el verdadero período (año y mes) al que corresponde la estrategia. NO uses {periodo} por defecto si el texto menciona explícitamente otro mes o si las fechas en el texto apuntan a un período anterior (ej. si el reporte se publicó en agosto pero dice "Visión Julio"). Debes ser muy preciso.
+        2. Resume la visión corta (1 párrafo contundente de 2-3 oraciones). Si el período real detectado no coincide con {periodo}, inicia el resumen diciendo: "[⚠️ ALERTA: Esta visión corresponde a {periodo} y no al mes actual] ".
         3. Escribe un resumen extendido estructurado por:
            - 🏛️ **Renta Fija (Local e Internacional)**
            - 📈 **Renta Variable (IPSA vs Wall Street)**
@@ -63,7 +63,7 @@ class InstitutionalScraper:
         
         Responde ÚNICAMENTE con un JSON válido con esta estructura:
         {{
-            "periodo_detectado": "{periodo}",
+            "periodo_detectado": "YYYY-MM (el verdadero)",
             "resumen_corto": "...",
             "resumen_extendido": "..."
         }}

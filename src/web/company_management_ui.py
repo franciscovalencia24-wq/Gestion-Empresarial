@@ -551,13 +551,13 @@ def render_company_management_ui():
                                 categoria="FACTURACION / ABONO",
                                 fecha=f_dt,
                                 periodo=f_dt.strftime("%Y-%m"),
-                                folio_factura=str(row.get("Folio", "")),
-                                concepto=str(row.get("Concepto / Detalle", "")),
+                                folio_factura=str(row.get("Folio") or ""),
+                                concepto=str(row.get("Concepto / Detalle") or ""),
                                 monto_neto=neto_val,
                                 monto_iva=iva_val,
                                 monto_total=tot_val,
-                                cuenta_corriente=str(row.get("Cuenta Corriente", "CTA. CTE. BCI: FV ASESORIAS")),
-                                observaciones=str(row.get("Observaciones", "Agregado en tabla editable"))
+                                cuenta_corriente=str(row.get("Cuenta Corriente") or "CTA. CTE. BCI: FV ASESORIAS"),
+                                observaciones=str(row.get("Observaciones") or "Agregado en tabla editable")
                             )
                             db.add(new_mov)
 
@@ -567,6 +567,11 @@ def render_company_management_ui():
                     if del_mov: db.delete(del_mov)
 
                 db.commit()
+                try:
+                    from src.utils.gcs_sync import upload_db_to_gcs
+                    upload_db_to_gcs()
+                except Exception:
+                    pass
                 st.success("✅ Cambios en Ingresos guardados en la Base de Datos.")
                 st.rerun()
 
@@ -581,6 +586,11 @@ def render_company_management_ui():
                         if mov_to_del:
                             db.delete(mov_to_del)
                             db.commit()
+                            try:
+                                from src.utils.gcs_sync import upload_db_to_gcs
+                                upload_db_to_gcs()
+                            except Exception:
+                                pass
                             st.success(f"✅ Ingreso ID {target_id} eliminado exitosamente.")
                             st.rerun()
                 else:
@@ -710,14 +720,14 @@ def render_company_management_ui():
                                 categoria=cat_val,
                                 fecha=f_dt,
                                 periodo=f_dt.strftime("%Y-%m"),
-                                rut_contraparte=str(row.get("RUT", "")),
-                                razon_social=str(row.get("Razón Social / Proveedor", "Inmobiliaria / Arriendo")),
-                                concepto=str(row.get("Concepto / Detalle", "Pago de Arriendo Oficina")),
+                                rut_contraparte=str(row.get("RUT") or ""),
+                                razon_social=str(row.get("Razón Social / Proveedor") or "Inmobiliaria / Arriendo"),
+                                concepto=str(row.get("Concepto / Detalle") or "Pago de Arriendo Oficina"),
                                 monto_neto=neto_val,
                                 monto_iva=iva_val,
                                 monto_total=tot_val,
-                                cuenta_corriente=str(row.get("Cuenta Corriente", "CTA. CTE. BCI: FV ASESORIAS")),
-                                observaciones=str(row.get("Observaciones", "Registrado en tabla editable"))
+                                cuenta_corriente=str(row.get("Cuenta Corriente") or "CTA. CTE. BCI: FV ASESORIAS"),
+                                observaciones=str(row.get("Observaciones") or "Registrado en tabla editable")
                             )
                             db.add(new_mov)
 
@@ -727,6 +737,11 @@ def render_company_management_ui():
                     if del_mov: db.delete(del_mov)
 
                 db.commit()
+                try:
+                    from src.utils.gcs_sync import upload_db_to_gcs
+                    upload_db_to_gcs()
+                except Exception:
+                    pass
                 st.success("✅ Egresos y nuevos pagos (Arriendo/Gastos) guardados exitosamente.")
                 st.rerun()
 

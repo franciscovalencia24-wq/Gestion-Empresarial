@@ -61,6 +61,35 @@ class MarketDataEngine:
         
         for region, symbol, name in tickers_info:
             try:
+                if name == "IPSA":
+                    import requests
+                    from bs4 import BeautifulSoup
+                    url_df = 'https://www.df.cl/mercados/bolsa-santiago'
+                    headers = {'User-Agent': 'Mozilla/5.0'}
+                    r = requests.get(url_df, headers=headers, timeout=10)
+                    soup = BeautifulSoup(r.text, 'html.parser')
+                    val_str = "N/D"
+                    efecto = "NEUTRAL"
+                    for group in soup.find_all('li', class_='indicadores__group'):
+                        name_tag = group.find('p', class_='indicadores__name')
+                        if name_tag and 'IPSA' in name_tag.text:
+                            val_tag = group.find('p', class_='indicadores__number')
+                            if val_tag:
+                                val_str = val_tag.text.strip()
+                                cls = val_tag.get('class', [])
+                                efecto = "ALZA" if "indicadores__number--green" in cls else "BAJA" if "indicadores__number--red" in cls else "NEUTRAL"
+                                break
+                    if val_str == "N/D":
+                        raise Exception("No se encontró el IPSA en DF.cl")
+                    
+                    results_by_region[region].append({
+                        "nombre": name,
+                        "valor": val_str,
+                        "efecto": efecto,
+                        "relevancia": "MODERADA"
+                    })
+                    continue
+
                 t = yf.Ticker(symbol)
                 data = t.history(period="5d")
                 
@@ -89,9 +118,41 @@ class MarketDataEngine:
                     "relevancia": relevancia
                 })
             except Exception as e:
-                logging.error(f"Error descargando {symbol}: {e}")
-                val_fallback = "6.582,40" if name == "IPSA" else "N/D"
-                results_by_region[region].append({"nombre": name, "valor": val_fallback, "efecto": "NEUTRAL", "relevancia": "LEVE"})
+                logging.error(f"Error descargando {symbol} vía yfinance: {e}. Intentando scraper HTML...")
+                try:
+                    import requests
+                    from bs4 import BeautifulSoup
+                    url_html = f'https://finance.yahoo.com/quote/{symbol.replace("^", "%5E")}/'
+                    headers = {'User-Agent': 'Mozilla/5.0'}
+                    r = requests.get(url_html, headers=headers, timeout=10)
+                    soup = BeautifulSoup(r.text, 'html.parser')
+                    streamer_price = soup.find('fin-streamer', {'data-field': 'regularMarketPrice'})
+                    streamer_change = soup.find('fin-streamer', {'data-field': 'regularMarketChangePercent'})
+                    
+                    if streamer_price and streamer_change:
+                        price_text = streamer_price.text.replace(',', '')
+                        close_today = float(price_text)
+                        
+                        change_text = streamer_change.text.replace('%', '').replace('+', '').replace('(', '').replace(')', '')
+                        delta_pct = float(change_text)
+                        
+                        efecto = "ALZA" if delta_pct > 0 else "BAJA" if delta_pct < 0 else "NEUTRAL"
+                        var_abs = abs(delta_pct)
+                        relevancia = "IMPORTANTE" if var_abs > 1.0 else "MODERADA" if var_abs > 0.3 else "LEVE"
+                        
+                        valor_str = f"{close_today:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+                        
+                        results_by_region[region].append({
+                            "nombre": name,
+                            "valor": valor_str,
+                            "efecto": efecto,
+                            "relevancia": relevancia
+                        })
+                    else:
+                        raise Exception("No se encontró fin-streamer en el HTML.")
+                except Exception as e2:
+                    logging.error(f"Error en scraper HTML para {symbol}: {e2}")
+                    results_by_region[region].append({"nombre": name, "valor": "N/D", "efecto": "NEUTRAL", "relevancia": "LEVE"})
                 
         return results_by_region
 
@@ -485,6 +546,25 @@ class MarketDataEngine:
             if "DÓLAR" in str(c.get("nombre", "")).upper():
                 dolar_val = str(c.get("valor", "")).split(",")[0].replace(".", "").strip()
                 if dolar_val: dolar_str = dolar_val
+                
+        # Extraer cotización del Cobre de commodity_stats si está disponible
+        cobre_str = "4,12"
+        for c in commodity_stats:
+            if "COBRE" in str(c.get("nombre", "")).upper():
+                cobre_val = str(c.get("valor", "")).strip()
+                if cobre_val and cobre_val != "N/D":
+                    cobre_str = cobre_val
+                    
+        # Extraer cotización del IPSA de global_stats si está disponible
+        ipsa_str = ""
+        for region, indices in global_stats.items():
+            for idx in indices:
+                if "IPSA" in str(idx.get("nombre", "")).upper():
+                    ipsa_val = str(idx.get("valor", "")).strip()
+                    if ipsa_val and ipsa_val != "N/D" and ipsa_val != "6.582,40":
+                        ipsa_str = ipsa_val
+                        
+        ipsa_instruction = f"- IPSA: Si se menciona, indicar que cotiza en la zona de {ipsa_str} puntos." if ipsa_str else ""
 
         focus_instruction = f"""
         REQUISITO DE ESTRUCTURA Y CALIBRACIÓN DE LONGITUD (POST ÁGIL, CONCISO Y DE IMPACTO):
@@ -494,9 +574,9 @@ class MarketDataEngine:
         REQUISITO DE ZERO-ALUCINACIÓN (GROUNDING ESTRICTO A FUENTES OFICIALES Y NOTICIAS):
         1. DATOS MACRO OFICIALES (ENLACE A APIS EN VIVO):
            - Tasa de Política Monetaria (TPM): Usa ESTRICTAMENTE {tpm_str} (Oficial Banco Central de Chile). PROHIBIDO inventar 5,0% u otros números.
-           - Dólar (USD/CLP): Cotiza en la zona de los ${dolar_str} CLP. PROHIBIDO inventar valores no alineados como $915.
-           - Cobre (Cochilco): Usa valores alineados a la tabla (~US$4,12/lb). NUNCA contradigas la tendencia de la tabla.
-           - IPSA: Si se menciona, indicar que cotiza neutral en la zona de ~6.580 puntos.
+           - Dólar (USD/CLP): Cotiza en la zona de los ${dolar_str} CLP. PROHIBIDO inventar valores no alineados.
+           - Cobre (Cochilco/Mercados): Usa valores alineados a la tabla oficial actual (US${cobre_str}/lb). NUNCA contradigas esto.
+           {ipsa_instruction}
         
         2. PROHIBICIÓN ABSOLUTA DE RECOMENDACIONES DE INVERSIÓN:
            - Queda ESTRICTAMENTE PROHIBIDO dar recomendaciones o asesoría directa de inversión (ej: NO escribir "Recomendamos sobreponderar", "Sugerimos comprar", "En APV es buen momento").
@@ -532,7 +612,7 @@ class MarketDataEngine:
             "fuente_noticia": "Fuente real de la noticia extraída del texto (ej: Diario Financiero, Reuters, etc. NO inventes).",
             "fecha_noticia": "Usa ESTRICTAMENTE la fecha y hora que viene en el texto de NOTICIAS HOY. Si la hora viene en formato UTC (ejemplo terminada en Z), réstale 4 horas para ajustarla a Chile. NO inventes fechas pasadas ni uses la fecha de tus ejemplos. Formato final: DD de Mes, YYYY - HH:MM hrs",
             "prompt_imagen": "Un prompt corto en inglés (max 10 palabras) que describa la noticia para generar una imagen abstracta. (Ej: 'stock market crash red arrows')",
-            "post_linkedin": "El post completo para RRSS para LinkedIn. REQUISITO DE TITULARES Y EXTENSIÓN ÁGIL: El post DEBE comenzar con un Titular Periodístico de Impacto en Mayúsculas (ej: 🚨 WALL STREET EN EXPECTATIVA ANTE LA FED) seguido de 3 párrafos concisos y ágiles (entre 1.100 y 1.400 caracteres brutos en total). Integra datos oficiales y estadísticas clave para diferenciarte de la competencia. Separa con dobles saltos de línea (\\n\\n). Finaliza EXACTAMENTE con este bloque literal:\n\n¿Qué podría significar esto para tus ahorros e inversiones?\nDescubre cómo preparar tu portafolio ante estos nuevos desafíos. Obtén tu Radiografía Patrimonial, impulsada por nuestro software privado ALTUS AI, y optimiza tu estrategia de inversión.\n\n📧 contacto@fv-inversiones.com | 📱 WhatsApp: +56966779662\n\nAgrega de 3 a 5 HASHTAGS al final (ej: #Inversiones #Mercados).",
+            "post_linkedin": "El post completo para RRSS para LinkedIn. REQUISITO DE TITULARES Y EXTENSIÓN ÁGIL: El post DEBE comenzar con un Titular Periodístico de Impacto en Mayúsculas (ej: 🚨 WALL STREET EN EXPECTATIVA ANTE LA FED) seguido de 3 párrafos concisos y ágiles (entre 1.100 y 1.400 caracteres brutos en total). Integra datos oficiales y estadísticas clave para diferenciarte de la competencia. Separa con dobles saltos de línea (\\n\\n). Finaliza EXACTAMENTE con este bloque literal:\n\n¿Qué podría significar esto para tus ahorros e inversiones?\nDescubre cómo preparar tu portafolio ante estos nuevos desafíos. Escríbenos para una asesoría patrimonial integral y optimiza tu estrategia de inversión.\n\n📧 contacto@fv-inversiones.com | 📱 WhatsApp: +56966779662\n\nAgrega de 3 a 5 HASHTAGS al final (ej: #Inversiones #Mercados).",
             "explicacion_interna": "Una explicación detallada (dirigida a los asesores de FV) de la lógica económica/financiera detrás de la noticia elegida y cómo fundamenta de forma causal los impactos (alzas y bajas) predichos en los commodities e índices. Sirve para responder dudas de clientes.",
             "explicacion_multifondos": "Un texto explicativo de unas 3-4 líneas (para clientes) justificando los movimientos proyectados (ALZA o BAJA) específicos de los Multifondos chilenos en base a la noticia y los mercados globales. Se incluirá en la presentación.",
             "impacto_local": {{
@@ -558,6 +638,12 @@ class MarketDataEngine:
                     {{"nombre": "COBRE CASH", "efecto": "BAJA", "relevancia": "IMPORTANTE"}},
                     {{"nombre": "PLATA", "efecto": "BAJA", "relevancia": "LEVE"}},
                     {{"nombre": "GAS NATURAL", "efecto": "ALZA", "relevancia": "IMPORTANTE"}}
+                ],
+                "indices_globales": [
+                    {{"nombre": "S&P 500", "efecto": "ALZA", "relevancia": "IMPORTANTE"}},
+                    {{"nombre": "NASDAQ 100", "efecto": "ALZA", "relevancia": "MODERADA"}},
+                    {{"nombre": "IPSA", "efecto": "NEUTRAL", "relevancia": "LEVE"}},
+                    {{"nombre": "EURO STOXX 50", "efecto": "BAJA", "relevancia": "MODERADA"}}
                 ]
             }}
         }}
@@ -580,7 +666,7 @@ class MarketDataEngine:
                 # 1. Corregir TPM
                 p_text = re.sub(
                     r'(Tasa\s*de\s*Política\s*Monetaria(?:\s*\(TPM\))?[^,\n\.]*(?:fijada|ubicada|en)?[^,\n\.]*?)\s*\d+[,\.]?\d*%',
-                    lambda m: f"{m.group(1)} {tpm_str}",
+                    lambda m: f"{m.group(1).rstrip()} {tpm_str}",
                     p_text,
                     flags=re.IGNORECASE
                 )
@@ -803,6 +889,16 @@ class MarketDataEngine:
             news_img_b64 = self.download_to_base64(fallback_url)
             if not news_img_b64:
                 news_img_b64 = map_b64
+
+        # Sobrescribir el efecto y relevancia matemático con la predicción de la IA para índices globales
+        if 'impacto_local' in ai_data and 'indices_globales' in ai_data['impacto_local']:
+            predicciones = {str(item.get('nombre', '')).upper(): item for item in ai_data['impacto_local']['indices_globales']}
+            for region, indices in global_stats.items():
+                for idx in indices:
+                    nombre_upper = str(idx.get('nombre', '')).upper()
+                    if nombre_upper in predicciones:
+                        idx['efecto'] = predicciones[nombre_upper].get('efecto', idx['efecto'])
+                        idx['relevancia'] = predicciones[nombre_upper].get('relevancia', idx['relevancia'])
         
         # Agregar datos al diccionario final
         ai_data['impacto_global'] = global_stats

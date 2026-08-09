@@ -187,7 +187,10 @@ def render_macro_chat_ui():
                 elif tipo_doc == "Multimodal desde URL (Pantallazo Autónomo)" and not url_input:
                     st.warning("Debes ingresar una URL válida.")
                 else:
-                    agent = MacroAnalystAgent()
+                    import importlib
+                    import src.agents.macro_analyst
+                    importlib.reload(src.agents.macro_analyst)
+                    agent = src.agents.macro_analyst.MacroAnalystAgent()
                     
                     if tipo_doc == "Estándar (Texto/Archivo)":
                         text_content = ""

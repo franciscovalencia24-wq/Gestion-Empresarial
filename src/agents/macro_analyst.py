@@ -50,8 +50,9 @@ class MacroAnalystAgent:
             
         prompt += """
         OBJETIVO:
-        1. Resume la visión corta (1 párrafo contundente).
-        2. Escribe el resumen extendido (Renta Fija, Variable, Alternativos). Si es una actualización intra-mes, asegúrate de indicarlo en el texto.
+        1. VALIDADOR DE PERÍODO: Verifica si el documento aportado corresponde realmente al período esperado ({periodo}). Si el texto indica claramente ser de un mes/año distinto (ej. Julio, Trimestre anterior), debes indicarlo.
+        2. Resume la visión corta (1 párrafo contundente). Si el período es incorrecto o desactualizado, inicia el resumen diciendo: "[⚠️ ALERTA: Este documento parece ser de <mes encontrado> y no de {periodo}] ".
+        3. Escribe el resumen extendido (Renta Fija, Variable, Alternativos). Si es una actualización intra-mes, asegúrate de indicarlo en el texto.
         
         Responde ÚNICAMENTE con un JSON válido con esta estructura:
         {
@@ -81,7 +82,7 @@ class MacroAnalystAgent:
                 vision.contenido_bruto = (vision.contenido_bruto or "") + "\n\n--- NUEVO APORTE ---\n" + (text_content[:5000] if not is_multimodal else "[Aporte Multimodal - JP Morgan]")
                 vision.resumen_corto = data.get("resumen_corto")
                 vision.resumen_extendido = data.get("resumen_extendido")
-                vision.fecha_ingesta = datetime.datetime.utcnow()
+                vision.fecha_ingesta = datetime.utcnow()
             else:
                 vision = MarketVision(
                     institucion=institucion,
