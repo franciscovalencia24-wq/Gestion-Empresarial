@@ -304,15 +304,34 @@ def render_company_management_ui():
                 db.add(bci_acc_db)
                 db.commit()
 
-            saldo_bci_base = float(bci_acc_db.saldo_actual or 21160054.0)
+            saldo_bci_base = float(bci_acc_db.saldo_actual or 20156118.0)
+            fecha_concil = bci_acc_db.created_at
         except Exception:
             db.rollback()
             try:
                 Base.metadata.create_all(bind=engine)
             except Exception:
                 pass
+            fecha_concil = None
 
         saldo_bci_real = saldo_bci_base
+        if fecha_concil:
+            # Sumar ingresos y restar egresos posteriores a la conciliación para la cuenta BCI
+            nuevos_ingresos = db.query(CompanyFinancialMovement).filter(
+                CompanyFinancialMovement.cuenta_corriente == "CTA. CTE. BCI: FV ASESORIAS",
+                CompanyFinancialMovement.tipo_movimiento.in_(["INGRESO", "DEVOLUCION_SOCIO"]),
+                CompanyFinancialMovement.created_at > fecha_concil
+            ).all()
+            
+            nuevos_egresos = db.query(CompanyFinancialMovement).filter(
+                CompanyFinancialMovement.cuenta_corriente == "CTA. CTE. BCI: FV ASESORIAS",
+                CompanyFinancialMovement.tipo_movimiento.in_(["EGRESO", "PRESTAMO_SOCIO"]),
+                CompanyFinancialMovement.created_at > fecha_concil
+            ).all()
+            
+            sum_in = sum(m.monto_total or 0.0 for m in nuevos_ingresos)
+            sum_out = sum(m.monto_total or 0.0 for m in nuevos_egresos)
+            saldo_bci_real += (sum_in - sum_out)
 
         st.markdown("### 📊 Indicadores Financieros Consolidados y Conciliación Bancaria")
         k1, k2, k3, k4, k5 = st.columns(5)
@@ -350,7 +369,9 @@ def render_company_management_ui():
                 )
                 if st.button("💾 Actualizar Saldo Real Banco", key="btn_save_saldo_bci", type="primary", use_container_width=True):
                     if bci_acc_db:
+                        from datetime import datetime
                         bci_acc_db.saldo_actual = float(nuevo_saldo_bci)
+                        bci_acc_db.created_at = datetime.utcnow()
                         db.commit()
                         try:
                             from src.utils.gcs_sync import upload_db_to_gcs
