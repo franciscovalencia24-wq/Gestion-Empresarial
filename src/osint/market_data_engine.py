@@ -38,7 +38,7 @@ class MarketDataEngine:
             mime = "image/svg+xml" if filepath.endswith(".svg") else f"image/{filepath.split('.')[-1]}"
             return f"data:{mime};base64,{encoded}"
 
-    def fetch_global_stats(self, ipsa_override=None):
+    def fetch_global_stats(self):
         """Descarga 14 métricas globales (yfinance)"""
         logging.info("Descargando 14 índices (yfinance)...")
         tickers_info = [
@@ -62,15 +62,6 @@ class MarketDataEngine:
         for region, symbol, name in tickers_info:
             try:
                 if name == "IPSA":
-                    if ipsa_override:
-                        results_by_region[region].append({
-                            "nombre": name,
-                            "valor": str(ipsa_override).strip(),
-                            "efecto": "NEUTRAL",
-                            "relevancia": "MODERADA"
-                        })
-                        continue
-
                     import requests
                     from bs4 import BeautifulSoup
                     url_df = 'https://www.df.cl/mercados/bolsa-santiago'
@@ -89,7 +80,7 @@ class MarketDataEngine:
                                 efecto = "ALZA" if "indicadores__number--green" in cls else "BAJA" if "indicadores__number--red" in cls else "NEUTRAL"
                                 break
                     if val_str == "N/D":
-                        logging.warning("IPSA no encontrado en DF.cl, intentando fallback de valor estático")
+                        raise Exception("No se encontró el IPSA en DF.cl")
                     
                     results_by_region[region].append({
                         "nombre": name,
@@ -626,39 +617,38 @@ class MarketDataEngine:
             "explicacion_multifondos": "Un texto explicativo de unas 3-4 líneas (para clientes) justificando los movimientos proyectados (ALZA o BAJA) específicos de los Multifondos chilenos en base a la noticia y los mercados globales. Se incluirá en la presentación.",
             "impacto_local": {{
                 "fondos_mutuos": [
-                    {{"nombre": "GLOBAL", "efecto": "<EVALUAR_ALZA_BAJA_NEUTRAL>", "relevancia": "<EVALUAR_IMPORTANTE_MODERADA_LEVE>"}},
-                    {{"nombre": "USA", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "EUROPA", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "ASIA", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "EMERGENTES", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "LATAM", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "RV LOCAL", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}}
+                    {{"nombre": "GLOBAL", "efecto": "BAJA", "relevancia": "IMPORTANTE"}},
+                    {{"nombre": "USA", "efecto": "BAJA", "relevancia": "MODERADA"}},
+                    {{"nombre": "EUROPA", "efecto": "NEUTRAL", "relevancia": "LEVE"}},
+                    {{"nombre": "ASIA", "efecto": "ALZA", "relevancia": "IMPORTANTE"}},
+                    {{"nombre": "EMERGENTES", "efecto": "BAJA", "relevancia": "MODERADA"}},
+                    {{"nombre": "LATAM", "efecto": "BAJA", "relevancia": "LEVE"}},
+                    {{"nombre": "RV LOCAL", "efecto": "ALZA", "relevancia": "IMPORTANTE"}}
                 ],
                 "multifondos": [
-                    {{"nombre": "Fondo A", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "Fondo B", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "Fondo C", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "Fondo D", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "Fondo E", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}}
+                    {{"nombre": "Fondo A", "efecto": "BAJA", "relevancia": "IMPORTANTE"}},
+                    {{"nombre": "Fondo B", "efecto": "BAJA", "relevancia": "IMPORTANTE"}},
+                    {{"nombre": "Fondo C", "efecto": "NEUTRAL", "relevancia": "MODERADA"}},
+                    {{"nombre": "Fondo D", "efecto": "NEUTRAL", "relevancia": "LEVE"}},
+                    {{"nombre": "Fondo E", "efecto": "ALZA", "relevancia": "IMPORTANTE"}}
                 ],
                 "commodities": [
-                    {{"nombre": "PETRÓLEO WTI", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "ORO", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "COBRE CASH", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "PLATA", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "GAS NATURAL", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}}
+                    {{"nombre": "PETRÓLEO WTI", "efecto": "ALZA", "relevancia": "IMPORTANTE"}},
+                    {{"nombre": "ORO", "efecto": "ALZA", "relevancia": "IMPORTANTE"}},
+                    {{"nombre": "COBRE CASH", "efecto": "BAJA", "relevancia": "IMPORTANTE"}},
+                    {{"nombre": "PLATA", "efecto": "BAJA", "relevancia": "LEVE"}},
+                    {{"nombre": "GAS NATURAL", "efecto": "ALZA", "relevancia": "IMPORTANTE"}}
                 ],
                 "indices_globales": [
-                    {{"nombre": "S&P 500", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "NASDAQ 100", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "IPSA", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
-                    {{"nombre": "EURO STOXX 50", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}}
+                    {{"nombre": "S&P 500", "efecto": "ALZA", "relevancia": "IMPORTANTE"}},
+                    {{"nombre": "NASDAQ 100", "efecto": "ALZA", "relevancia": "MODERADA"}},
+                    {{"nombre": "IPSA", "efecto": "NEUTRAL", "relevancia": "LEVE"}},
+                    {{"nombre": "EURO STOXX 50", "efecto": "BAJA", "relevancia": "MODERADA"}}
                 ]
             }}
         }}
-        Recuerda usar SOLO "BAJA", "ALZA" o "NEUTRAL" para efecto y "IMPORTANTE", "MODERADA" o "LEVE" para relevancia.
-        IMPORTANTE: NO copies la palabra <EVALUAR>. DEBES evaluar e interpretar tú mismo la noticia y calcular de forma lógica el efecto y la relevancia para CADA UNO de los ítems.
-        Devuelve un JSON strictly válido. Escapa las comillas internas con \\" y los saltos de línea dentro de los textos con \\n.
+        Recuerda usar solo BAJA, ALZA, NEUTRAL para efecto y IMPORTANTE, MODERADA, LEVE para relevancia.
+        IMPORTANTE: Devuelve un JSON strictly válido. Escapa las comillas internas con \\" y los saltos de línea dentro de los textos con \\n.
         """
         try:
             logging.info("Solicitando análisis de la noticia...")
@@ -791,7 +781,7 @@ class MarketDataEngine:
         try:
             currency_stats = self.fetch_currency_stats()
             commodity_stats = self.fetch_commodities_stats()
-            global_stats = self.fetch_global_stats(ipsa_override=ipsa_override)
+            global_stats = self.fetch_global_stats()
             
             official_stats_context = "DATOS ESTADÍSTICOS OFICIALES Y METRICAS EN TIEMPO REAL (APIs de Banco Central, BCCh, Cobre/LME, Yahoo Finance):\n"
             for c in currency_stats:
@@ -1162,8 +1152,8 @@ class MarketDataEngine:
         logging.info("Publicación enviada a LinkedIn exitosamente.")
         return True
 
-    def run_daily_routine(self, mode="auto", custom_input=None, ipsa_override=None):
-        global_stats = self.fetch_global_stats(ipsa_override=ipsa_override)
+    def run_daily_routine(self, mode="auto", custom_input=None):
+        global_stats = self.fetch_global_stats()
         currency_stats = self.fetch_currency_stats()
         commodity_stats = self.fetch_commodities_stats()
         

@@ -118,7 +118,7 @@ def render_infographic_generator_ui():
                     with st.spinner("🤖 El motor de Inteligencia y Diseño está creando la infografía 4K y el post de LinkedIn..."):
                         try:
                             engine = MarketDataEngine()
-                            post_content, img_file = engine.run_daily_routine(mode=mode_arg, custom_input=custom_input, ipsa_override=ipsa_override)
+                            post_content, img_file = engine.run_daily_routine(mode=mode_arg, custom_input=custom_input)
                             
                             st.session_state.info_post_content = post_content
                             st.session_state.info_img_file = img_file
