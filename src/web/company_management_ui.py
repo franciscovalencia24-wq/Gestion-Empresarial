@@ -34,7 +34,7 @@ def render_company_management_ui():
     """, unsafe_allow_html=True)
 
     # 1. SELECCIÓN DE EMPRESA Y ACCIONES SUPERIORES
-    col_emp, col_btn1, col_btn2 = st.columns([2, 1.2, 1.2])
+    col_emp, col_btn_new = st.columns([3, 1.5])
 
     with col_emp:
         empresa_sel = st.selectbox(
@@ -44,20 +44,38 @@ def render_company_management_ui():
             key="company_sel_main"
         )
 
-    with col_btn1:
-        st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
-        if st.button("🔄 Sincronizar desde Excel", use_container_width=True, type="secondary"):
-            with st.spinner("Sincronizando REGISTRO FACTURAS.xlsx..."):
-                res = import_fv_excel(company_name=empresa_sel)
-                if res["status"] == "success":
-                    st.success(res["message"])
-                    st.rerun()
-                else:
-                    st.error(res["message"])
-
-    with col_btn2:
+    with col_btn_new:
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         show_new_form = st.checkbox("➕ Nuevo Movimiento", key="toggle_new_mov")
+
+    with st.expander("📥 Importar Registro SII (Compras/Ventas)", expanded=False):
+        st.caption("Sube los archivos CSV descargados desde el SII para ingresarlos automáticamente a la base de datos sin duplicarlos.")
+        sii_files = st.file_uploader("Arrastra aquí los archivos CSV del SII", type=['csv'], accept_multiple_files=True)
+        if sii_files and st.button("Procesar Archivos SII", type="primary"):
+            from src.ingestion.sii_importer import process_sii_dataframe
+            import io
+            for f in sii_files:
+                try:
+                    # El SII suele usar codificación iso-8859-1 / latin-1 y separador ;
+                    content = f.getvalue().decode('latin-1', errors='replace')
+                    df = pd.read_csv(io.StringIO(content), sep=';', index_col=False)
+                    
+                    res = process_sii_dataframe(df, empresa_sel, f.name)
+                    if res["status"] == "success":
+                        st.success(res["message"])
+                    else:
+                        st.error(res["message"])
+                except Exception as e:
+                    st.error(f"Error leyendo {f.name}: {str(e)}")
+            
+            # Respaldar inmediatamente en la nube
+            from src.utils.gcs_sync import upload_db_to_gcs
+            try:
+                upload_db_to_gcs()
+            except Exception:
+                pass
+            
+            st.rerun()
 
     # 0. DESCARGA AUTOMÁTICA DESDE GOOGLE CLOUD STORAGE EN NUBE
     if "gcs_db_synced" not in st.session_state:
@@ -164,7 +182,7 @@ def render_company_management_ui():
                 fc1, fc2, fc3 = st.columns(3)
                 with fc1:
                     n_tipo = st.selectbox("Tipo de Movimiento", ["EGRESO", "INGRESO", "PRESTAMO_SOCIO", "DEVOLUCION_SOCIO", "MOVIMIENTO_CTA_CTE"], key="n_mov_tipo")
-                    n_categoria = st.selectbox("Categoría", ["ARRIENDO", "GASTO / COMPRA", "FACTURACION / ABONO", "PRÉSTAMO A SOCIO", "DEVOLUCIÓN PRÉSTAMO SOCIO", "REEMBOLSO GASTO / COMPRA SOCIO", "PAGO SUELDOS SOCIO", "IMPUESTOS F29", "OTROS"], key="n_mov_cat")
+                    n_categoria = st.selectbox("Categoría", ["ARRIENDO", "GASTO / COMPRA", "FACTURACION / ABONO", "PRÉSTAMO A SOCIO", "DEVOLUCIÓN PRÉSTAMO SOCIO", "REEMBOLSO GASTO / COMPRA SOCIO", "PAGO SUELDOS SOCIO", "IMPUESTOS F29", "OTROS", "⚠️ CLASIFICAR GASTO"], key="n_mov_cat")
                     n_fecha = st.date_input("Fecha", value=datetime.today(), key="n_mov_fecha")
 
                 with fc2:
@@ -659,7 +677,7 @@ def render_company_management_ui():
                     "ID": st.column_config.NumberColumn("ID", width=50),
                     "Fecha": st.column_config.DateColumn("Fecha", format="DD/MM/YYYY", width=95),
                     "Período": st.column_config.TextColumn("Período", width=75),
-                    "Categoría": st.column_config.SelectboxColumn("Categoría", options=["ARRIENDO", "GASTO / COMPRA", "PAGO SUELDOS SOCIO", "IMPUESTOS F29", "REEMBOLSO GASTO / COMPRA SOCIO", "SERVICIOS", "OTROS"], width=130),
+                    "Categoría": st.column_config.SelectboxColumn("Categoría", options=["ARRIENDO", "GASTO / COMPRA", "PAGO SUELDOS SOCIO", "IMPUESTOS F29", "REEMBOLSO GASTO / COMPRA SOCIO", "SERVICIOS", "OTROS", "SUELDO", "PREVIRED", "HONORARIOS", "⚠️ CLASIFICAR GASTO"], width=130),
                     "RUT": st.column_config.TextColumn("RUT", width=95),
                     "Razón Social / Proveedor": st.column_config.TextColumn("Proveedor / Entidad", width=180),
                     "Concepto / Detalle": st.column_config.TextColumn("Concepto / Detalle", width=220),

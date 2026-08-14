@@ -27,6 +27,16 @@ def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/c
         bucket = client.bucket(BUCKET_NAME)
         blob = bucket.blob(db_filename)
         if blob.exists():
+            # Validación de prevención de downgrade de BD
+            if os.path.exists(destination_path):
+                local_mtime = os.path.getmtime(destination_path)
+                remote_mtime = blob.updated.timestamp()
+                
+                # Si el archivo local fue modificado más recientemente que la copia en GCS
+                if local_mtime > remote_mtime:
+                    logger.warning("PREVENCIÓN DE PÉRDIDA DE DATOS: La base de datos local es más reciente que la versión en GCS. Se cancelará la descarga para evitar sobreescribir tus movimientos manuales recientes.")
+                    return False
+                    
             os.makedirs(os.path.dirname(destination_path), exist_ok=True)
             blob.download_to_filename(destination_path)
             logger.info(f"DB descargada exitosamente desde GCS: gs://{BUCKET_NAME}/{db_filename} -> {destination_path}")
