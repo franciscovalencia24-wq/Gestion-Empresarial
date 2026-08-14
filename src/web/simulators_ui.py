@@ -45,13 +45,17 @@ def render_apv_simulator(uf_valor):
     if rut_buscado and not modo_demo:
         db = SessionLocal()
         try:
-            prospect = db.query(Prospect).filter(Prospect.rut == rut_buscado).first()
+            rut_clean = rut_buscado.replace(".", "").replace("-", "").strip().upper()
+            from sqlalchemy import func
+            prospect = db.query(Prospect).filter(
+                func.replace(func.replace(func.upper(Prospect.rut), '.', ''), '-', '') == rut_clean
+            ).first()
             if prospect and prospect.nombre:
                 nombre_cliente = prospect.nombre
         finally:
             db.close()
             
-    nombre_final = c_nom.text_input("Nombre Completo", value=nombre_cliente, placeholder="Nombre del cliente")
+    nombre_final = c_nom.text_input("Nombre Completo", value=nombre_cliente, placeholder="Nombre del cliente", key=f"nom_apv_{rut_buscado}")
     
     with st.expander("📩 Generar Solicitud de Datos para este Cliente (Excel Corporativo & Correo sin asteriscos)", expanded=False):
         solic_enfoque = st.radio(
@@ -170,13 +174,17 @@ def render_reliquidacion_simulator(utm_val: float = 65000.0, uf_val: float = 380
     if rut_buscado and not modo_demo:
         db = SessionLocal()
         try:
-            prospect = db.query(Prospect).filter(Prospect.rut == rut_buscado).first()
+            rut_clean = rut_buscado.replace(".", "").replace("-", "").strip().upper()
+            from sqlalchemy import func
+            prospect = db.query(Prospect).filter(
+                func.replace(func.replace(func.upper(Prospect.rut), '.', ''), '-', '') == rut_clean
+            ).first()
             if prospect and prospect.nombre:
                 nombre_cliente = prospect.nombre
         finally:
             db.close()
             
-    nombre_final = c_nom.text_input("Nombre Completo", value=nombre_cliente, placeholder="Nombre del cliente", key="nom_reliquida")
+    nombre_final = c_nom.text_input("Nombre Completo", value=nombre_cliente, placeholder="Nombre del cliente", key=f"nom_reliquida_{rut_buscado}")
     
     st.divider()
     
