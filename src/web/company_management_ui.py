@@ -48,6 +48,20 @@ def render_company_management_ui():
         st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
         show_new_form = st.checkbox("➕ Nuevo Movimiento", key="toggle_new_mov")
 
+    st.sidebar.markdown("---")
+    if st.sidebar.button("☁️ Forzar Restauración desde la Nube (GCS)"):
+        try:
+            from src.utils.gcs_sync import get_gcs_client
+            client = get_gcs_client()
+            bucket = client.bucket("fv-asesorias-db-storage-fv")
+            blob = bucket.blob("crm_database.db")
+            blob.download_to_filename("data/crm_database.db")
+            st.session_state["gcs_db_synced"] = True
+            st.sidebar.success("¡Restauración exitosa! Recargando...")
+            st.rerun()
+        except Exception as e:
+            st.sidebar.error(f"Error: {e}")
+
     with st.expander("📥 Importar Registro SII (Compras/Ventas)", expanded=False):
         st.caption("Sube los archivos CSV descargados desde el SII para ingresarlos automáticamente a la base de datos sin duplicarlos.")
         sii_files = st.file_uploader("Arrastra aquí los archivos CSV del SII", type=['csv'], accept_multiple_files=True)
