@@ -9,6 +9,20 @@ logger = logging.getLogger("gcs_sync")
 def get_gcs_client():
     try:
         from google.cloud import storage
+        from google.oauth2 import service_account
+        import streamlit as st
+        
+        # Intenta usar Streamlit Secrets (Nube)
+        try:
+            if "gcp_service_account" in st.secrets:
+                credentials = service_account.Credentials.from_service_account_info(
+                    st.secrets["gcp_service_account"]
+                )
+                return storage.Client(credentials=credentials, project=PROJECT_ID)
+        except Exception:
+            pass # Si no hay st.secrets o falla, cae al entorno local
+            
+        # Fallback para desarrollo local
         return storage.Client(project=PROJECT_ID)
     except Exception as e:
         logger.warning(f"No se pudo inicializar cliente de GCS: {e}")
