@@ -289,7 +289,9 @@ def render_reliquidacion_simulator(utm_val: float = 65000.0, uf_val: float = 380
                 f"El cliente tiene un sueldo bruto anual de ${sueldo_anual:,.0f}, "
                 f"boletas de honorarios por ${honorarios:,.0f}, "
                 f"aporta en APV Régimen B ${apv_b:,.0f} y tiene ganancias de capital por ${ganancias_capital:,.0f}. "
-                "¿Existe algún beneficio o artículo específico en la Ley sobre Impuesto a la Renta o Ley 21.133 que debamos tener en cuenta para optimizar sus impuestos o alertarlo de algún riesgo? Sé directo y cita la norma."
+                "¿Existe algún beneficio o artículo específico en la Ley sobre Impuesto a la Renta o Ley 21.133 que debamos tener en cuenta para optimizar sus impuestos o alertarlo de algún riesgo? "
+                "Responde siendo directo, citando la norma aplicable. "
+                "IMPORTANTE PARA TU RESPUESTA: Revisa cuidadosamente la ortografía y el formato Markdown. NUNCA unas palabras con números (por ejemplo, nunca escribas '36.000.000yunaporte', asegúrate de poner espacios). NUNCA dejes espacios entre los asteriscos de negrita y la palabra (usa **$1.200.000** en vez de * *1.200.000)."
             )
             
             try:
