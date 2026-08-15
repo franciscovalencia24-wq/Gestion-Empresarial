@@ -142,7 +142,8 @@ class MacroAnalystAgent:
            - **Moderado:** Qué % asignar a cada activo.
            - **Agresivo/Arriesgado:** Qué % asignar a cada activo.
         
-        Usa formato Markdown profesional. No inventes datos que no estén en el texto provisto. Sé directo y analítico.
+        Usa formato Markdown profesional. No inventes datos que no estén en el texto provisto.
+        CRÍTICO: Ve directo a la información dura y al análisis. NO hagas introducciones, NO saludes y NUNCA uses frases introductorias como 'De acuerdo. Como Altus AI Macro...' o 'Procedo a destilar...'. Tu respuesta debe comenzar directamente con el texto analítico o el primer título.
         """
 
         try:

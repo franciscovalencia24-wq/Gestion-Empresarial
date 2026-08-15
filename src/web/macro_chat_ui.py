@@ -162,6 +162,8 @@ def render_macro_chat_ui():
                     st.success(f"✅ Scrapers ejecutados. Las visiones de {periodo_actual} han sido guardadas y consolidadas.")
                     if isinstance(res, dict) and res.get("alerts"):
                         st.warning("Se detectaron alertas en algunas páginas: " + str(res["alerts"]))
+                    import time
+                    time.sleep(2.5)
                     st.rerun()
 
         with c2:
@@ -212,6 +214,7 @@ def render_macro_chat_ui():
                             res = agent.ingest_document_vision(inst_name, mes_pdf, text_content=text_content)
                             if "✅" in res:
                                 st.success(res)
+                                import time; time.sleep(2.5)
                                 st.rerun()
                             else:
                                 st.error(res)
@@ -231,6 +234,7 @@ def render_macro_chat_ui():
                                 
                             if "✅" in res:
                                 st.success(res)
+                                import time; time.sleep(2.5)
                                 st.rerun()
                             else:
                                 st.error(res)
@@ -251,6 +255,7 @@ def render_macro_chat_ui():
                                         
                                     if "✅" in res:
                                         st.success(res)
+                                        import time; time.sleep(2.5)
                                         st.rerun()
                                     else:
                                         st.error(res)
