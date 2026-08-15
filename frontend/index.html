@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FV Asesorías | Altus AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <!-- Canvas for 3D Background (Three.js) -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- ECharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+
+    <div class="site-wrapper">
+      <!-- Navbar -->
+      <nav class="navbar">
+        <div class="nav-container">
+          <img src="/assets/brand/fv_logo_negativo.svg" alt="FV Asesorías" class="logo-fv" />
+          <div class="nav-links">
+            <a href="#noticias">Noticias</a>
+            <a href="#simulador">Simulador</a>
+            <div style="display: flex; align-items: center; gap: 24px; margin-right: 24px;">
+              <span style="font-size: 14px; font-weight: 600; color: var(--color-text-secondary); letter-spacing: 0.1em;">POWERED BY</span>
+              <img src="/assets/brand/altus_ai_logo_negativo.svg" alt="Altus AI" class="logo-altus" />
+            </div>
+            <a href="https://wa.me/56912345678" target="_blank" class="btn-primary btn-link">Contacto WhatsApp</a>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Hero Section -->
+      <header class="hero" id="inicio">
+        <div class="hero-content">
+          <h1 class="hero-title gsap-reveal">Preservación y Crecimiento</h1>
+          <p class="hero-subtitle gsap-reveal" style="margin-bottom: 48px;">El Estándar de la Inteligencia Financiera e Inversión Institucional.</p>
+
+          <div style="display: flex; gap: 16px; justify-content: center; align-items: stretch; flex-wrap: wrap; margin-bottom: 24px;">
+            <a href="https://wa.me/56912345678" target="_blank" class="btn-primary btn-large btn-link gsap-reveal">Agendar Consulta Estratégica</a>
+            <a href="#lab" class="btn-secondary btn-large btn-link gsap-reveal" style="border-color: rgba(197, 160, 89, 0.5); padding: 16px 36px; display: flex; align-items: center; justify-content: center;" title="Proponernos un nuevo proyecto de análisis, simulador o modelo predictivo a través de nuestro Innovation Lab.">Proponer Herramienta</a>
+          </div>
+
+          <!-- TradingView Widget BEGIN -->
+          <div class="tradingview-widget-container ticker-wrapper gsap-reveal">
+            <div class="tradingview-widget-container__widget"></div>
+            <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js" async>
+            {
+            "symbols": [
+              {
+                "proName": "FOREXCOM:SPXUSD",
+                "title": "S&P 500"
+              },
+              {
+                "proName": "FOREXCOM:NSXUSD",
+                "title": "US 100"
+              },
+              {
+                "description": "Cobre",
+                "proName": "COMEX:HG1!"
+              },
+              {
+                "description": "USD/CLP",
+                "proName": "FX_IDC:USDCLP"
+              }
+            ],
+            "showSymbolLogo": true,
+            "colorTheme": "dark",
+            "isTransparent": true,
+            "displayMode": "regular",
+            "locale": "es"
+          }
+            </script>
+          </div>
+          <!-- TradingView Widget END -->
+        </div>
+      </header>
+
+      <!-- Consenso de Mercado -->
+      <section class="linkedin-news" id="noticias" style="padding: 100px 0;">
+        <h2 class="section-title gsap-reveal">Perspectivas y Consenso de Mercado</h2>
+        <p class="section-subtitle gsap-reveal" style="text-align: center; color: #94a3b8; margin-bottom: 60px; max-width: 700px; margin-left: auto; margin-right: auto;">Nuestra visión analítica sobre el entorno macroeconómico actual y las recomendaciones tácticas del mes.</p>
+        
+        <div class="glass-card gsap-reveal" style="max-width: 900px; margin: 0 auto; padding: 48px; position: relative;">
+          <!-- CONSENSO_START -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+            <div style="display: flex; align-items: center; gap: 16px;">
+              <i data-lucide="bar-chart-2" style="color: var(--color-primary-gold); width: 32px; height: 32px;"></i>
+              <h3 style="font-size: 24px; font-weight: 700; color: #fff; margin: 0;">Recomendación Táctica</h3>
+            </div>
+            <span style="background: rgba(197, 160, 89, 0.1); color: var(--color-primary-gold); padding: 6px 16px; border-radius: 20px; font-size: 14px; font-weight: 600; border: 1px solid rgba(197, 160, 89, 0.3);">
+              Actualización: Agosto 2026
+            </span>
+          </div>
+          
+          <div style="color: #cbd5e1; font-size: 16px; line-height: 1.8;">
+            <h4 style="color: #fff; margin-bottom: 12px; font-size: 18px;">Visión Macro Consolidada</h4>
+            <p style="margin-bottom: 16px;">
+              Esta recomendación es un compilado estratégico basado en el análisis de fuentes abiertas y reportes públicos de las principales instituciones financieras chilenas y globales.
+            </p>
+            <p style="margin-bottom: 32px; color: #94a3b8; font-style: italic;">
+              "Mantenemos una postura neutral en renta variable global frente a señales mixtas en los datos de inflación núcleo y una política monetaria restrictiva persistente. Observamos oportunidades de valor relativo en renta fija corporativa de alta calidad (Investment Grade) dado el ensanchamiento reciente de spreads."
+            </p>
+            
+            <h4 style="color: #fff; margin-bottom: 16px; font-size: 18px;">Alocación Sugerida</h4>
+            <ul style="list-style-type: none; padding-left: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+              <li style="display: flex; align-items: center; gap: 12px;"><div style="width: 10px; height: 10px; background: #22c55e; border-radius: 50%;"></div> <strong>Sobreponderar:</strong> Renta Fija Corta</li>
+              <li style="display: flex; align-items: center; gap: 12px;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%;"></div> <strong>Neutral:</strong> Renta Variable EE.UU.</li>
+              <li style="display: flex; align-items: center; gap: 12px;"><div style="width: 10px; height: 10px; background: #ef4444; border-radius: 50%;"></div> <strong>Subponderar:</strong> Mercados Emergentes</li>
+              <li style="display: flex; align-items: center; gap: 12px;"><div style="width: 10px; height: 10px; background: #eab308; border-radius: 50%;"></div> <strong>Neutral:</strong> Activos Alternativos</li>
+            </ul>
+          </div>
+          <!-- CONSENSO_END -->
+        </div>
+      </section>
+
+      <!-- Simulador Interactivo -->
+      <section class="simulator-section" id="simulador" style="padding: 120px 0;">
+        <h2 class="section-title gsap-reveal">Simulador de Crecimiento Patrimonial</h2>
+        <p class="section-subtitle gsap-reveal" style="text-align: center; color: #94a3b8; margin-bottom: 40px; max-width: 700px; margin-left: auto; margin-right: auto;">Visualiza el poder del interés compuesto en tu capital a lo largo del tiempo, ajustado por tu perfil de riesgo y la inflación.</p>
+        
+        <div class="simulator-grid gsap-reveal">
+          <div class="simulator-controls glass-card">
+            <h3 style="color: var(--color-primary-gold); margin-bottom: 16px; border-bottom: 1px solid rgba(197, 160, 89, 0.2); padding-bottom: 16px;">Configura tu Inversión</h3>
+            
+            <div class="control-group">
+              <label style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #f8fafc; font-weight: 500;">
+                <span>Inversión Inicial</span>
+                <span style="color: var(--color-primary-gold);">CLP $<span id="val-initial">200.000.000</span></span>
+              </label>
+              <input type="range" id="sim-initial" min="10000000" max="2000000000" step="5000000" value="200000000" style="width: 100%; accent-color: var(--color-primary-gold);">
+            </div>
+            
+            <div class="control-group">
+              <label style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #f8fafc; font-weight: 500;">
+                <span>Aporte Mensual</span>
+                <span style="color: var(--color-primary-gold);">CLP $<span id="val-monthly">500.000</span></span>
+              </label>
+              <input type="range" id="sim-monthly" min="0" max="10000000" step="50000" value="500000" style="width: 100%; accent-color: var(--color-primary-gold);">
+            </div>
+            
+            <div class="control-group">
+              <label style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #f8fafc; font-weight: 500;">
+                <span>Horizonte (Años)</span>
+                <span style="color: var(--color-primary-gold);"><span id="val-years">15</span> Años</span>
+              </label>
+              <input type="range" id="sim-years" min="1" max="40" step="1" value="15" style="width: 100%; accent-color: var(--color-primary-gold);">
+            </div>
+            
+            <div class="control-group">
+              <label style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #f8fafc; font-weight: 500;">
+                <span>Perfil de Riesgo</span>
+              </label>
+              <select id="sim-risk" class="form-control" style="width: 100%; cursor: pointer;">
+                <option value="muy_conservador">Muy conservador (0% Renta variable)</option>
+                <option value="conservador">Conservador (10% Máxima exposición Renta variable)</option>
+                <option value="cauteloso">Cauteloso (25% Máxima exposición Renta variable)</option>
+                <option value="moderado" selected>Moderado (50% Máxima exposición Renta variable)</option>
+                <option value="decidido">Decidido (75% Máxima exposición Renta variable)</option>
+                <option value="agresivo">Agresivo (100% Máxima exposición Renta variable)</option>
+              </select>
+            </div>
+            
+            <div class="control-group">
+              <label style="display: block; margin-bottom: 12px; color: #f8fafc; font-weight: 500;">Porcentajes Proyectados</label>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: flex-end;">
+                <div>
+                  <label style="display: block; margin-bottom: 8px; color: #94a3b8; font-size: 13px; font-weight: 500;">Rentabilidad Nominal</label>
+                  <div style="display: flex; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 8px 12px;">
+                    <input type="number" id="sim-return" step="0.1" value="7.5" style="background: transparent; border: none; color: var(--color-primary-gold); font-weight: bold; width: 100%; outline: none;">
+                    <span style="color: #94a3b8;">%</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <label style="display: block; margin-bottom: 8px; color: #94a3b8; font-size: 13px; font-weight: 500;">Inflación (Chile)</label>
+                  <div style="display: flex; align-items: center; background: rgba(255,255,255,0.05); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 8px 12px;">
+                  <input type="number" id="sim-inflation" step="0.1" value="3.5" style="background: transparent; border: none; color: #ef4444; font-weight: bold; width: 100%; outline: none;">
+                  <span style="color: #94a3b8;">%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+          
+          <div class="simulator-chart glass-card" style="padding: 24px;">
+            <div id="simulator-echart" style="width: 100%; height: 450px;"></div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- Gráfico de Volatilidad Histórica -->
+      <section class="volatility" id="volatility">
+        <h2 class="section-title gsap-reveal">Volatilidad Histórica e Impacto (S&P 500)</h2>
+        <p class="section-subtitle gsap-reveal" style="text-align: center; color: #94a3b8; margin-bottom: 40px; max-width: 700px; margin-left: auto; margin-right: auto;">Explora las grandes crisis de las últimas décadas y cómo el mercado ha reaccionado históricamente. Haz hover sobre los iconos para más detalles.</p>
+        <div class="glass-card gsap-reveal" style="padding: 20px;">
+          <div id="volatility-chart" style="width: 100%; height: 500px;"></div>
+        </div>
+      </section>
+
+
+
+      <!-- Altus Innovation Lab -->
+      <section class="innovation-lab" id="lab" style="padding: 80px 24px; max-width: 900px; margin: 0 auto;">
+        <div class="glass-card lab-card gsap-reveal" style="position: relative; overflow: hidden; padding: 48px; text-align: center; border: 1px solid rgba(197, 160, 89, 0.4);">
+          <div class="lab-glow"></div>
+          
+          <div style="position: relative; z-index: 2;">
+            <i data-lucide="zap" style="width: 48px; height: 48px; color: var(--color-primary-gold); margin-bottom: 24px;"></i>
+            <h2 style="font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 16px;">Altus Innovation Lab</h2>
+            <p style="color: #94a3b8; font-size: 18px; margin-bottom: 24px; max-width: 600px; margin-left: auto; margin-right: auto;">
+              En Altus AI tenemos la capacidad tecnológica de desarrollar plataformas, modelos predictivos y gráficos a medida. ¿Necesitas una herramienta analítica específica para tu portafolio? <strong>Nosotros la construimos.</strong>
+            </p>
+            <p style="color: #64748b; font-size: 13px; margin-bottom: 32px; font-style: italic;">
+              *Toda idea o solicitud enviada al Lab será sujeta a evaluación técnica y comercial de factibilidad por parte de nuestro equipo.
+            </p>
+            
+            <form action="https://formspree.io/f/xyyqpeok" method="POST" style="max-width: 500px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px;">
+              <input type="hidden" name="source" value="Innovation Lab Suggestion">
+              <textarea name="idea" class="form-control" placeholder="Ej: Me gustaría un simulador de rentabilidad inmobiliaria..." rows="3" required style="width: 100%; border-color: rgba(197, 160, 89, 0.3); resize: none;"></textarea>
+              <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+                <button type="submit" class="btn-primary" style="flex: 1; min-width: 200px;">
+                  <i data-lucide="send" class="btn-icon"></i> Enviar al Lab
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contacto -->
+      <section class="contact-section" id="contacto">
+        <h2 class="section-title gsap-reveal">Contacto Estratégico</h2>
+        <p class="section-subtitle gsap-reveal" style="text-align: center; color: #94a3b8; margin-bottom: 40px;">Ponte en comunicación directa con nuestro equipo para una evaluación personalizada de tu portafolio.</p>
+        
+        <div class="contact-grid">
+          <div class="glass-card contact-form-card gsap-reveal">
+            <form action="https://formspree.io/f/xyyqpeok" method="POST" class="contact-form">
+              <div class="form-group">
+                <label for="name">Nombre Completo</label>
+                <input type="text" id="name" name="name" class="form-control" required placeholder="Ej: Juan Pérez">
+              </div>
+              <div class="form-group">
+                <label for="email">Correo Electrónico</label>
+                <input type="email" id="email" name="email" class="form-control" required placeholder="juan@empresa.com">
+              </div>
+              <div class="form-group">
+                <label for="phone">Teléfono / WhatsApp</label>
+                <input type="tel" id="phone" name="phone" class="form-control" placeholder="+56 9 1234 5678">
+              </div>
+              <div class="form-group">
+                <label for="message">Mensaje</label>
+                <textarea id="message" name="message" class="form-control" rows="4" required placeholder="Cuentanos brevemente tus objetivos de inversión..."></textarea>
+              </div>
+              <button type="submit" class="btn-primary" style="width: 100%; justify-content: center;">Enviar Mensaje</button>
+            </form>
+          </div>
+          
+          <div class="contact-info gsap-reveal">
+            <div class="glass-card info-card">
+              <i data-lucide="mail" class="info-icon"></i>
+              <div>
+                <h3>Correo Directo</h3>
+                <p>contacto@fv-inversiones.com</p>
+              </div>
+            </div>
+            <div class="glass-card info-card" style="margin-top: 20px;">
+              <i data-lucide="phone" class="info-icon"></i>
+              <div>
+                <h3>WhatsApp Business</h3>
+                <p>Atención prioritaria clientes premium</p>
+                <a href="https://wa.me/56912345678" target="_blank" class="btn-secondary" style="margin-top: 10px; display: inline-flex;">Contactar por WA</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="footer" style="padding: 40px 24px; text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.05); margin-top: 60px;">
+        <p style="color: #94a3b8; margin-bottom: 8px;">&copy; 2026 FV Asesorías e Inversiones. Todos los derechos reservados. <br/> Tecnología desarrollada por Altus AI.</p>
+        <a href="privacidad.html" style="color: var(--color-primary-gold); font-size: 14px; text-decoration: none;">Política de Privacidad</a>
+      </footer>
+    </div>
+
+    <!-- Cargar dependencias de iconos desde CDN o mediante bundle (lucide) -->
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>

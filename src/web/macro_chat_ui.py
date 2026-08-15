@@ -138,6 +138,20 @@ def render_macro_chat_ui():
                 except Exception as e_docx:
                     st.error(f"Error generando Word: {e_docx}")
 
+            st.markdown("---")
+            st.markdown("### 🌐 Publicación Web Automática")
+            if st.button("🚀 Publicar Consenso en fv-inversiones.com", use_container_width=True):
+                with st.spinner("Conectando con Vercel y actualizando repositorio..."):
+                    import src.utils.web_publisher
+                    import importlib
+                    importlib.reload(src.utils.web_publisher)
+                    from src.utils.web_publisher import publish_consensus_to_vercel
+                    success, msg = publish_consensus_to_vercel(current_consensus, periodo_actual)
+                    if success:
+                        st.success(msg)
+                    else:
+                        st.error(f"Error publicando: {msg}")
+
     with tab2:
         c1, c2 = st.columns(2)
         with c1:
