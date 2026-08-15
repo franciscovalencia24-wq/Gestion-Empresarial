@@ -79,6 +79,13 @@ def render_macro_chat_ui():
 
         current_consensus = st.session_state.get(f"last_consensus_{periodo_actual}")
         if current_consensus:
+            # Limpieza retrospectiva de verbosidad (por si quedó guardado en DB con saludos)
+            import re
+            match = re.search(r'(#|\*\*|MEMORÁNDUM|VISIÓN|CONSENSO)', current_consensus, re.IGNORECASE)
+            if match and match.start() < 400:
+                # Cortar todo lo que haya antes del título
+                current_consensus = current_consensus[match.start():].strip()
+            
             st.markdown("---")
             st.markdown(f"## 🧠 Consenso Definitivo del Mes ({periodo_actual})")
             st.success(current_consensus)
