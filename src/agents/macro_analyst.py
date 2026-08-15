@@ -143,13 +143,17 @@ class MacroAnalystAgent:
            - **Agresivo/Arriesgado:** Qué % asignar a cada activo.
         
         Usa formato Markdown profesional. No inventes datos que no estén en el texto provisto.
-        CRÍTICO: Ve directo a la información dura y al análisis. NO hagas introducciones, NO saludes y NUNCA uses frases introductorias como 'De acuerdo. Como Altus AI Macro...' o 'Procedo a destilar...'. Tu respuesta debe comenzar directamente con el texto analítico o el primer título.
+        CRÍTICO: Tu respuesta DEBE comenzar estrictamente con el símbolo numeral (#) para el primer título. NO escribas ninguna palabra antes de ese símbolo. NUNCA digas "Absolutamente" ni saludes.
         """
 
         try:
             response = self.model.generate_content(prompt)
             consenso_texto = response.text
-
+            
+            # Limpiar cualquier saludo terco que la IA haya puesto antes del primer título
+            if "#" in consenso_texto:
+                consenso_texto = consenso_texto[consenso_texto.find("#"):]
+            
             # Guardar/Actualizar en DB para memoria a largo plazo
             try:
                 db_save = SessionLocal()
