@@ -76,15 +76,29 @@ def render_macro_chat_ui():
             if c_saved and c_saved.resumen_extendido:
                 st.session_state[f"last_consensus_{periodo_actual}"] = c_saved.resumen_extendido
             db_c.close()
-
         current_consensus = st.session_state.get(f"last_consensus_{periodo_actual}")
         if current_consensus:
-            # Limpieza retrospectiva de verbosidad (por si quedó guardado en DB con saludos)
-            import re
-            match = re.search(r'(#|\*\*|MEMORÁNDUM|VISIÓN|CONSENSO)', current_consensus, re.IGNORECASE)
-            if match and match.start() < 400:
-                # Cortar todo lo que haya antes del título
-                current_consensus = current_consensus[match.start():].strip()
+            # Limpieza retrospectiva de verbosidad robusta línea por línea
+            lines = current_consensus.split('\n')
+            clean_lines = []
+            skip_mode = True
+            
+            for line in lines:
+                l_lower = line.strip().lower()
+                if skip_mode:
+                    if not l_lower:
+                        continue # Ignorar líneas vacías al inicio
+                    # Si la línea tiene palabras típicas de saludo/introducción, la descartamos
+                    if any(bad_word in l_lower for bad_word in ["absolutamente", "a continuación", "procedo", "destilar", "economista jefe", "altus ai", "desde mi posición", "aquí tienes", "este es el"]):
+                        continue
+                    else:
+                        # Encontramos la primera línea limpia (ej. el título)
+                        skip_mode = False
+                        clean_lines.append(line)
+                else:
+                    clean_lines.append(line)
+            
+            current_consensus = '\n'.join(clean_lines).strip()
             
             st.markdown("---")
             st.markdown(f"## 🧠 Consenso Definitivo del Mes ({periodo_actual})")
