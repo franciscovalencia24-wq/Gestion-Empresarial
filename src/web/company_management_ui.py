@@ -50,18 +50,33 @@ def render_company_management_ui():
         show_new_form = st.checkbox("➕ Nuevo Movimiento", key="toggle_new_mov")
 
     st.sidebar.markdown("---")
+    
+    st.sidebar.markdown("**Opciones de Seguridad en Nube (Bóveda)**")
+    
+    if st.sidebar.button("💾 Forzar Guardado Seguro en la Nube"):
+        from src.utils.gcs_sync import upload_db_to_gcs
+        with st.spinner("Subiendo respaldo de seguridad a Google Cloud..."):
+            try:
+                if upload_db_to_gcs():
+                    st.sidebar.success("✅ Guardado en Bóveda confirmado. ¡Ya puede cerrar la ventana!")
+                else:
+                    st.sidebar.error("⚠️ Error guardando en la Nube.")
+            except Exception as e:
+                st.sidebar.error(f"Error crítico: {e}")
+                
+    st.sidebar.markdown("---")
+    
     if st.sidebar.button("☁️ Forzar Restauración desde la Nube (GCS)"):
-        try:
-            from src.utils.gcs_sync import get_gcs_client
-            client = get_gcs_client()
-            bucket = client.bucket("fv-asesorias-db-storage-fv")
-            blob = bucket.blob("crm_database.db")
-            blob.download_to_filename("data/crm_database.db")
-            st.session_state["gcs_db_synced"] = True
-            st.sidebar.success("¡Restauración exitosa! Recargando...")
-            st.rerun()
-        except Exception as e:
-            st.sidebar.error(f"Error: {e}")
+        from src.utils.gcs_sync import download_db_from_gcs
+        with st.spinner("Descargando base de datos desde GCS..."):
+            try:
+                download_db_from_gcs()
+                st.session_state["gcs_db_synced"] = True
+                st.sidebar.success("¡Restauración exitosa! Recargando...")
+                time.sleep(1)
+                st.rerun()
+            except Exception as e:
+                st.sidebar.error(f"Error: {e}")
 
     with st.expander("📥 Importar Registro SII (Compras/Ventas)", expanded=False):
         st.caption("Sube los archivos CSV descargados desde el SII para ingresarlos automáticamente a la base de datos sin duplicarlos.")
@@ -86,9 +101,12 @@ def render_company_management_ui():
             # Respaldar inmediatamente en la nube
             from src.utils.gcs_sync import upload_db_to_gcs
             try:
-                upload_db_to_gcs()
-            except Exception:
-                pass
+                if upload_db_to_gcs():
+                    st.success("✅ Respaldo en la Bóveda exitoso.")
+                else:
+                    st.error("⚠️ ERROR: El sistema guardó los datos en la pantalla, pero FALLÓ el respaldo en Google Cloud. Su archivo se perderá si cierra la página. Revise su internet e intente hacer otro cambio para forzar la sincronización.")
+            except Exception as e:
+                st.error(f"⚠️ ERROR CRÍTICO sincronizando con la Bóveda: {e}")
             
             st.rerun()
 

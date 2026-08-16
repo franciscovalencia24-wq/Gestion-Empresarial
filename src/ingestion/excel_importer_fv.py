@@ -206,9 +206,16 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
         # Respaldar automáticamente la BD en la nube (GCS)
         try:
             from src.utils.gcs_sync import upload_db_to_gcs
-            upload_db_to_gcs()
-        except Exception:
-            pass
+            if not upload_db_to_gcs():
+                return {
+                    "status": "error",
+                    "message": "Los datos se procesaron en pantalla, pero OCURRIÓ UN ERROR GUARDANDO EN LA NUBE. Su internet puede haber fallado. Intente cargar los archivos nuevamente para asegurar el guardado."
+                }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Error crítico subiendo el respaldo a GCS: {str(e)}"
+            }
 
         return {
             "status": "success",
