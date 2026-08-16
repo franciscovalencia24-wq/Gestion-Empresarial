@@ -33,39 +33,6 @@ def render_company_management_ui():
     </div>
     """, unsafe_allow_html=True)
 
-    # Inyección de CSS Premium Dark Mode específico para las tarjetas de métricas en esta vista
-    st.markdown("""
-    <style>
-        div[data-testid="stMetric"] {
-            background-color: #1e293b !important;
-            border: 1px solid #334155 !important;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4) !important;
-            border-radius: 16px !important;
-            padding: 20px !important;
-        }
-        div[data-testid="stMetricValue"] {
-            color: #f8fafc !important;
-            font-weight: 800 !important;
-        }
-        div[data-testid="stMetricLabel"] {
-            color: #ffffff !important;
-            font-size: 1.05rem !important;
-            font-weight: 600 !important;
-            opacity: 1 !important;
-        }
-        div[data-testid="stMetricLabel"] > div,
-        div[data-testid="stMetricLabel"] label,
-        div[data-testid="stMetricLabel"] p,
-        div[data-testid="stMetricLabel"] span {
-            color: #ffffff !important;
-            opacity: 1 !important;
-        }
-        div[data-testid="stMetricDelta"],
-        div[data-testid="stMetricDelta"] * {
-            color: #10b981 !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
 
     # 1. SELECCIÓN DE EMPRESA Y ACCIONES SUPERIORES
     col_emp, col_btn_new = st.columns([3, 1.5])
