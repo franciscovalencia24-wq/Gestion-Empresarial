@@ -205,16 +205,16 @@ def main():
             st.write("Copia este texto y envíalo a `dlpichilecomplianceoffshore@exchange.principal.com` con copia a Averta Support:")
             
             email_text = f"""
-**Asunto:** Onboarding y ACAT In - {nombre_cliente}
+Asunto: Onboarding y ACAT In - {nombre_cliente}
 
 Estimados,
-Adjunto la documentación para la apertura de cuenta en StoneX del cliente **{nombre_cliente}**.
-Adicionalmente, adjuntamos la cartola de inversiones (Pershing) ya que la cuenta será fondeada vía **ACAT** por un monto aproximado de USD {st.session_state.data.get('monto_inversion', '50.000')}.
+Adjunto la documentación para la apertura de cuenta en StoneX del cliente {nombre_cliente}.
+Adicionalmente, adjuntamos la cartola de inversiones (Pershing) ya que la cuenta será fondeada vía ACAT por un monto aproximado de USD {st.session_state.data.get('monto_inversion', '50.000')}.
 
 Por favor confirmar cuando se envíe el DocuSign al cliente.
 Quedo atento.
             """
-            st.code(email_text, language="markdown")
+            st.code(email_text.strip(), language="text")
             
         except Exception as e:
             st.error(f"Hubo un error al generar el Excel: {e}")
