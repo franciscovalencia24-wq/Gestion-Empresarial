@@ -21,8 +21,8 @@ def render_company_management_ui():
         <div style='display: flex; align-items: center; justify-content: space-between;'>
             <div>
                 <h1 style='color: #f8fafc; margin: 0; font-size: 2rem; font-weight: 800;'>🏢 Gestión Empresarial y Financiera</h1>
-                <p style='color: #e2e8f0; margin-top: 5px; margin-bottom: 0; font-size: 1rem;'>
-                    Control consolidado de facturación, egresos, préstamos a socios, cuentas corrientes e impuestos (F29) para <b>FV Asesorías</b>.
+                <p style='color: #94a3b8; margin-top: 5px; margin-bottom: 0; font-size: 1rem;'>
+                    Control consolidado de facturación, egresos, préstamos a socios, cuentas corrientes e impuestos (F29) para <b>FV Asesorías</b> y <b>ALTUS</b>.
                 </p>
             </div>
             <div style='background: rgba(255,255,255,0.08); padding: 10px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); text-align: right;'>
@@ -48,7 +48,7 @@ def render_company_management_ui():
             font-weight: 800 !important;
         }
         div[data-testid="stMetricLabel"] {
-            color: #e2e8f0 !important;
+            color: #94a3b8 !important;
             font-size: 1.05rem !important;
             font-weight: 600 !important;
         }
@@ -64,7 +64,7 @@ def render_company_management_ui():
     with col_emp:
         empresa_sel = st.selectbox(
             "🏢 Seleccionar Empresa:",
-            ["FV Asesorías SpA"],
+            ["FV Asesorías SpA", "ALTUS AI SpA (En constitución)"],
             index=0,
             key="company_sel_main"
         )
@@ -76,8 +76,11 @@ def render_company_management_ui():
     st.sidebar.markdown("---")
     if st.sidebar.button("☁️ Forzar Restauración desde la Nube (GCS)"):
         try:
-            from src.utils.gcs_sync import download_db_from_gcs
-            download_db_from_gcs()
+            from src.utils.gcs_sync import get_gcs_client
+            client = get_gcs_client()
+            bucket = client.bucket("fv-asesorias-db-storage-fv")
+            blob = bucket.blob("crm_database.db")
+            blob.download_to_filename("data/crm_database.db")
             st.session_state["gcs_db_synced"] = True
             st.sidebar.success("¡Restauración exitosa! Recargando...")
             st.rerun()
@@ -171,9 +174,14 @@ def render_company_management_ui():
         db.rollback()
 
     try:
-        movs = db.query(CompanyFinancialMovement).filter(
-            CompanyFinancialMovement.empresa.like("%FV%")
-        ).order_by(CompanyFinancialMovement.fecha.desc()).all()
+        if "FV" in empresa_sel:
+            movs = db.query(CompanyFinancialMovement).filter(
+                CompanyFinancialMovement.empresa.like("%FV%")
+            ).order_by(CompanyFinancialMovement.fecha.desc()).all()
+        else:
+            movs = db.query(CompanyFinancialMovement).filter(
+                CompanyFinancialMovement.empresa.like("%ALTUS%")
+            ).order_by(CompanyFinancialMovement.fecha.desc()).all()
 
         data_list = []
         for m in movs:
