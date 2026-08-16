@@ -34,17 +34,46 @@ def main():
         
     step = st.session_state.step
     
+    # Modo Demo en Sidebar
+    st.sidebar.markdown("### Herramientas de Desarrollo")
+    if st.sidebar.button("🤖 Llenar con Datos de Prueba"):
+        st.session_state.data = {
+            "nombre_completo": "Juan Pérez Demo",
+            "rut": "15.444.333-2",
+            "email": "juan.demo@altus.cl",
+            "estado_civil": "Casado/a",
+            "ocupacion": "Ingeniero Civil",
+            "horizonte_tiempo": "5 - 10 años",
+            "experiencia": "Buena (3-5 años)",
+            "porcentaje_activos": "25% - 50%",
+            "objetivos_inversion": "Crecimiento agresivo",
+            "tolerancia_riesgo": "Alta",
+            "ingresos_anuales": "100.000 - 250.000",
+            "patrimonio_total": "500.000 - 1.000.000",
+            "origen_fondos": "Venta de empresa",
+            "monto_inversion": "150000"
+        }
+        st.session_state.step = 1
+        st.rerun()
+        
     # Barra de progreso
-    st.progress(step / 4)
+    st.progress(step / 5)
     
+    def get_idx(opciones, clave, default):
+        val = st.session_state.data.get(clave, default)
+        return opciones.index(val) if val in opciones else 0
+
     if step == 1:
         st.header("1. Datos Personales")
         with st.form("form_step_1"):
-            nombre = st.text_input("Nombre Completo (como aparece en su documento)")
-            rut = st.text_input("RUT / Nro Documento")
-            email = st.text_input("Correo Electrónico")
-            estado_civil = st.selectbox("Estado Civil", ["Soltero/a", "Casado/a", "Divorciado/a", "Viudo/a"])
-            ocupacion = st.text_input("Profesión / Ocupación")
+            nombre = st.text_input("Nombre Completo (como aparece en su documento)", value=st.session_state.data.get("nombre_completo", ""))
+            rut = st.text_input("RUT / Nro Documento", value=st.session_state.data.get("rut", ""))
+            email = st.text_input("Correo Electrónico", value=st.session_state.data.get("email", ""))
+            
+            opc_ec = ["Soltero/a", "Casado/a", "Divorciado/a", "Viudo/a"]
+            estado_civil = st.selectbox("Estado Civil", opc_ec, index=get_idx(opc_ec, "estado_civil", "Soltero/a"))
+            
+            ocupacion = st.text_input("Profesión / Ocupación", value=st.session_state.data.get("ocupacion", ""))
             
             submitted = st.form_submit_button("Siguiente ->")
             if submitted:
@@ -65,21 +94,21 @@ def main():
         st.header("2. Perfilamiento de Inversión")
         with st.form("form_step_2"):
             st.info("Estas preguntas son exigidas por la regulación estadounidense (SEC).")
-            horizonte = st.selectbox("1 - ¿Cuál es su horizonte de tiempo para esta inversión?", [
-                "Menos de 1 año", "1 - 3 años", "3 - 5 años", "5 - 10 años", "Más de 10 años"
-            ])
-            experiencia = st.selectbox("2 - Experiencia en inversiones (Años)", [
-                "Ninguna", "Limitada (1-3 años)", "Buena (3-5 años)", "Extensa (Más de 5 años)"
-            ])
-            porcentaje = st.selectbox("3 - ¿Qué porcentaje de sus activos totales líquidos representa esta inversión?", [
-                "Menos del 10%", "10% - 25%", "25% - 50%", "Más del 50%"
-            ])
-            objetivos = st.selectbox("4 - Objetivos de inversión", [
-                "Preservación de capital", "Generación de ingresos", "Crecimiento moderado", "Crecimiento agresivo"
-            ])
-            tolerancia = st.selectbox("5 - ¿Cuál es su tolerancia al riesgo frente a caídas temporales del mercado?", [
-                "Baja", "Media", "Alta"
-            ])
+            
+            opc_hor = ["Menos de 1 año", "1 - 3 años", "3 - 5 años", "5 - 10 años", "Más de 10 años"]
+            horizonte = st.selectbox("1 - ¿Cuál es su horizonte de tiempo para esta inversión?", opc_hor, index=get_idx(opc_hor, "horizonte_tiempo", opc_hor[0]))
+            
+            opc_exp = ["Ninguna", "Limitada (1-3 años)", "Buena (3-5 años)", "Extensa (Más de 5 años)"]
+            experiencia = st.selectbox("2 - Experiencia en inversiones (Años)", opc_exp, index=get_idx(opc_exp, "experiencia", opc_exp[0]))
+            
+            opc_porc = ["Menos del 10%", "10% - 25%", "25% - 50%", "Más del 50%"]
+            porcentaje = st.selectbox("3 - ¿Qué porcentaje de sus activos totales líquidos representa esta inversión?", opc_porc, index=get_idx(opc_porc, "porcentaje_activos", opc_porc[0]))
+            
+            opc_obj = ["Preservación de capital", "Generación de ingresos", "Crecimiento moderado", "Crecimiento agresivo"]
+            objetivos = st.selectbox("4 - Objetivos de inversión", opc_obj, index=get_idx(opc_obj, "objetivos_inversion", opc_obj[0]))
+            
+            opc_tol = ["Baja", "Media", "Alta"]
+            tolerancia = st.selectbox("5 - ¿Cuál es su tolerancia al riesgo frente a caídas temporales del mercado?", opc_tol, index=get_idx(opc_tol, "tolerancia_riesgo", opc_tol[0]))
             
             col1, col2 = st.columns(2)
             with col1:
@@ -101,16 +130,16 @@ def main():
     elif step == 3:
         st.header("3. Origen de Fondos e Información Financiera")
         with st.form("form_step_3"):
-            ingresos = st.selectbox("Ingresos Anuales Estimados (USD)", [
-                "Menos de 50.000", "50.000 - 100.000", "100.000 - 250.000", "Más de 250.000"
-            ])
-            patrimonio = st.selectbox("Patrimonio Total Estimado (USD)", [
-                "Menos de 100.000", "100.000 - 500.000", "500.000 - 1.000.000", "Más de 1.000.000"
-            ])
-            origen = st.selectbox("Origen principal de los fondos", [
-                "Ahorros / Salario", "Venta de propiedad", "Herencia", "Inversiones previas", "Venta de empresa"
-            ])
-            monto = st.text_input("Monto aproximado de inversión inicial (USD)", value="50000")
+            opc_ing = ["Menos de 50.000", "50.000 - 100.000", "100.000 - 250.000", "Más de 250.000"]
+            ingresos = st.selectbox("Ingresos Anuales Estimados (USD)", opc_ing, index=get_idx(opc_ing, "ingresos_anuales", opc_ing[0]))
+            
+            opc_pat = ["Menos de 100.000", "100.000 - 500.000", "500.000 - 1.000.000", "Más de 1.000.000"]
+            patrimonio = st.selectbox("Patrimonio Total Estimado (USD)", opc_pat, index=get_idx(opc_pat, "patrimonio_total", opc_pat[0]))
+            
+            opc_ori = ["Ahorros / Salario", "Venta de propiedad", "Herencia", "Inversiones previas", "Venta de empresa"]
+            origen = st.selectbox("Origen principal de los fondos", opc_ori, index=get_idx(opc_ori, "origen_fondos", opc_ori[0]))
+            
+            monto = st.text_input("Monto aproximado de inversión inicial (USD)", value=st.session_state.data.get("monto_inversion", "50000"))
             
             col1, col2 = st.columns(2)
             with col1:
