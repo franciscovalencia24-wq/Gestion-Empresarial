@@ -70,6 +70,14 @@ def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/c
 
             # 4. Reemplazo Atómico
             shutil.move(temp_path, destination_path)
+            
+            # 5. Si estaba corrupto, forzar el rescate inmediatamente
+            try:
+                from src.database.connection import force_recover_db
+                force_recover_db(os.path.abspath(destination_path))
+            except Exception as rec_err:
+                logger.error(f"Error invocando la rutina de rescate forzado: {rec_err}")
+                
             logger.info(f"DB descargada desde GCS: gs://{BUCKET_NAME}/{db_filename} -> {destination_path}")
             return True
         else:
