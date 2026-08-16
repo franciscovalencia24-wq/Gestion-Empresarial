@@ -47,12 +47,14 @@ def render_company_management_ui():
             color: #f8fafc !important;
             font-weight: 800 !important;
         }
-        div[data-testid="stMetricLabel"] {
-            color: #94a3b8 !important;
+        div[data-testid="stMetricLabel"],
+        div[data-testid="stMetricLabel"] * {
+            color: #e2e8f0 !important;
             font-size: 1.05rem !important;
             font-weight: 600 !important;
         }
-        div[data-testid="stMetricDelta"] {
+        div[data-testid="stMetricDelta"],
+        div[data-testid="stMetricDelta"] * {
             color: #10b981 !important;
         }
     </style>
