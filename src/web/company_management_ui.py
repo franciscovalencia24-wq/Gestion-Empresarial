@@ -116,7 +116,7 @@ def render_company_management_ui():
             
             st.rerun()
 
-    # 0. DESCARGA AUTOMÁTICA DESDE GOOGLE CLOUD STORAGE EN NUBE
+    # 0. DESCARGA AUTOMÁTICA DESDE GOOGLE CLOUD STORAGE EN NUBE (SAFE SYNC)
     if "gcs_db_synced" not in st.session_state:
         try:
             from src.utils.gcs_sync import download_db_from_gcs
