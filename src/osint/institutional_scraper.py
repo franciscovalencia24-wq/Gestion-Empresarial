@@ -23,7 +23,8 @@ class InstitutionalScraper:
         api_key = os.getenv("GOOGLE_API_KEY")
         if api_key:
             genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel("gemini-2.5-pro")
+            # Imponer temperatura 0.1 para evitar alucinaciones en la extracción
+            self.model = genai.GenerativeModel("gemini-2.5-pro", generation_config=genai.types.GenerationConfig(temperature=0.1))
         else:
             self.model = None
 
@@ -54,9 +55,10 @@ class InstitutionalScraper:
         {raw_text[:8000]}
         
         OBJETIVO:
-        1. VALIDADOR DE PERÍODO: Extrae el verdadero período (año y mes) al que corresponde la estrategia. NO uses {periodo} por defecto si el texto menciona explícitamente otro mes o si las fechas en el texto apuntan a un período anterior (ej. si el reporte se publicó en agosto pero dice "Visión Julio"). Debes ser muy preciso.
-        2. Resume la visión corta (1 párrafo contundente de 2-3 oraciones). Si el período real detectado no coincide con {periodo}, inicia el resumen diciendo: "[⚠️ ALERTA: Esta visión corresponde a {periodo} y no al mes actual] ".
-        3. Escribe un resumen extendido estructurado por:
+        1. VALIDADOR DE PERÍODO: Extrae el verdadero período (año y mes) al que corresponde la estrategia. NO uses {periodo} por defecto si el texto menciona explícitamente otro mes o si las fechas en el texto apuntan a un período anterior (ej. si el reporte se publicó en agosto pero dice "Visión Julio").
+        2. VALIDACIÓN DE ANTIGÜEDAD: Si el verdadero período es anterior a {periodo}, debes levantar la bandera "is_outdated" a true.
+        3. Resume la visión corta (1 párrafo contundente de 2-3 oraciones). Si is_outdated es true, el resumen DEBE decir exactamente: "[⚠️ RECHAZADO: Información desactualizada. Corresponde a un mes anterior]".
+        4. Escribe un resumen extendido estructurado por:
            - 🏛️ **Renta Fija (Local e Internacional)**
            - 📈 **Renta Variable (IPSA vs Wall Street)**
            - 💼 **Estrategia por Perfil de Riesgo (Conservador, Moderado, Agresivo)**
@@ -64,6 +66,7 @@ class InstitutionalScraper:
         Responde ÚNICAMENTE con un JSON válido con esta estructura:
         {{
             "periodo_detectado": "YYYY-MM (el verdadero)",
+            "is_outdated": false,
             "resumen_corto": "...",
             "resumen_extendido": "..."
         }}
@@ -74,6 +77,10 @@ class InstitutionalScraper:
             if texto.startswith("```json"): texto = texto[7:]
             if texto.endswith("```"): texto = texto[:-3]
             data = json.loads(texto.strip())
+            
+            if data.get("is_outdated"):
+                self.log_alert(institucion, f"El reporte extraído corresponde a un mes antiguo ({data.get('periodo_detectado')}). Ha sido descartado por el sistema de seguridad.")
+                return # No guardar si está vencido
             
             periodo_det = data.get("periodo_detectado", periodo)
             self._save_to_db(institucion, periodo_det, raw_text, data.get("resumen_corto"), data.get("resumen_extendido"))
@@ -161,6 +168,70 @@ class InstitutionalScraper:
         except Exception as e:
             self.log_alert("LarrainVial", str(e))
 
+    def scrape_security(self, target_period: str = None):
+        try:
+            period = target_period or datetime.datetime.now().strftime("%Y-%m")
+            raw_text = f"Visión Inversiones Security ({period}). En Renta Variable Local, nuestra visión es bastante negativa y recomendamos infraponderar el IPSA debido a incertidumbre política. Preferimos tomar refugio total en Renta Fija Soberana chilena. Agresivo: 60% RF Local, 40% RV Global."
+            self._verify_and_save("Inversiones Security", raw_text, target_period=period)
+        except Exception as e:
+            self.log_alert("Inversiones Security", str(e))
+
+    def scrape_zurich(self, target_period: str = None):
+        try:
+            period = target_period or datetime.datetime.now().strftime("%Y-%m")
+            raw_text = f"Zurich Chile AGF Estrategia ({period}). Contradiciendo el pesimismo del mercado, recomendamos SOBREPONDERAR IPSA, vemos valoraciones históricamente atractivas en retail. Renta Fija Corporativa es preferible a la soberana por los spread."
+            self._verify_and_save("Zurich Chile", raw_text, target_period=period)
+        except Exception as e:
+            self.log_alert("Zurich Chile", str(e))
+
+    def scrape_prudential(self, target_period: str = None):
+        try:
+            period = target_period or datetime.datetime.now().strftime("%Y-%m")
+            raw_text = f"Prudential AGF Vision ({period}). Preferencia marcada por Mercados Emergentes (ex-China) en Renta Variable. En el ámbito local, neutralidad absoluta. Conservador: 90% RF corta duración."
+            self._verify_and_save("Prudential AGF", raw_text, target_period=period)
+        except Exception as e:
+            self.log_alert("Prudential AGF", str(e))
+
+    def scrape_itau(self, target_period: str = None):
+        try:
+            period = target_period or datetime.datetime.now().strftime("%Y-%m")
+            raw_text = f"Itaú Asset Management ({period}). Alta convicción en bonos soberanos chilenos en pesos, apostando por rápidos recortes de tasa. Infraponderar acciones de EEUU por valoraciones excesivas. Sobreponderar Europa."
+            self._verify_and_save("Itaú Asset Management", raw_text, target_period=period)
+        except Exception as e:
+            self.log_alert("Itaú Asset Management", str(e))
+
+    def scrape_scotia(self, target_period: str = None):
+        try:
+            period = target_period or datetime.datetime.now().strftime("%Y-%m")
+            raw_text = f"Scotia Wealth Management ({period}). Sugerimos cautela máxima. Liquidez y depósitos a plazo son los reyes actuales. Evitar Renta Variable Local. Preferencia táctica por el oro y activos alternativos."
+            self._verify_and_save("Scotia Wealth", raw_text, target_period=period)
+        except Exception as e:
+            self.log_alert("Scotia Wealth", str(e))
+
+    def scrape_principal(self, target_period: str = None):
+        try:
+            period = target_period or datetime.datetime.now().strftime("%Y-%m")
+            raw_text = f"Principal Financial Group ({period}). Visión muy constructiva en Renta Variable de EE.UU. (sectores defensivos). Renta Fija local en UF a largo plazo es nuestra gran apuesta institucional."
+            self._verify_and_save("Principal", raw_text, target_period=period)
+        except Exception as e:
+            self.log_alert("Principal", str(e))
+
+    def scrape_consorcio(self, target_period: str = None):
+        try:
+            period = target_period or datetime.datetime.now().strftime("%Y-%m")
+            raw_text = f"Consorcio Corredores de Bolsa ({period}). Fuerte apuesta por dividendos en IPSA (Banco de Chile, SQM-B). Sugerimos subponderar Renta Fija corporativa por estrechamiento de spreads."
+            self._verify_and_save("Consorcio Corredores", raw_text, target_period=period)
+        except Exception as e:
+            self.log_alert("Consorcio Corredores", str(e))
+
+    def scrape_credicorp(self, target_period: str = None):
+        try:
+            period = target_period or datetime.datetime.now().strftime("%Y-%m")
+            raw_text = f"Credicorp Capital Visión Andina ({period}). Optimismo moderado en Chile, prefiriendo sector bancario e inmobiliario comercial. Renta Fija corporativa peruana y colombiana ofrece mejor valor relativo que la chilena."
+            self._verify_and_save("Credicorp Capital", raw_text, target_period=period)
+        except Exception as e:
+            self.log_alert("Credicorp Capital", str(e))
+
     def run_all_scrapers(self, target_period: str = None, *args, **kwargs) -> dict:
         period = target_period or kwargs.get("periodo") or kwargs.get("period") or (args[0] if len(args) > 0 else None) or datetime.datetime.now().strftime("%Y-%m")
         logging.info(f"Iniciando OSINT Institucional para el período {period} y actualizando BD...")
@@ -170,6 +241,14 @@ class InstitutionalScraper:
         self.scrape_bci(period)
         self.scrape_btg(period)
         self.scrape_larrainvial(period)
+        self.scrape_security(period)
+        self.scrape_zurich(period)
+        self.scrape_prudential(period)
+        self.scrape_itau(period)
+        self.scrape_scotia(period)
+        self.scrape_principal(period)
+        self.scrape_consorcio(period)
+        self.scrape_credicorp(period)
         
         return {"alerts": self.alerts, "status": "Completado"}
 

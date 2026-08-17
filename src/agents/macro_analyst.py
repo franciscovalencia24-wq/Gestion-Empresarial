@@ -17,7 +17,8 @@ class MacroAnalystAgent:
     """
     def __init__(self):
         if api_key:
-            self.model = genai.GenerativeModel("gemini-2.5-pro")
+            # Imponer temperatura 0.1 para forzar anclaje a los datos crudos (anti-alucinaciones)
+            self.model = genai.GenerativeModel("gemini-2.5-pro", generation_config=genai.types.GenerationConfig(temperature=0.1))
         else:
             self.model = None
 
@@ -124,14 +125,21 @@ class MacroAnalystAgent:
         prompt = f"""
         Eres el sistema analítico 'Altus AI' de un Family Office Privado.
         
-        A continuación te presento las visiones de mercado de múltiples instituciones correspondientes al período {periodo}:
+        A continuación te presento las visiones de mercado de {len(visiones)} instituciones correspondientes al período {periodo}:
         
         {datos_crudos}
         
         TU MISIÓN:
-        Genera el "Consenso Institucional de Mercado" definitivo para este período. Debes leer las visiones de todos, encontrar las coincidencias y divergencias, y entregar una sugerencia unificada y sofisticada.
+        Genera el "Consenso Institucional de Mercado" definitivo para este período basándote EXCLUSIVAMENTE en el texto anterior.
+        
+        REGLAS ANTI-ALUCINACIÓN (CRÍTICO):
+        - Tienes ESTRICTAMENTE PROHIBIDO inventar o asumir posturas que no estén expresamente escritas en los resúmenes anteriores.
+        - Si no hay información suficiente sobre un activo o mercado en los reportes provistos, simplemente omítelo.
+        - DEBES citar siempre la institución específica entre paréntesis cuando asumas una postura o afirmes un dato (ejemplo: "En renta variable local, la visión es neutral (Santander, BTG) aunque con sesgos positivos por dividendos (Consorcio).").
         
         ESTRUCTURA OBLIGATORIA:
+        Al inicio del documento incluye el siguiente texto en cursiva: "*Análisis basado en las recomendaciones mensuales de {len(visiones)} instituciones.*"
+        
         1. **Visión Global y Local**: Resumen de lo que opina la industria sobre tasas, inflación y crecimiento (con foco en la visión de las instituciones chilenas).
         2. **Consenso por Tipo de Activo**:
            - Renta Variable Local e Internacional
@@ -143,7 +151,7 @@ class MacroAnalystAgent:
            - **Agresivo/Arriesgado:** Qué % asignar a cada activo.
         
         Usa formato Markdown profesional. No inventes datos que no estén en el texto provisto.
-        CRÍTICO: Tu respuesta DEBE comenzar estrictamente con el símbolo numeral (#) para el primer título. NO uses encabezados de tipo "De: / Para: / Asunto:".
+        CRÍTICO: Tu respuesta DEBE comenzar estrictamente con el texto en cursiva indicado, y luego el símbolo numeral (#) para el primer título. NO uses encabezados de tipo "De: / Para: / Asunto:".
         Si incluyes un subtítulo de autor, DEBE decir EXACTAMENTE: "**Preparado por:** Altus AI". (NUNCA uses la palabra Macro ni el título Economista Jefe).
         NUNCA digas "Absolutamente" ni saludes.
         """
