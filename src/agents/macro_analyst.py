@@ -132,10 +132,10 @@ class MacroAnalystAgent:
         TU MISIÓN:
         Genera el "Consenso Institucional de Mercado" definitivo para este período basándote EXCLUSIVAMENTE en el texto anterior.
         
-        REGLAS ANTI-ALUCINACIÓN (CRÍTICO):
+        REGLAS ANTI-ALUCINACIÓN Y DE PRIVACIDAD (CRÍTICO):
         - Tienes ESTRICTAMENTE PROHIBIDO inventar o asumir posturas que no estén expresamente escritas en los resúmenes anteriores.
         - Si no hay información suficiente sobre un activo o mercado en los reportes provistos, simplemente omítelo.
-        - DEBES citar siempre la institución específica entre paréntesis cuando asumas una postura o afirmes un dato (ejemplo: "En renta variable local, la visión es neutral (Santander, BTG) aunque con sesgos positivos por dividendos (Consorcio).").
+        - DEBES ANONIMIZAR totalmente a las instituciones. NUNCA menciones nombres propios de bancos, corredoras o AGFs en el texto. En su lugar, utiliza estadísticas, fracciones o consensos abstractos (ejemplo: "El 65% de las instituciones analizadas sugiere...", "Dos de los grandes bancos de inversión locales advierten...", "Existe un consenso mayoritario en...").
         
         ESTRUCTURA OBLIGATORIA:
         Al inicio del documento incluye el siguiente texto en cursiva: "*Análisis basado en las recomendaciones mensuales de {len(visiones)} instituciones.*"
