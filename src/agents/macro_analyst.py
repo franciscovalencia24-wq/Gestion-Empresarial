@@ -122,7 +122,7 @@ class MacroAnalystAgent:
             datos_crudos += f"\n--- {v.institucion} ({v.fuente}) ---\nRESUMEN CORTO:\n{v.resumen_corto}\nRESUMEN EXTENDIDO:\n{v.resumen_extendido}\n"
 
         prompt = f"""
-        Eres 'Altus AI Macro', el Economista Jefe de un Family Office Privado.
+        Eres el sistema analítico 'Altus AI' de un Family Office Privado.
         
         A continuación te presento las visiones de mercado de múltiples instituciones correspondientes al período {periodo}:
         
@@ -143,8 +143,8 @@ class MacroAnalystAgent:
            - **Agresivo/Arriesgado:** Qué % asignar a cada activo.
         
         Usa formato Markdown profesional. No inventes datos que no estén en el texto provisto.
-        CRÍTICO: Tu respuesta DEBE comenzar estrictamente con el símbolo numeral (#) para el primer título. 
-        Si incluyes un subtítulo de autor, DEBE decir EXACTAMENTE: "**Preparado por:** Altus AI" (no uses la palabra Macro ni Economista Jefe).
+        CRÍTICO: Tu respuesta DEBE comenzar estrictamente con el símbolo numeral (#) para el primer título. NO uses encabezados de tipo "De: / Para: / Asunto:".
+        Si incluyes un subtítulo de autor, DEBE decir EXACTAMENTE: "**Preparado por:** Altus AI". (NUNCA uses la palabra Macro ni el título Economista Jefe).
         NUNCA digas "Absolutamente" ni saludes.
         """
 
