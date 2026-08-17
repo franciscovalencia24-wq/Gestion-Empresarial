@@ -85,18 +85,30 @@ def render_macro_chat_ui():
             
             for line in lines:
                 l_lower = line.strip().lower()
+                
+                # Filtro agresivo: sin importar el skip_mode, si es un encabezado de memo, lo saltamos.
+                if any(l_lower.startswith(prefix) for prefix in ["de:", "para:", "fecha:", "asunto:", "memorándum", "memorandum", "# memorándum", "# memorandum"]):
+                    continue
+                    
+                # También filtramos cualquier línea que mencione al 'economista jefe' en el encabezado
+                if "economista jefe" in l_lower and len(clean_lines) < 10:
+                    continue
+
                 if skip_mode:
                     if not l_lower:
                         continue # Ignorar líneas vacías al inicio
                     # Si la línea tiene palabras típicas de saludo/introducción, la descartamos
-                    if any(bad_word in l_lower for bad_word in ["absolutamente", "a continuación", "procedo", "destilar", "economista jefe", "altus ai", "desde mi posición", "aquí tienes", "este es el"]):
+                    if any(bad_word in l_lower for bad_word in ["absolutamente", "a continuación", "procedo", "destilar", "altus ai macro", "desde mi posición", "aquí tienes", "este es el"]):
                         continue
                     else:
-                        # Encontramos la primera línea limpia (ej. el título)
+                        # Encontramos la primera línea limpia (ej. el título real)
                         skip_mode = False
                         clean_lines.append(line)
                 else:
-                    clean_lines.append(line)
+                    # Remplazos in-line para evitar "Macro" si se coló
+                    cleaned_line = line.replace("Altus AI Macro, Economista Jefe", "Altus AI")
+                    cleaned_line = cleaned_line.replace("Altus AI Macro", "Altus AI")
+                    clean_lines.append(cleaned_line)
             
             current_consensus = '\n'.join(clean_lines).strip()
             
