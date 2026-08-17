@@ -132,7 +132,7 @@ class MacroAnalystAgent:
         Genera el "Consenso Institucional de Mercado" definitivo para este período. Debes leer las visiones de todos, encontrar las coincidencias y divergencias, y entregar una sugerencia unificada y sofisticada.
         
         ESTRUCTURA OBLIGATORIA:
-        1. **Visión Global y Local**: Resumen de lo que opina la industria sobre tasas, inflación y crecimiento.
+        1. **Visión Global y Local**: Resumen de lo que opina la industria sobre tasas, inflación y crecimiento (con foco en la visión de las instituciones chilenas).
         2. **Consenso por Tipo de Activo**:
            - Renta Variable Local e Internacional
            - Renta Fija Local e Internacional
@@ -143,7 +143,9 @@ class MacroAnalystAgent:
            - **Agresivo/Arriesgado:** Qué % asignar a cada activo.
         
         Usa formato Markdown profesional. No inventes datos que no estén en el texto provisto.
-        CRÍTICO: Tu respuesta DEBE comenzar estrictamente con el símbolo numeral (#) para el primer título. NO escribas ninguna palabra antes de ese símbolo. NUNCA digas "Absolutamente" ni saludes.
+        CRÍTICO: Tu respuesta DEBE comenzar estrictamente con el símbolo numeral (#) para el primer título. 
+        Si incluyes un subtítulo de autor, DEBE decir EXACTAMENTE: "**Preparado por:** Altus AI" (no uses la palabra Macro ni Economista Jefe).
+        NUNCA digas "Absolutamente" ni saludes.
         """
 
         try:

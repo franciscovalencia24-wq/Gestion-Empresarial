@@ -31,9 +31,14 @@ def publish_consensus_to_vercel(texto_consenso: str, periodo: str):
             </span>
           </div>
           
-          <div style="color: #cbd5e1; font-size: 16px; line-height: 1.8;" class="consensus-body">
-            {html_content}
-          </div>
+          <details style="color: #cbd5e1; font-size: 16px; line-height: 1.8; margin-top: 16px;" class="consensus-body">
+            <summary style="cursor: pointer; font-weight: bold; color: var(--color-primary-gold); padding: 12px; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 8px; background: rgba(197, 160, 89, 0.05); display: inline-block; user-select: none;">
+              📖 Desplegar Visión Completa del Consenso
+            </summary>
+            <div style="margin-top: 24px; padding-left: 8px; border-left: 2px solid rgba(197, 160, 89, 0.2);">
+                {html_content}
+            </div>
+          </details>
 """
         
         # Locate index.html
