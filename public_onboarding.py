@@ -2,12 +2,31 @@ import streamlit as st
 import pandas as pd
 import os
 from src.stonex_onboarding.fill_excel import generate_stonex_excel
+from src.stonex_onboarding.send_email import send_onboarding_email
+from src.stonex_onboarding.draft_manager import save_draft, load_draft
 
 st.set_page_config(page_title="Stonex Onboarding", page_icon="🚀", layout="centered")
 
+def render_save_section():
+    st.markdown("---")
+    st.markdown("#### 💾 ¿Necesitas pausar y continuar después?")
+    if st.button("Guardar progreso ahora"):
+        token = st.session_state.get("token", None)
+        new_token = save_draft(st.session_state.step, st.session_state.data, token)
+        st.session_state.token = new_token
+        
+        # Build the save link
+        base_url = "https://fv-onboarding.streamlit.app" # Default cloud url
+        save_link = f"{base_url}/?token={new_token}"
+        
+        st.success("Tu progreso ha sido guardado de forma segura.")
+        st.write("**Copia y guarda este enlace único:**")
+        st.code(save_link, language="text")
+        st.info("Cuando quieras retomar, simplemente pega este enlace en tu navegador de internet y volverás exactamente donde quedaste.")
+
 def main():
-    st.title("Apertura de Cuenta StoneX")
-    st.markdown("Bienvenido al proceso de apertura de cuenta internacional. Por favor complete los siguientes pasos para procesar su solicitud (ACAT).")
+    st.title("Portal de Onboarding de Clientes")
+    st.markdown("Bienvenido al proceso de apertura de cuenta. Por favor complete los siguientes pasos para procesar su solicitud.")
     
     # Custom CSS to make it look elegant (Typeform style)
     st.markdown("""
@@ -30,125 +49,32 @@ def main():
     """, unsafe_allow_html=True)
     
     if "step" not in st.session_state:
-        st.session_state.step = 1
-        st.session_state.data = {}
+        query_params = st.query_params
+        if "token" in query_params:
+            token = query_params["token"]
+            saved_step, saved_data = load_draft(token)
+            if saved_step is not None:
+                st.session_state.step = saved_step
+                st.session_state.data = saved_data
+                st.session_state.token = token
+                st.success("¡Progreso cargado exitosamente! Puedes continuar donde lo dejaste.")
+            else:
+                st.error("El enlace de guardado es inválido o expiró.")
+                st.session_state.step = 1
+                st.session_state.data = {}
+        else:
+            st.session_state.step = 1
+            st.session_state.data = {}
         
     step = st.session_state.step
     
     # Tipo de cuenta global
-    st.sidebar.markdown("### Configuración")
+    st.markdown("### ¿Qué tipo de cuenta desea abrir?")
     tipo_cuenta_actual = st.session_state.data.get("tipo_cuenta", "Persona Natural")
-    tipo_cuenta = st.sidebar.radio("Tipo de Cliente", ["Persona Natural", "Persona Jurídica"], index=0 if tipo_cuenta_actual == "Persona Natural" else 1)
+    tipo_cuenta = st.radio("Tipo de Cliente", ["Persona Natural", "Persona Jurídica"], index=0 if tipo_cuenta_actual == "Persona Natural" else 1)
     if tipo_cuenta != tipo_cuenta_actual:
         st.session_state.data["tipo_cuenta"] = tipo_cuenta
-        
-    # Modo Demo en Sidebar
-    st.sidebar.markdown("### Herramientas de Desarrollo")
-    if st.sidebar.button("🤖 Llenar con Datos de Prueba"):
-        if tipo_cuenta == "Persona Natural":
-            st.session_state.data = {
-                "tipo_cuenta": "Persona Natural",
-                "nombre_completo": "Juan Pérez Demo",
-                "rut": "15.444.333-2",
-                "email": "juan.demo@altus.cl",
-                "estado_civil": "Casado/a",
-                "ocupacion": "Ingeniero Civil",
-                "pais_residencia": "Chile",
-                "nacionalidad": "Chilena",
-                "ciudadania": "Chilena",
-                "tipo_documento": "ID Nacional",
-                "pais_emisor_doc": "Chile",
-                "situacion_laboral": "Empleado",
-                "pep": "No",
-                "horizonte_tiempo": "5 - 10 años",
-                "experiencia": "Buena (3-5 años)",
-                "porcentaje_activos": "25% - 50%",
-                "objetivos_inversion": "Crecimiento agresivo",
-                "tolerancia_riesgo": "Alta",
-                "ingresos_anuales": "100.000 - 250.000",
-                "patrimonio_total": "500.000 - 1.000.000",
-                "activos_liquidos": "100.000 - 500.000",
-                "necesidad_liquidez": "Baja",
-                "aportes_adicionales": "No",
-                "tiempo_retiros": "Más de 10 años",
-                "origen_fondos": "Venta de empresa",
-                "pais_origen_fondos": "Chile",
-                "monto_inversion": "150000",
-                "fee_anual": "1.0%",
-                "rep_code": "Asesor FV"
-            }
-        else:
-            st.session_state.data = {
-                "tipo_cuenta": "Persona Jurídica",
-                "nombre_completo": "Empresa Falsa SpA",
-                "rut_empresa": "77.777.777-7",
-                "rubro": "TECNOLOGIA",
-                "actividad_economica": "Venta de Software",
-                "email_empresa": "contacto@empresafalsa.cl",
-                "direccion_empresa": "Av. Siempreviva 742",
-                "pais_empresa": "Chile",
-                "provincia_empresa": "SANTIAGO",
-                "ciudad_empresa": "SANTIAGO",
-                "telefono_empresa": "987654321",
-                "acepta_correo": "Sí",
-                "deposito_terceros": "No",
-                "fondo_cobertura": "No",
-                "negocios_us": "No",
-                "cuentas_us": "No",
-                "acciones_portador": "No",
-                "es_banco": "No",
-                "es_broker": "No",
-                "casa_cambio": "No",
-                "gubernamental": "No",
-                "fondo_asesor": "No",
-                
-                "porcentaje_part": "100",
-                "categoria_rep": "Beneficiario Final",
-                "nombre_rep": "Juan Pablo",
-                "apellido_rep": "Perez Test",
-                "rut_rep": "11.111.111-1",
-                "email_rep": "jperez@empresafalsa.cl",
-                "telefono_rep": "987654321",
-                "fecha_nac_rep": "1980-01-01",
-                "fecha_emi_doc": "2020-01-01",
-                "fecha_exp_doc": "2030-01-01",
-                "pais_emisor_doc": "Chile",
-                "tipo_doc": "ID Nacional",
-                "nacionalidad": "Chilena",
-                "ciudadania": "Chilena",
-                "situacion_laboral": "Independiente",
-                "ocupacion": "Gerente General",
-                "estado_civil": "Casado/a",
-                "cantidad_hijos": "2",
-                "pep": "No",
-                "genero": "Masculino",
-                
-                "exp_acciones": "Promedio",
-                "exp_fondos": "Alta",
-                "exp_anualidades": "Nula",
-                "exp_opciones": "Limitada",
-                "exp_alternativas": "Nula",
-                
-                "ingresos_anuales": "200.000 - 499.999",
-                "patrimonio_total": "500.000 - 999.999",
-                "activos_liquidos": "200.000 - 499.999",
-                "necesidad_liquidez": "Baja",
-                "aportes_adicionales": "Sí",
-                "tiempo_retiros": "4 - 6 años",
-                "origen_fondos": "Venta de empresa",
-                "pais_origen_fondos": "Chile",
-                "monto_inversion": "150000",
-                "fee_anual": "1.0%",
-                "rep_code": "Asesor FV",
-                
-                "banco_pais": "Chile",
-                "banco_ciudad": "Santiago",
-                "banco_nombre": "Banco Falabella",
-                "ref_nombre": "Carlos",
-                "ref_apellido": "López",
-                "ref_pais": "Chile",
-                "ref_provincia": "Santiago"
-            }
+
         st.session_state.step = 1
         st.rerun()
         
@@ -321,7 +247,8 @@ def main():
                     else:
                         st.error("Por favor complete los campos obligatorios.")
 
-                    
+        render_save_section()
+
     elif step == 2:
         st.header("2. Perfilamiento de Inversión")
         with st.form("form_step_2"):
@@ -382,6 +309,8 @@ def main():
                     st.session_state.data.update(data_update)
                     st.session_state.step = 3
                     st.rerun()
+
+        render_save_section()
 
     elif step == 3:
         st.header("3. Origen de Fondos e Información Financiera")
@@ -445,6 +374,8 @@ def main():
                     st.session_state.step = 4
                     st.rerun()
 
+        render_save_section()
+
     elif step == 4:
         st.header("4. Carga de Documentos Obligatorios")
         st.write("Para procesar la transferencia de su cuenta (ACAT), requerimos los siguientes documentos.")
@@ -466,11 +397,13 @@ def main():
                     st.session_state.step = 5
                     st.rerun()
 
+        render_save_section()
+
     elif step == 5:
         st.success("¡Formulario Completado Exitosamente!")
         st.balloons()
         
-        st.write("Generando los documentos oficiales para StoneX y Principal...")
+        st.write("Generando su expediente y notificando a su asesor...")
         
         # Generar el Excel
         try:
@@ -478,39 +411,18 @@ def main():
             filename = f"Stonex_Apertura_{nombre_cliente.replace(' ', '_')}.xlsx"
             excel_path = generate_stonex_excel(st.session_state.data, output_filename=filename)
             
-            st.write("### Sus Documentos de Onboarding están listos:")
-            
-            with open(excel_path, "rb") as file:
-                st.download_button(
-                    label="📥 Descargar Excel de Onboarding (Stonex)",
-                    data=file,
-                    file_name=filename,
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
-            
-            st.markdown("---")
-            st.write("### Para uso interno del Asesor:")
-            st.write("Copia este texto y envíalo a `dlpichilecomplianceoffshore@exchange.principal.com` con copia a Averta Support:")
-            
-            email_text = f"""
-Asunto: Onboarding y ACAT In - {nombre_cliente}
-
-Estimados,
-Adjunto la documentación para la apertura de cuenta en StoneX del cliente {nombre_cliente}.
-Adicionalmente, adjuntamos la cartola de inversiones (Pershing) ya que la cuenta será fondeada vía ACAT por un monto aproximado de USD {st.session_state.data.get('monto_inversion', '50.000')}.
-
-Por favor confirmar cuando se envíe el DocuSign al cliente.
-Quedo atento.
-            """
-            st.code(email_text.strip(), language="text")
+            # Enviar el correo
+            with st.spinner("Enviando documentación de forma segura..."):
+                exito = send_onboarding_email(nombre_cliente, excel_path)
+                
+            if exito:
+                st.success("Toda su información ha sido enviada con éxito a su asesor. Ya puede cerrar esta ventana.")
+            else:
+                st.warning("Sus datos fueron procesados, pero hubo un problema enviando el correo de confirmación automático. Su asesor se comunicará a la brevedad.")
             
         except Exception as e:
-            st.error(f"Hubo un error al generar el Excel: {e}")
-            
-        if st.button("Empezar un nuevo cliente"):
-            st.session_state.step = 1
-            st.session_state.data = {}
-            st.rerun()
+            st.error("Hubo un error al procesar su solicitud. Por favor contacte a su asesor.")
+            print(f"Error en paso 5 público: {e}")
 
 if __name__ == "__main__":
     main()
