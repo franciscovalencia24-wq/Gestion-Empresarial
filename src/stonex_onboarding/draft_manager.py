@@ -20,26 +20,31 @@ def _init_db():
     conn.close()
 
 def save_draft(step, data, token=None):
-    _init_db()
-    if not token:
-        token = str(uuid.uuid4())
-    
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    
-    data_str = json.dumps(data)
-    cursor.execute('''
-        INSERT INTO onboarding_drafts (token, step, data_json)
-        VALUES (?, ?, ?)
-        ON CONFLICT(token) DO UPDATE SET
-            step=excluded.step,
-            data_json=excluded.data_json,
-            updated_at=CURRENT_TIMESTAMP
-    ''', (token, step, data_str))
-    
-    conn.commit()
-    conn.close()
-    return token
+    try:
+        _init_db()
+        if not token:
+            token = str(uuid.uuid4())
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # default=str asegura que fechas o campos no serializables no rompan JSON
+        data_str = json.dumps(data, default=str)
+        cursor.execute('''
+            INSERT INTO onboarding_drafts (token, step, data_json)
+            VALUES (?, ?, ?)
+            ON CONFLICT(token) DO UPDATE SET
+                step=excluded.step,
+                data_json=excluded.data_json,
+                updated_at=CURRENT_TIMESTAMP
+        ''', (token, step, data_str))
+        
+        conn.commit()
+        conn.close()
+        return token
+    except Exception as e:
+        print(f"Error saving draft: {e}")
+        return f"ERROR: {str(e)}"
 
 def load_draft(token):
     _init_db()

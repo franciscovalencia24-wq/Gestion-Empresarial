@@ -13,16 +13,19 @@ def render_save_section():
     if st.button("Guardar progreso ahora"):
         token = st.session_state.get("token", None)
         new_token = save_draft(st.session_state.step, st.session_state.data, token)
-        st.session_state.token = new_token
         
-        # Build the save link
-        base_url = "https://fv-onboarding.streamlit.app" # Default cloud url
-        save_link = f"{base_url}/?token={new_token}"
-        
-        st.success("Tu progreso ha sido guardado de forma segura.")
-        st.write("**Copia y guarda este enlace único:**")
-        st.code(save_link, language="text")
-        st.info("Cuando quieras retomar, simplemente pega este enlace en tu navegador de internet y volverás exactamente donde quedaste.")
+        if new_token and new_token.startswith("ERROR:"):
+            st.error(f"No se pudo guardar el progreso. Error interno: {new_token}")
+        else:
+            st.session_state.token = new_token
+            # Build the save link
+            base_url = "https://fv-registro.streamlit.app" # Default cloud url
+            save_link = f"{base_url}/?token={new_token}"
+            
+            st.success("Tu progreso ha sido guardado de forma segura.")
+            st.write("**Copia y guarda este enlace único:**")
+            st.code(save_link, language="text")
+            st.info("Cuando quieras retomar, simplemente pega este enlace en tu navegador de internet y volverás exactamente donde quedaste.")
 
 def main():
     st.title("Portal de Registro de Clientes")
