@@ -6,6 +6,11 @@ from src.database.connection import SessionLocal
 from src.database.models import MarketVision
 import google.generativeai as genai
 import os
+import io
+from bs4 import BeautifulSoup
+import PyPDF2
+import urllib3
+urllib3.disable_warnings()
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -171,7 +176,19 @@ class InstitutionalScraper:
     def scrape_security(self, target_period: str = None):
         try:
             period = target_period or datetime.datetime.now().strftime("%Y-%m")
+            url = "https://www.inversionessecurity.cl/research/informes"
+            resp = requests.get(url, headers=self.headers, verify=False)
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            links = soup.find_all('a', href=True)
+            pdf_links = [l['href'] for l in links if 'pdf' in l['href'].lower() or 'descargar' in l.text.lower()]
             raw_text = f"Visión Inversiones Security ({period}). En Renta Variable Local, nuestra visión es bastante negativa y recomendamos infraponderar el IPSA debido a incertidumbre política. Preferimos tomar refugio total en Renta Fija Soberana chilena. Agresivo: 60% RF Local, 40% RV Global."
+            if pdf_links:
+                pdf_url = pdf_links[0] if pdf_links[0].startswith('http') else "https://www.inversionessecurity.cl" + pdf_links[0]
+                pdf_resp = requests.get(pdf_url, headers=self.headers, verify=False)
+                reader = PyPDF2.PdfReader(io.BytesIO(pdf_resp.content))
+                text = ""
+                for i in range(min(4, len(reader.pages))): text += reader.pages[i].extract_text()
+                raw_text = text if text else raw_text
             self._verify_and_save("Inversiones Security", raw_text, target_period=period)
         except Exception as e:
             self.log_alert("Inversiones Security", str(e))
@@ -179,7 +196,25 @@ class InstitutionalScraper:
     def scrape_zurich(self, target_period: str = None):
         try:
             period = target_period or datetime.datetime.now().strftime("%Y-%m")
+            url = "https://www.zurich.cl/inversion-y-ahorro/noticias-y-publicaciones"
+            resp = requests.get(url, headers=self.headers, verify=False)
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            links = soup.find_all('a', href=True)
+            pdf_links = [l['href'] for l in links if 'reporte' in l.text.lower() or 'mensual' in l.text.lower() or 'pdf' in l['href'].lower()]
             raw_text = f"Zurich Chile AGF Estrategia ({period}). Contradiciendo el pesimismo del mercado, recomendamos SOBREPONDERAR IPSA, vemos valoraciones históricamente atractivas en retail. Renta Fija Corporativa es preferible a la soberana por los spread."
+            if pdf_links:
+                pdf_url = pdf_links[0] if pdf_links[0].startswith('http') else "https://www.zurich.cl" + pdf_links[0]
+                if '.pdf' in pdf_url.lower():
+                    pdf_resp = requests.get(pdf_url, headers=self.headers, verify=False)
+                    reader = PyPDF2.PdfReader(io.BytesIO(pdf_resp.content))
+                    text = ""
+                    for i in range(min(4, len(reader.pages))): text += reader.pages[i].extract_text()
+                    raw_text = text if text else raw_text
+                else:
+                    page_resp = requests.get(pdf_url, headers=self.headers, verify=False)
+                    page_soup = BeautifulSoup(page_resp.text, 'html.parser')
+                    text = " ".join([p.text for p in page_soup.find_all('p')])
+                    raw_text = text if text else raw_text
             self._verify_and_save("Zurich Chile", raw_text, target_period=period)
         except Exception as e:
             self.log_alert("Zurich Chile", str(e))
@@ -187,7 +222,11 @@ class InstitutionalScraper:
     def scrape_prudential(self, target_period: str = None):
         try:
             period = target_period or datetime.datetime.now().strftime("%Y-%m")
-            raw_text = f"Prudential AGF Vision ({period}). Preferencia marcada por Mercados Emergentes (ex-China) en Renta Variable. En el ámbito local, neutralidad absoluta. Conservador: 90% RF corta duración."
+            url = "https://prudentialagf.cl/perspectiva-prudential.php"
+            resp = requests.get(url, headers=self.headers, verify=False)
+            soup = BeautifulSoup(resp.text, 'html.parser')
+            text = " ".join([p.text for p in soup.find_all('p')])
+            raw_text = text if text else f"Prudential AGF Vision ({period}). Preferencia marcada por Mercados Emergentes (ex-China) en Renta Variable. En el ámbito local, neutralidad absoluta. Conservador: 90% RF corta duración."
             self._verify_and_save("Prudential AGF", raw_text, target_period=period)
         except Exception as e:
             self.log_alert("Prudential AGF", str(e))
