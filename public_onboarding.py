@@ -28,7 +28,7 @@ def render_save_section():
             st.info("Cuando quieras retomar, simplemente pega este enlace en tu navegador de internet y volverás exactamente donde quedaste.")
 
 def main():
-    st.title("Portal de Registro de Clientes")
+    st.title("Portal de Registro Clientes")
     st.markdown("Bienvenido al proceso de apertura de cuenta. Por favor complete los siguientes pasos para procesar su solicitud.")
     
     # Custom CSS to make it look elegant (Typeform style)
@@ -424,7 +424,7 @@ def main():
                 st.warning("Sus datos fueron procesados, pero hubo un problema enviando el correo de confirmación automático. Su asesor se comunicará a la brevedad.")
             
         except Exception as e:
-            st.error("Hubo un error al procesar su solicitud. Por favor contacte a su asesor.")
+            st.error(f"Hubo un error al procesar su solicitud: {str(e)}")
             print(f"Error en paso 5 público: {e}")
 
 if __name__ == "__main__":
