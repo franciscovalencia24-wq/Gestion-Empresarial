@@ -384,9 +384,9 @@ def main():
         st.write("Para procesar la transferencia de su cuenta (ACAT), requerimos los siguientes documentos.")
         
         with st.form("form_step_4"):
-            st.file_uploader("1. Cédula de Identidad (Ambos lados en un solo PDF/Imagen)", type=["pdf", "jpg", "png"])
-            st.file_uploader("2. Comprobante de Domicilio (Agua, Luz, Teléfono)", type=["pdf", "jpg", "png"])
-            st.file_uploader("3. Última Cartola de Inversiones (SURA/Pershing/Etc)", type=["pdf"])
+            doc1 = st.file_uploader("1. Cédula de Identidad (Ambos lados en un solo PDF/Imagen)", type=["pdf", "jpg", "png"])
+            doc2 = st.file_uploader("2. Comprobante de Domicilio (Agua, Luz, Teléfono)", type=["pdf", "jpg", "png"])
+            doc3 = st.file_uploader("3. Última Cartola de Inversiones (SURA/Pershing/Etc)", type=["pdf"])
             
             st.markdown("---")
             col1, col2 = st.columns(2)
@@ -397,6 +397,14 @@ def main():
             with col2:
                 submitted = st.form_submit_button("✅ Finalizar y Enviar")
                 if submitted:
+                    st.session_state.attachments = []
+                    os.makedirs("data/uploads", exist_ok=True)
+                    for doc in [doc1, doc2, doc3]:
+                        if doc is not None:
+                            path = os.path.join("data/uploads", doc.name)
+                            with open(path, "wb") as f:
+                                f.write(doc.getbuffer())
+                            st.session_state.attachments.append({"filename": doc.name, "path": path})
                     st.session_state.step = 5
                     st.rerun()
 
@@ -416,7 +424,8 @@ def main():
             
             # Enviar el correo
             with st.spinner("Enviando documentación de forma segura..."):
-                exito = send_onboarding_email(nombre_cliente, excel_path)
+                attachments = st.session_state.get("attachments", [])
+                exito = send_onboarding_email(nombre_cliente, excel_path, attachments=attachments)
                 
             if exito:
                 st.success("Toda su información ha sido enviada con éxito a su asesor. Ya puede cerrar esta ventana.")
