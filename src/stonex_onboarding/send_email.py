@@ -10,16 +10,23 @@ def send_onboarding_email(cliente_nombre, excel_filepath, attachments=None):
     Para que funcione en producción, es necesario definir las variables de entorno o Secrets en Streamlit:
     SMTP_SERVER, SMTP_PORT, SMTP_USER, SMTP_PASSWORD.
     """
-    # Si no hay variables de entorno, usamos un fallback a gmail para la guía.
-    smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
-    smtp_port = int(os.environ.get("SMTP_PORT", 587))
-    smtp_user = os.environ.get("SMTP_USER", "")
-    smtp_password = os.environ.get("SMTP_PASSWORD", "")
+    # Streamlit Cloud usa st.secrets preferentemente
+    try:
+        import streamlit as st
+        smtp_server = os.environ.get("SMTP_SERVER") or st.secrets.get("SMTP_SERVER", "smtp.gmail.com")
+        smtp_port = int(os.environ.get("SMTP_PORT") or st.secrets.get("SMTP_PORT", 587))
+        smtp_user = os.environ.get("SMTP_USER") or st.secrets.get("SMTP_USER", "")
+        smtp_password = os.environ.get("SMTP_PASSWORD") or st.secrets.get("SMTP_PASSWORD", "")
+    except Exception:
+        smtp_server = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
+        smtp_port = int(os.environ.get("SMTP_PORT", 587))
+        smtp_user = os.environ.get("SMTP_USER", "")
+        smtp_password = os.environ.get("SMTP_PASSWORD", "")
+
     to_email = "contacto@fv-inversiones.com"
 
     if not smtp_user or not smtp_password:
-        print("ADVERTENCIA: No se han configurado credenciales de SMTP. El correo no se enviará.")
-        return False
+        raise Exception("Las credenciales de correo (SMTP_USER o SMTP_PASSWORD) no están configuradas en los Secrets de Streamlit.")
 
     msg = MIMEMultipart()
     msg['From'] = smtp_user
@@ -64,5 +71,4 @@ def send_onboarding_email(cliente_nombre, excel_filepath, attachments=None):
         server.quit()
         return True
     except Exception as e:
-        print(f"Error al enviar correo: {e}")
-        return False
+        raise Exception(f"Fallo en servidor SMTP: {e}")
