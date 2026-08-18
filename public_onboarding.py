@@ -25,7 +25,7 @@ def render_save_section():
         st.info("Cuando quieras retomar, simplemente pega este enlace en tu navegador de internet y volverás exactamente donde quedaste.")
 
 def main():
-    st.title("Portal de Onboarding de Clientes")
+    st.title("Portal de Registro de Clientes")
     st.markdown("Bienvenido al proceso de apertura de cuenta. Por favor complete los siguientes pasos para procesar su solicitud.")
     
     # Custom CSS to make it look elegant (Typeform style)
