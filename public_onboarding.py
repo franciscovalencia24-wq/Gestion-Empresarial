@@ -159,14 +159,26 @@ def main():
                 cc1, cc2 = st.columns(2)
                 with cc1:
                     con_nombres = st.text_input("Nombres del Cónyuge", value=st.session_state.data.get("con_nombres", ""))
-                    con_sit_lab = st.selectbox("Situación Laboral Cónyuge", opc_sit, index=get_idx(opc_sit, "con_sit_lab", "Empleado"))
-                    con_nac = st.selectbox("Nacionalidad Cónyuge", opc_nac, index=get_idx(opc_nac, "con_nac", "Chilena"))
-                    con_tipo_doc = st.selectbox("Tipo Doc. Cónyuge", opc_td, index=get_idx(opc_td, "con_tipo_doc", "ID Nacional"))
                 with cc2:
                     con_apellidos = st.text_input("Apellidos del Cónyuge", value=st.session_state.data.get("con_apellidos", ""))
-                    con_fecha_nac = str(st.date_input("Fecha Nacimiento Cónyuge", value=pd.to_datetime(st.session_state.data.get("con_fecha_nac", "1980-01-01")).date()))
-                    con_pais_emi = st.selectbox("País Emisor Doc. Cónyuge", opc_pais, index=get_idx(opc_pais, "con_pais_emi", "Chile"))
+                
+                cc3, cc4 = st.columns(2)
+                with cc3:
                     con_rut = st.text_input("Número de Documento / RUT Cónyuge", value=st.session_state.data.get("con_rut", ""))
+                with cc4:
+                    con_fecha_nac = str(st.date_input("Fecha Nacimiento Cónyuge", value=pd.to_datetime(st.session_state.data.get("con_fecha_nac", "1980-01-01")).date()))
+                    
+                cc5, cc6 = st.columns(2)
+                with cc5:
+                    con_tipo_doc = st.selectbox("Tipo Doc. Cónyuge", opc_td, index=get_idx(opc_td, "con_tipo_doc", "ID Nacional"))
+                with cc6:
+                    con_pais_emi = st.selectbox("País Emisor Doc. Cónyuge", opc_pais, index=get_idx(opc_pais, "con_pais_emi", "Chile"))
+                
+                cc7, cc8 = st.columns(2)
+                with cc7:
+                    con_nac = st.selectbox("Nacionalidad Cónyuge", opc_nac, index=get_idx(opc_nac, "con_nac", "Chilena"))
+                with cc8:
+                    con_sit_lab = st.selectbox("Situación Laboral Cónyuge", opc_sit, index=get_idx(opc_sit, "con_sit_lab", "Empleado"))
                 
                 submitted = st.form_submit_button("Siguiente ->")
                 if submitted:
