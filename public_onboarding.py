@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 import os
+import importlib
+import src.stonex_onboarding.fill_excel as fill_excel_module
+importlib.reload(fill_excel_module)
 from src.stonex_onboarding.fill_excel import generate_stonex_excel
 from src.stonex_onboarding.send_email import send_onboarding_email
 from src.stonex_onboarding.draft_manager import save_draft, load_draft
