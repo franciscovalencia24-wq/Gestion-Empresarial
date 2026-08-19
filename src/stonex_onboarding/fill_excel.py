@@ -119,21 +119,28 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
     else:
         # Mapeo de Persona Natural
         # Perfilamiento de Riesgo
-        safe_write(sheet, 'B3', data.get('horizonte_tiempo', ''))
-        safe_write(sheet, 'B5', data.get('experiencia', ''))
-        safe_write(sheet, 'B7', data.get('porcentaje_activos', ''))
-        safe_write(sheet, 'B9', data.get('objetivos_inversion', ''))
-        safe_write(sheet, 'B11', data.get('tolerancia_riesgo', ''))
+        safe_write(sheet, 'D31', data.get('horizonte_tiempo', ''))
+        safe_write(sheet, 'D33', data.get('experiencia', ''))
+        safe_write(sheet, 'D35', data.get('porcentaje_activos', ''))
+        safe_write(sheet, 'D37', data.get('objetivos_inversion', ''))
+        safe_write(sheet, 'D39', data.get('tolerancia_riesgo', ''))
         
         # Datos de Cuenta y Asesor
-        safe_write(sheet, 'B15', 'Individual')
-        safe_write(sheet, 'B18', data.get('rep_code', 'Asesor FV'))
+        safe_write(sheet, 'B17', 'Individual')
+        safe_write(sheet, 'B20', data.get('rep_code', 'Asesor FV'))
         
         # Datos Personales
-        safe_write(sheet, 'B19', data.get('nombre_completo', ''))
+        nombre_partes = data.get('nombre_completo', '').split()
+        nombres = " ".join(nombre_partes[:2]) if len(nombre_partes) > 1 else data.get('nombre_completo', '')
+        apellidos = " ".join(nombre_partes[2:]) if len(nombre_partes) > 2 else ""
+        safe_write(sheet, 'B49', nombres)
+        safe_write(sheet, 'B51', apellidos)
+        safe_write(sheet, 'B60', data.get('email', ''))
+        safe_write(sheet, 'B64', data.get('rut', ''))
+        
         safe_write(sheet, 'B54', data.get('pais_residencia', 'Chile'))
-        safe_write(sheet, 'B60', data.get('tipo_documento', 'ID Nacional'))
         safe_write(sheet, 'B62', data.get('pais_emisor_doc', 'Chile'))
+        safe_write(sheet, 'B63', data.get('tipo_documento', 'ID Nacional'))
         safe_write(sheet, 'B66', data.get('nacionalidad', 'Chilena'))
         safe_write(sheet, 'B67', data.get('ciudadania', 'Chilena'))
         safe_write(sheet, 'B68', data.get('situacion_laboral', ''))
@@ -155,9 +162,9 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
         safe_write(sheet, 'B113', 'ACAT')
         
         # Campos de texto libre
-        safe_write(sheet, 'A109', data.get('monto_inversion', ''))
-        safe_write(sheet, 'A111', data.get('fee_anual', '1.0%'))
-        safe_write(sheet, 'A112', '0')
+        safe_write(sheet, 'B109', data.get('monto_inversion', ''))
+        safe_write(sheet, 'B111', data.get('fee_anual', '1.0%'))
+        safe_write(sheet, 'B112', '0')
         
     # Desproteger la hoja para que el asesor pueda editarla manualmente después de la descarga
     sheet.protection.sheet = False
