@@ -119,11 +119,10 @@ def main():
                     provincia = st.text_input("Provincia (Región)", value=st.session_state.data.get("provincia", ""))
                     codigo_postal = st.text_input("Código Postal", value=st.session_state.data.get("codigo_postal", ""))
                 
-                difiere_dir = st.checkbox("Mi dirección de correspondencia es distinta a la de residencia", value=st.session_state.data.get("difiere_dir", False))
-                direccion_correspondencia = ""
-                if difiere_dir:
-                    direccion_correspondencia = st.text_input("Dirección de Correspondencia", value=st.session_state.data.get("direccion_correspondencia", ""))
-                    
+                st.markdown("##### Dirección de Correspondencia")
+                st.info("Complete solo si su dirección de correspondencia es **distinta** a la de residencia.")
+                direccion_correspondencia = st.text_input("Dirección de Correspondencia", value=st.session_state.data.get("direccion_correspondencia", ""))
+                difiere_dir = True if direccion_correspondencia else False
                 telefono = st.text_input("Teléfono", value=st.session_state.data.get("telefono", ""))
 
                 col1, col2 = st.columns(2)
@@ -153,30 +152,21 @@ def main():
                     opc_pep = ["No", "Sí"]
                     pep = st.selectbox("¿Es Persona Expuesta Políticamente (PEP)?", opc_pep, index=get_idx(opc_pep, "pep", "No"))
                 
-                # Cónyuge
-                con_nombres = ""
-                con_apellidos = ""
-                con_fecha_nac = "1980-01-01"
-                con_sit_lab = "Empleado"
-                con_nac = "Chilena"
-                con_tipo_doc = "ID Nacional"
-                con_pais_emi = "Chile"
-                con_rut = ""
-                
-                if estado_civil == "Casado/a":
-                    st.markdown("---")
-                    st.markdown("##### Datos del Cónyuge")
-                    cc1, cc2 = st.columns(2)
-                    with cc1:
-                        con_nombres = st.text_input("Nombres del Cónyuge", value=st.session_state.data.get("con_nombres", ""))
-                        con_sit_lab = st.selectbox("Situación Laboral Cónyuge", opc_sit, index=get_idx(opc_sit, "con_sit_lab", "Empleado"))
-                        con_nac = st.selectbox("Nacionalidad Cónyuge", opc_nac, index=get_idx(opc_nac, "con_nac", "Chilena"))
-                        con_tipo_doc = st.selectbox("Tipo Doc. Cónyuge", opc_td, index=get_idx(opc_td, "con_tipo_doc", "ID Nacional"))
-                    with cc2:
-                        con_apellidos = st.text_input("Apellidos del Cónyuge", value=st.session_state.data.get("con_apellidos", ""))
-                        con_fecha_nac = str(st.date_input("Fecha Nacimiento Cónyuge", value=pd.to_datetime(st.session_state.data.get("con_fecha_nac", "1980-01-01")).date()))
-                        con_pais_emi = st.selectbox("País Emisor Doc. Cónyuge", opc_pais, index=get_idx(opc_pais, "con_pais_emi", "Chile"))
-                        con_rut = st.text_input("Número de Documento / RUT Cónyuge", value=st.session_state.data.get("con_rut", ""))
+                # Cónyuge (Siempre visible para evitar bloqueo del form, pero marcado como condicional)
+                st.markdown("---")
+                st.markdown("##### Datos del Cónyuge")
+                st.info("Complete esta sección **solo si seleccionó 'Casado/a'** en su Estado Civil.")
+                cc1, cc2 = st.columns(2)
+                with cc1:
+                    con_nombres = st.text_input("Nombres del Cónyuge", value=st.session_state.data.get("con_nombres", ""))
+                    con_sit_lab = st.selectbox("Situación Laboral Cónyuge", opc_sit, index=get_idx(opc_sit, "con_sit_lab", "Empleado"))
+                    con_nac = st.selectbox("Nacionalidad Cónyuge", opc_nac, index=get_idx(opc_nac, "con_nac", "Chilena"))
+                    con_tipo_doc = st.selectbox("Tipo Doc. Cónyuge", opc_td, index=get_idx(opc_td, "con_tipo_doc", "ID Nacional"))
+                with cc2:
+                    con_apellidos = st.text_input("Apellidos del Cónyuge", value=st.session_state.data.get("con_apellidos", ""))
+                    con_fecha_nac = str(st.date_input("Fecha Nacimiento Cónyuge", value=pd.to_datetime(st.session_state.data.get("con_fecha_nac", "1980-01-01")).date()))
+                    con_pais_emi = st.selectbox("País Emisor Doc. Cónyuge", opc_pais, index=get_idx(opc_pais, "con_pais_emi", "Chile"))
+                    con_rut = st.text_input("Número de Documento / RUT Cónyuge", value=st.session_state.data.get("con_rut", ""))
                 
                 submitted = st.form_submit_button("Siguiente ->")
                 if submitted:
