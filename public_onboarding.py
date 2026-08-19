@@ -170,7 +170,17 @@ def main():
                 
                 submitted = st.form_submit_button("Siguiente ->")
                 if submitted:
-                    if pn_primer_nombre and pn_primer_apellido and rut and email:
+                    pn_valid = all([pn_primer_nombre, pn_primer_apellido, rut, email, direccion_residencia, ciudad, provincia, codigo_postal, telefono, ocupacion, cantidad_hijos])
+                    dir_valid = True if not difiere_dir else bool(direccion_correspondencia)
+                    con_valid = True if estado_civil != "Casado/a" else all([con_nombres, con_apellidos, con_rut])
+                    
+                    if not pn_valid:
+                        st.error("Por favor complete todos los campos obligatorios de sus Datos Personales (nombres, RUT, correo, dirección completa, teléfono, ocupación, cantidad de hijos).")
+                    elif not dir_valid:
+                        st.error("Indicó que su dirección de correspondencia es distinta. Por favor, complétela.")
+                    elif not con_valid:
+                        st.error("Seleccionó estado civil Casado/a. Por favor complete los Nombres, Apellidos y RUT de su Cónyuge.")
+                    else:
                         st.session_state.data.update({
                             "pn_primer_nombre": pn_primer_nombre, "pn_segundo_nombre": pn_segundo_nombre,
                             "pn_primer_apellido": pn_primer_apellido, "pn_segundo_apellido": pn_segundo_apellido,
@@ -188,8 +198,6 @@ def main():
                         })
                         st.session_state.step = 2
                         st.rerun()
-                    else:
-                        st.error("Por favor complete los campos obligatorios.")
             else:
                 st.subheader("Datos de la Empresa")
                 razon_social = st.text_input("Razón Social / Nombre Completo", value=st.session_state.data.get("nombre_completo", ""))
@@ -282,7 +290,14 @@ def main():
                 
                 submitted = st.form_submit_button("Siguiente ->")
                 if submitted:
-                    if razon_social and rut_emp and n_rep and rut_rep:
+                    pj_valid = all([razon_social, rut_emp, rubro, act_eco, email_emp, dir_emp, prov_emp, ciud_emp, cp_emp])
+                    rep_valid = all([n_rep, a_rep, rut_rep, email_rep, tel_rep, porc_part])
+                    
+                    if not pj_valid:
+                        st.error("Por favor complete todos los campos obligatorios de la Empresa (Razón Social, RUT, Rubro, Dirección completa, Correo, etc).")
+                    elif not rep_valid:
+                        st.error("Por favor complete todos los campos obligatorios del Representante Legal (Nombres, Apellidos, RUT, Correo, Teléfono y % de participación).")
+                    else:
                         st.session_state.data.update({
                             "nombre_completo": razon_social, "rut_empresa": rut_emp, 
                             "rubro": rubro, "actividad_economica": act_eco,
@@ -310,8 +325,6 @@ def main():
                         })
                         st.session_state.step = 2
                         st.rerun()
-                    else:
-                        st.error("Por favor complete los campos obligatorios.")
 
         render_save_section()
 
