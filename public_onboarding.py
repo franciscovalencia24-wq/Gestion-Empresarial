@@ -360,6 +360,35 @@ def main():
             opc_tol = ["Baja", "Media", "Alta"]
             tolerancia = st.selectbox("5 - ¿Cuál es su tolerancia al riesgo frente a caídas temporales del mercado?", opc_tol, index=get_idx(opc_tol, "tolerancia_riesgo", opc_tol[0]))
             
+            # Nuevas preguntas (6, 7, 8)
+            st.markdown("---")
+            st.markdown("#### 6 - Elección de portafolio")
+            st.markdown("El siguiente gráfico muestra la evolución del valor de tres portafolios de inversión hipotéticos, para un período de 4 años...")
+            if os.path.exists("assets/grafico_6.png"):
+                st.image("assets/grafico_6.png", caption="Gráfico Pregunta 6")
+            else:
+                st.info("💡 Por favor suba el archivo 'grafico_6.png' a la carpeta 'assets/' para ver este gráfico.")
+            opc_p6 = ["Portafolio 1", "Portafolio 2", "Portafolio 3"]
+            eleccion_portafolio = st.radio("¿En cuál de los portafolios se sentiría más cómodo?", opc_p6, index=get_idx(opc_p6, "eleccion_portafolio", "Portafolio 2"))
+
+            st.markdown("---")
+            st.markdown("#### 7 - Elección de rendimiento")
+            st.markdown("La gráfica del cuadro que aparece a continuación muestra el rendimiento de cinco inversiones hipotéticas diferentes...")
+            if os.path.exists("assets/grafico_7.png"):
+                st.image("assets/grafico_7.png", caption="Gráfico Pregunta 7")
+            else:
+                st.info("💡 Por favor suba el archivo 'grafico_7.png' a la carpeta 'assets/' para ver este gráfico.")
+            opc_p7 = ["Portafolio A", "Portafolio B", "Portafolio C", "Portafolio D", "Portafolio E"]
+            eleccion_rendimiento = st.radio("¿Con cuál de estas inversiones se sentiría más cómodo?", opc_p7, index=get_idx(opc_p7, "eleccion_rendimiento", "Portafolio C"))
+
+            st.markdown("---")
+            st.markdown("#### 8 - Caída en portafolio")
+            st.markdown("Considere el siguiente escenario: Imagine que durante los últimos 3 meses la bolsa de valores tuvo una pérdida del 25%, algunos fondos de su portafolio también están perdiendo 25% de su valor. ¿Qué haría usted?")
+            if os.path.exists("assets/grafico_8.png"):
+                st.image("assets/grafico_8.png", caption="Gráfico Pregunta 8")
+            opc_p8 = ["Vendería toda mi inversión", "Vendería parte de mi inversión", "No haría nada", "Compraría más"]
+            caida_portafolio = st.radio("Seleccione una opción", opc_p8, index=get_idx(opc_p8, "caida_portafolio", "No haría nada"))
+
             col1, col2 = st.columns(2)
             with col1:
                 if st.form_submit_button("<- Volver"):
@@ -372,7 +401,10 @@ def main():
                         "experiencia": experiencia,
                         "porcentaje_activos": porcentaje,
                         "objetivos_inversion": objetivos,
-                        "tolerancia_riesgo": tolerancia
+                        "tolerancia_riesgo": tolerancia,
+                        "eleccion_portafolio": eleccion_portafolio,
+                        "eleccion_rendimiento": eleccion_rendimiento,
+                        "caida_portafolio": caida_portafolio
                     }
                     if tipo_cuenta == "Persona Jurídica":
                         data_update.update({
