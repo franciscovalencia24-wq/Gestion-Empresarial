@@ -95,10 +95,33 @@ def main():
         st.header("1. Datos Personales" if tipo_cuenta == "Persona Natural" else "1. Datos de la Empresa y Representante")
         with st.form("form_step_1"):
             if tipo_cuenta == "Persona Natural":
-                nombre = st.text_input("Nombre Completo (como aparece en su documento)", value=st.session_state.data.get("nombre_completo", ""))
+                col_n1, col_n2 = st.columns(2)
+                with col_n1:
+                    pn_primer_nombre = st.text_input("Primer Nombre", value=st.session_state.data.get("pn_primer_nombre", ""))
+                    pn_primer_apellido = st.text_input("Primer Apellido", value=st.session_state.data.get("pn_primer_apellido", ""))
+                with col_n2:
+                    pn_segundo_nombre = st.text_input("Segundo Nombre", value=st.session_state.data.get("pn_segundo_nombre", ""))
+                    pn_segundo_apellido = st.text_input("Segundo Apellido", value=st.session_state.data.get("pn_segundo_apellido", ""))
+                
                 rut = st.text_input("RUT / Nro Documento", value=st.session_state.data.get("rut", ""))
                 email = st.text_input("Correo Electrónico", value=st.session_state.data.get("email", ""))
+                fecha_nacimiento = st.date_input("Fecha de Nacimiento", value=pd.to_datetime(st.session_state.data.get("fecha_nacimiento", "1980-01-01")).date())
                 
+                col_d1, col_d2 = st.columns(2)
+                with col_d1:
+                    direccion_residencia = st.text_input("Dirección de Residencia", value=st.session_state.data.get("direccion_residencia", ""))
+                    ciudad = st.text_input("Ciudad", value=st.session_state.data.get("ciudad", ""))
+                with col_d2:
+                    provincia = st.text_input("Provincia (Región)", value=st.session_state.data.get("provincia", ""))
+                    codigo_postal = st.text_input("Código Postal", value=st.session_state.data.get("codigo_postal", ""))
+                
+                difiere_dir = st.checkbox("Mi dirección de correspondencia es distinta a la de residencia", value=st.session_state.data.get("difiere_dir", False))
+                direccion_correspondencia = ""
+                if difiere_dir:
+                    direccion_correspondencia = st.text_input("Dirección de Correspondencia", value=st.session_state.data.get("direccion_correspondencia", ""))
+                    
+                telefono = st.text_input("Teléfono", value=st.session_state.data.get("telefono", ""))
+
                 col1, col2 = st.columns(2)
                 with col1:
                     opc_pais = ["Chile", "Perú", "Colombia", "Estados Unidos", "Otro"]
@@ -116,6 +139,8 @@ def main():
                     opc_ec = ["Soltero/a", "Casado/a", "Divorciado/a", "Viudo/a"]
                     estado_civil = st.selectbox("Estado Civil", opc_ec, index=get_idx(opc_ec, "estado_civil", "Soltero/a"))
                     
+                    cantidad_hijos = st.text_input("Cantidad de Hijos", value=st.session_state.data.get("cantidad_hijos", "0"))
+
                     opc_sit = ["Empleado", "Independiente", "Jubilado", "Desempleado", "Estudiante"]
                     sit_lab = st.selectbox("Situación Laboral", opc_sit, index=get_idx(opc_sit, "situacion_laboral", "Empleado"))
                     
@@ -124,15 +149,48 @@ def main():
                     opc_pep = ["No", "Sí"]
                     pep = st.selectbox("¿Es Persona Expuesta Políticamente (PEP)?", opc_pep, index=get_idx(opc_pep, "pep", "No"))
                 
+                # Cónyuge
+                con_nombres = ""
+                con_apellidos = ""
+                con_fecha_nac = "1980-01-01"
+                con_sit_lab = "Empleado"
+                con_nac = "Chilena"
+                con_tipo_doc = "ID Nacional"
+                con_pais_emi = "Chile"
+                con_rut = ""
+                
+                if estado_civil == "Casado/a":
+                    st.markdown("---")
+                    st.markdown("##### Datos del Cónyuge")
+                    cc1, cc2 = st.columns(2)
+                    with cc1:
+                        con_nombres = st.text_input("Nombres del Cónyuge", value=st.session_state.data.get("con_nombres", ""))
+                        con_sit_lab = st.selectbox("Situación Laboral Cónyuge", opc_sit, index=get_idx(opc_sit, "con_sit_lab", "Empleado"))
+                        con_nac = st.selectbox("Nacionalidad Cónyuge", opc_nac, index=get_idx(opc_nac, "con_nac", "Chilena"))
+                        con_tipo_doc = st.selectbox("Tipo Doc. Cónyuge", opc_td, index=get_idx(opc_td, "con_tipo_doc", "ID Nacional"))
+                    with cc2:
+                        con_apellidos = st.text_input("Apellidos del Cónyuge", value=st.session_state.data.get("con_apellidos", ""))
+                        con_fecha_nac = str(st.date_input("Fecha Nacimiento Cónyuge", value=pd.to_datetime(st.session_state.data.get("con_fecha_nac", "1980-01-01")).date()))
+                        con_pais_emi = st.selectbox("País Emisor Doc. Cónyuge", opc_pais, index=get_idx(opc_pais, "con_pais_emi", "Chile"))
+                        con_rut = st.text_input("Número de Documento / RUT Cónyuge", value=st.session_state.data.get("con_rut", ""))
+                
                 submitted = st.form_submit_button("Siguiente ->")
                 if submitted:
-                    if nombre and rut and email:
+                    if pn_primer_nombre and pn_primer_apellido and rut and email:
                         st.session_state.data.update({
-                            "nombre_completo": nombre, "rut": rut, "email": email,
-                            "pais_residencia": pais_res, "nacionalidad": nac, "ciudadania": ciud,
-                            "tipo_documento": tipo_doc, "pais_emisor_doc": pais_emi,
-                            "estado_civil": estado_civil, "situacion_laboral": sit_lab,
-                            "ocupacion": ocupacion, "pep": pep
+                            "pn_primer_nombre": pn_primer_nombre, "pn_segundo_nombre": pn_segundo_nombre,
+                            "pn_primer_apellido": pn_primer_apellido, "pn_segundo_apellido": pn_segundo_apellido,
+                            # Create backwards compatible 'nombre_completo' just in case
+                            "nombre_completo": f"{pn_primer_nombre} {pn_segundo_nombre} {pn_primer_apellido} {pn_segundo_apellido}".replace("  ", " ").strip(),
+                            "rut": rut, "email": email, "fecha_nacimiento": str(fecha_nacimiento),
+                            "direccion_residencia": direccion_residencia, "ciudad": ciudad, "provincia": provincia,
+                            "codigo_postal": codigo_postal, "direccion_correspondencia": direccion_correspondencia,
+                            "telefono": telefono, "pais_residencia": pais_res, "nacionalidad": nac, "ciudadania": ciud,
+                            "tipo_documento": tipo_doc, "pais_emisor_doc": pais_emi, "estado_civil": estado_civil,
+                            "cantidad_hijos": cantidad_hijos, "situacion_laboral": sit_lab, "ocupacion": ocupacion, "pep": pep,
+                            "con_nombres": con_nombres, "con_apellidos": con_apellidos, "con_fecha_nac": str(con_fecha_nac),
+                            "con_sit_lab": con_sit_lab, "con_nac": con_nac, "con_tipo_doc": con_tipo_doc,
+                            "con_pais_emi": con_pais_emi, "con_rut": con_rut, "difiere_dir": difiere_dir
                         })
                         st.session_state.step = 2
                         st.rerun()
@@ -145,6 +203,7 @@ def main():
                 rubro = st.text_input("Rubro", value=st.session_state.data.get("rubro", ""))
                 act_eco = st.text_input("Actividad Económica", value=st.session_state.data.get("actividad_economica", ""))
                 email_emp = st.text_input("Correo Electrónico Empresa", value=st.session_state.data.get("email_empresa", ""))
+                descripcion_inversiones = st.text_area("Descripción del tipo y tamaño de las inversiones de la cuenta", value=st.session_state.data.get("descripcion_inversiones", ""))
                 
                 col1, col2 = st.columns(2)
                 with col1:
@@ -154,6 +213,7 @@ def main():
                     pais_emp = st.selectbox("País Empresa", opc_pais, index=get_idx(opc_pais, "pais_empresa", "Chile"))
                 with col2:
                     ciud_emp = st.text_input("Ciudad Empresa", value=st.session_state.data.get("ciudad_empresa", ""))
+                    cp_emp = st.text_input("Código Postal Empresa", value=st.session_state.data.get("cp_emp", ""))
                     tel_emp = st.text_input("Teléfono Empresa", value=st.session_state.data.get("telefono_empresa", ""))
                 
                 st.markdown("##### Cumplimiento Normativo (SEC)")
@@ -181,6 +241,10 @@ def main():
                     cat_rep = st.selectbox("Categoría", ["Beneficiario Final", "Representante Legal", "Apoderado"], index=get_idx(["Beneficiario Final", "Representante Legal", "Apoderado"], "categoria_rep", "Beneficiario Final"))
                     n_rep = st.text_input("Nombres Representante", value=st.session_state.data.get("nombre_rep", ""))
                     a_rep = st.text_input("Apellidos Representante", value=st.session_state.data.get("apellido_rep", ""))
+                    dir_rep = st.text_input("Dirección Representante", value=st.session_state.data.get("dir_rep", ""))
+                    prov_rep = st.text_input("Provincia Representante", value=st.session_state.data.get("prov_rep", ""))
+                    ciud_rep = st.text_input("Ciudad Representante", value=st.session_state.data.get("ciud_rep", ""))
+                    cp_rep = st.text_input("Código Postal Representante", value=st.session_state.data.get("cp_rep", ""))
                     rut_rep = st.text_input("RUT Representante", value=st.session_state.data.get("rut_rep", ""))
                     email_rep = st.text_input("Correo Representante", value=st.session_state.data.get("email_rep", ""))
                     tel_rep = st.text_input("Teléfono Representante", value=st.session_state.data.get("telefono_rep", ""))
@@ -230,13 +294,15 @@ def main():
                             "rubro": rubro, "actividad_economica": act_eco,
                             "email_empresa": email_emp, "direccion_empresa": dir_emp,
                             "provincia_empresa": prov_emp, "ciudad_empresa": ciud_emp,
-                            "pais_empresa": pais_emp, "telefono_empresa": tel_emp,
+                            "pais_empresa": pais_emp, "telefono_empresa": tel_emp, "cp_emp": cp_emp,
+                            "descripcion_inversiones": descripcion_inversiones,
                             "acepta_correo": acepta_correo, "deposito_terceros": deposito_terceros,
                             "fondo_cobertura": fondo_cobertura, "negocios_us": negocios_us,
                             "cuentas_us": cuentas_us, "acciones_portador": acciones_portador,
                             "es_banco": es_banco, "es_broker": es_broker, "casa_cambio": casa_cambio,
                             "gubernamental": gubernamental, "fondo_asesor": fondo_asesor,
                             "categoria_rep": cat_rep, "nombre_rep": n_rep, "apellido_rep": a_rep,
+                            "dir_rep": dir_rep, "prov_rep": prov_rep, "ciud_rep": ciud_rep, "cp_rep": cp_rep,
                             "rut_rep": rut_rep, "email_rep": email_rep, "telefono_rep": tel_rep,
                             "porcentaje_part": porc_part, "fecha_nac_rep": str(fecha_nac_rep),
                             "fecha_emi_doc": str(fecha_emi_doc), "fecha_exp_doc": str(fecha_exp_doc),

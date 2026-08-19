@@ -33,7 +33,18 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
     sheet = wb['Datos - solicitar a cliente']
 
     if tipo_cuenta == 'Persona Jurídica':
+        # Perfilamiento de Riesgo (PJ)
+        safe_write(sheet, 'D31', data.get('horizonte_tiempo', ''))
+        safe_write(sheet, 'D33', data.get('experiencia', ''))
+        safe_write(sheet, 'D35', data.get('porcentaje_activos', ''))
+        safe_write(sheet, 'D37', data.get('objetivos_inversion', ''))
+        safe_write(sheet, 'D39', data.get('tolerancia_riesgo', ''))
+        safe_write(sheet, 'D41', data.get('eleccion_portafolio', ''))
+        safe_write(sheet, 'D43', data.get('eleccion_rendimiento', ''))
+        safe_write(sheet, 'D46', data.get('caida_portafolio', ''))
+
         # Mapeo de Empresa
+        safe_write(sheet, 'B55', data.get('rut_empresa', ''))
         safe_write(sheet, 'B56', data.get('nombre_completo', ''))
         safe_write(sheet, 'B57', data.get('rubro', ''))
         safe_write(sheet, 'B58', data.get('actividad_economica', ''))
@@ -41,8 +52,10 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
         safe_write(sheet, 'B60', data.get('pais_empresa', 'Chile'))
         safe_write(sheet, 'B61', data.get('provincia_empresa', ''))
         safe_write(sheet, 'B62', data.get('ciudad_empresa', ''))
+        safe_write(sheet, 'B63', data.get('cp_emp', ''))
         safe_write(sheet, 'B64', data.get('telefono_empresa', ''))
         safe_write(sheet, 'B65', data.get('email_empresa', ''))
+        safe_write(sheet, 'B66', data.get('descripcion_inversiones', ''))
         safe_write(sheet, 'B67', data.get('acepta_correo', 'Sí'))
         safe_write(sheet, 'B68', data.get('deposito_terceros', 'No'))
         safe_write(sheet, 'B69', data.get('fondo_cobertura', 'No'))
@@ -77,6 +90,10 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
         safe_write(sheet, 'B108', data.get('categoria_rep', 'Beneficiario Final'))
         safe_write(sheet, 'B109', data.get('nombre_rep', ''))
         safe_write(sheet, 'B110', data.get('apellido_rep', ''))
+        safe_write(sheet, 'B111', data.get('dir_rep', ''))
+        safe_write(sheet, 'B112', data.get('prov_rep', ''))
+        safe_write(sheet, 'B113', data.get('ciud_rep', ''))
+        safe_write(sheet, 'B114', data.get('cp_rep', ''))
         safe_write(sheet, 'B115', data.get('telefono_rep', ''))
         safe_write(sheet, 'B116', data.get('email_rep', ''))
         safe_write(sheet, 'B117', data.get('fecha_nac_rep', ''))
@@ -124,19 +141,25 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
         safe_write(sheet, 'D35', data.get('porcentaje_activos', ''))
         safe_write(sheet, 'D37', data.get('objetivos_inversion', ''))
         safe_write(sheet, 'D39', data.get('tolerancia_riesgo', ''))
+        safe_write(sheet, 'D41', data.get('eleccion_portafolio', ''))
+        safe_write(sheet, 'D43', data.get('eleccion_rendimiento', ''))
+        safe_write(sheet, 'D46', data.get('caida_portafolio', ''))
         
         # Datos de Cuenta y Asesor
         safe_write(sheet, 'B17', 'Individual')
         safe_write(sheet, 'B20', data.get('rep_code', 'Asesor FV'))
         
         # Datos Personales
-        nombre_partes = data.get('nombre_completo', '').split()
-        nombres = " ".join(nombre_partes[:2]) if len(nombre_partes) > 1 else data.get('nombre_completo', '')
-        apellidos = " ".join(nombre_partes[2:]) if len(nombre_partes) > 2 else ""
-        safe_write(sheet, 'B49', nombres)
-        safe_write(sheet, 'B51', apellidos)
+        safe_write(sheet, 'B49', data.get('pn_primer_nombre', ''))
+        safe_write(sheet, 'B50', data.get('pn_segundo_nombre', ''))
+        safe_write(sheet, 'B51', data.get('pn_primer_apellido', ''))
+        safe_write(sheet, 'B52', data.get('pn_segundo_apellido', ''))
         safe_write(sheet, 'B60', data.get('email', ''))
         safe_write(sheet, 'B64', data.get('rut', ''))
+        safe_write(sheet, 'B65', data.get('rut', ''))  # Identificación fiscal (rut)
+        safe_write(sheet, 'B61', data.get('fecha_nacimiento', ''))
+        safe_write(sheet, 'B57', data.get('codigo_postal', ''))
+        safe_write(sheet, 'B58', data.get('direccion_correspondencia', ''))
         
         safe_write(sheet, 'B54', data.get('pais_residencia', 'Chile'))
         safe_write(sheet, 'B62', data.get('pais_emisor_doc', 'Chile'))
@@ -146,7 +169,18 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
         safe_write(sheet, 'B68', data.get('situacion_laboral', ''))
         safe_write(sheet, 'B69', data.get('ocupacion', ''))
         safe_write(sheet, 'B70', data.get('estado_civil', ''))
+        safe_write(sheet, 'B71', data.get('cantidad_hijos', '0'))
         safe_write(sheet, 'B72', data.get('pep', 'No'))
+        
+        if data.get('estado_civil') == 'Casado/a':
+            safe_write(sheet, 'B77', data.get('con_nombres', ''))
+            safe_write(sheet, 'B78', data.get('con_apellidos', ''))
+            safe_write(sheet, 'D77', data.get('con_fecha_nac', ''))
+            safe_write(sheet, 'B79', data.get('con_sit_lab', ''))
+            safe_write(sheet, 'B80', data.get('con_nac', ''))
+            safe_write(sheet, 'D78', data.get('con_pais_emi', ''))
+            safe_write(sheet, 'D79', data.get('con_tipo_doc', ''))
+            safe_write(sheet, 'D80', data.get('con_rut', ''))
         
         # Datos financieros y de Inversión
         safe_write(sheet, 'B92', data.get('necesidad_liquidez', ''))
