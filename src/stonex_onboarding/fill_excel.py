@@ -175,16 +175,24 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
         safe_write(sheet, 'B70', data.get('estado_civil', ''))
         safe_write(sheet, 'B71', data.get('cantidad_hijos', '0'))
         safe_write(sheet, 'B72', data.get('pep', 'No'))
+        safe_write(sheet, 'B74', data.get('acepta_correo', 'Sí'))
         
         if data.get('estado_civil') == 'Casado/a':
             safe_write(sheet, 'B77', data.get('con_nombres', ''))
             safe_write(sheet, 'B78', data.get('con_apellidos', ''))
-            safe_write(sheet, 'D77', data.get('con_fecha_nac', ''))
+            safe_write(sheet, 'E77', data.get('con_fecha_nac', ''))
             safe_write(sheet, 'B79', data.get('con_sit_lab', ''))
             safe_write(sheet, 'B80', data.get('con_nac', ''))
-            safe_write(sheet, 'D78', data.get('con_pais_emi', ''))
-            safe_write(sheet, 'D79', data.get('con_tipo_doc', ''))
-            safe_write(sheet, 'D80', data.get('con_rut', ''))
+            safe_write(sheet, 'E78', data.get('con_pais_emi', ''))
+            safe_write(sheet, 'E79', data.get('con_tipo_doc', ''))
+            safe_write(sheet, 'E80', data.get('con_rut', ''))
+            
+        # Experiencia de Inversiones
+        safe_write(sheet, 'B84', data.get('exp_acciones', 'Nula'))
+        safe_write(sheet, 'B85', data.get('exp_fondos', 'Nula'))
+        safe_write(sheet, 'B86', data.get('exp_anualidades', 'Nula'))
+        safe_write(sheet, 'B87', data.get('exp_opciones', 'Nula'))
+        safe_write(sheet, 'B88', data.get('exp_alternativas', 'Nula'))
         
         # Datos financieros y de Inversión
         safe_write(sheet, 'B92', data.get('necesidad_liquidez', ''))

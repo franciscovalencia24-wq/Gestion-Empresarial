@@ -93,6 +93,19 @@ def main():
 
     if step == 1:
         st.header("1. Datos Personales" if tipo_cuenta == "Persona Natural" else "1. Datos de la Empresa y Representante")
+        if tipo_cuenta == "Persona Natural":
+            st.info("""
+**Información a adjuntar Persona Natural:**
+- ID vigente del titular - cédula de identidad.
+- Evidencia de domicilio vigente del titular.
+- Estado de cuenta actual desde donde se transferirán los fondos, que sustente el monto de la inversión.
+- Evidenciar cómo se generaron los fondos a invertir, por ejemplo:
+    - Venta de propiedad – presentar contrato de compraventa.
+    - Herencia – presentar adjudicación por sucesión.
+    - Ingresos regulares – declaración jurada o recibos de ingresos regulares.
+    - Profesión del cliente – ingresos regulares / declaración jurada.
+- Solo se aceptará la presentación de declaración jurada del titular como evidencia válida de sus ingresos regulares.
+""")
         with st.form("form_step_1"):
             if tipo_cuenta == "Persona Natural":
                 col_n1, col_n2 = st.columns(2)
@@ -123,7 +136,12 @@ def main():
                 st.info("Complete solo si su dirección de correspondencia es **distinta** a la de residencia.")
                 direccion_correspondencia = st.text_input("Dirección de Correspondencia", value=st.session_state.data.get("direccion_correspondencia", ""))
                 difiere_dir = True if direccion_correspondencia else False
-                telefono = st.text_input("Teléfono", value=st.session_state.data.get("telefono", ""))
+                
+                col_t1, col_t2 = st.columns(2)
+                with col_t1:
+                    telefono = st.text_input("Teléfono", value=st.session_state.data.get("telefono", ""))
+                with col_t2:
+                    acepta_correo = st.selectbox("¿Acepta que la correspondencia sea por correo electrónico?", ["Sí", "No"], index=get_idx(["Sí", "No"], "acepta_correo", "Sí"))
 
                 col1, col2 = st.columns(2)
                 with col1:
@@ -206,7 +224,8 @@ def main():
                             "cantidad_hijos": cantidad_hijos, "situacion_laboral": sit_lab, "ocupacion": ocupacion, "pep": pep,
                             "con_nombres": con_nombres, "con_apellidos": con_apellidos, "con_fecha_nac": str(con_fecha_nac),
                             "con_sit_lab": con_sit_lab, "con_nac": con_nac, "con_tipo_doc": con_tipo_doc,
-                            "con_pais_emi": con_pais_emi, "con_rut": con_rut, "difiere_dir": difiere_dir
+                            "con_pais_emi": con_pais_emi, "con_rut": con_rut, "difiere_dir": difiere_dir,
+                            "acepta_correo": acepta_correo
                         })
                         st.session_state.step = 2
                         st.rerun()
@@ -351,20 +370,19 @@ def main():
             opc_exp = ["Ninguna", "Limitada (1-3 años)", "Buena (3-5 años)", "Extensa (Más de 5 años)"]
             experiencia = st.selectbox("2 - Experiencia general en inversiones (Años)", opc_exp, index=get_idx(opc_exp, "experiencia", opc_exp[0]))
             
-            # BLOQUE ESPECIFICO PJ
-            if tipo_cuenta == "Persona Jurídica":
-                st.markdown("##### Experiencia Específica (PJ)")
-                st.caption("Califique su nivel de experiencia en los siguientes instrumentos:")
-                opc_nivel = ["Nula", "Limitada", "Promedio", "Alta"]
-                col_e1, col_e2 = st.columns(2)
-                with col_e1:
-                    exp_acciones = st.selectbox("Acciones", opc_nivel, index=get_idx(opc_nivel, "exp_acciones", "Nula"))
-                    exp_fondos = st.selectbox("Fondos Mutuos", opc_nivel, index=get_idx(opc_nivel, "exp_fondos", "Nula"))
-                    exp_anual = st.selectbox("Anualidades", opc_nivel, index=get_idx(opc_nivel, "exp_anualidades", "Nula"))
-                with col_e2:
-                    exp_opciones = st.selectbox("Opciones", opc_nivel, index=get_idx(opc_nivel, "exp_opciones", "Nula"))
-                    exp_alt = st.selectbox("Inversiones Alternativas", opc_nivel, index=get_idx(opc_nivel, "exp_alternativas", "Nula"))
-                st.markdown("---")
+            # BLOQUE DE EXPERIENCIA ESPECIFICA
+            st.markdown("##### Experiencia Específica de Inversiones")
+            st.caption("Completar información contemplando a todos los titulares:")
+            opc_nivel = ["Nula", "Limitada", "Promedio", "Alta"]
+            col_e1, col_e2 = st.columns(2)
+            with col_e1:
+                exp_acciones = st.selectbox("Acciones", opc_nivel, index=get_idx(opc_nivel, "exp_acciones", "Nula"))
+                exp_fondos = st.selectbox("Fondos Mutuos", opc_nivel, index=get_idx(opc_nivel, "exp_fondos", "Nula"))
+                exp_anual = st.selectbox("Anualidades", opc_nivel, index=get_idx(opc_nivel, "exp_anualidades", "Nula"))
+            with col_e2:
+                exp_opciones = st.selectbox("Opciones", opc_nivel, index=get_idx(opc_nivel, "exp_opciones", "Nula"))
+                exp_alt = st.selectbox("Inversiones Alternativas", opc_nivel, index=get_idx(opc_nivel, "exp_alternativas", "Nula"))
+            st.markdown("---")
             
             opc_porc = ["Menos del 10%", "10% - 25%", "25% - 50%", "Más del 50%"]
             porcentaje = st.selectbox("3 - ¿Qué porcentaje de sus activos totales líquidos representa esta inversión?", opc_porc, index=get_idx(opc_porc, "porcentaje_activos", opc_porc[0]))
@@ -399,8 +417,6 @@ def main():
             st.markdown("---")
             st.markdown("#### 8 - Caída en portafolio")
             st.markdown("Considere el siguiente escenario: Imagine que durante los últimos 3 meses la bolsa de valores tuvo una pérdida del 25%, algunos fondos de su portafolio también están perdiendo 25% de su valor. ¿Qué haría usted?")
-            if os.path.exists("assets/grafico_8.png"):
-                st.image("assets/grafico_8.png", caption="Gráfico Pregunta 8")
             opc_p8 = ["Vendería toda mi inversión", "Vendería parte de mi inversión", "No haría nada", "Compraría más"]
             caida_portafolio = st.radio("Seleccione una opción", opc_p8, index=get_idx(opc_p8, "caida_portafolio", "No haría nada"))
 
@@ -509,6 +525,11 @@ def main():
             doc3 = st.file_uploader("3. Última Cartola de Inversiones (SURA/Pershing/Etc)", type=["pdf"])
             
             st.markdown("---")
+            terminos = st.checkbox(
+                "Autorizo el tratamiento de mis datos personales con la finalidad de gestionar mi enrolamiento en la plataforma Stonex y en los sistemas de AIVA, así como para permitir la correcta administración y monitoreo de mis inversiones. El tratamiento de mis datos se realizará únicamente mientras mantenga vigente mi relación con los servicios contratados o mientras resulte necesario para la adecuada gestión de mis inversiones. El responsable del tratamiento se obliga a utilizar mis datos exclusivamente para las finalidades señaladas y...", 
+                value=False
+            )
+            
             col1, col2 = st.columns(2)
             with col1:
                 if st.form_submit_button("<- Volver"):
@@ -517,16 +538,19 @@ def main():
             with col2:
                 submitted = st.form_submit_button("✅ Finalizar y Enviar")
                 if submitted:
-                    st.session_state.attachments = []
-                    os.makedirs("data/uploads", exist_ok=True)
-                    for doc in [doc1, doc2, doc3]:
-                        if doc is not None:
-                            path = os.path.join("data/uploads", doc.name)
-                            with open(path, "wb") as f:
-                                f.write(doc.getbuffer())
-                            st.session_state.attachments.append({"filename": doc.name, "path": path})
-                    st.session_state.step = 5
-                    st.rerun()
+                    if not terminos:
+                        st.error("Debe autorizar el tratamiento de sus datos personales para continuar.")
+                    else:
+                        st.session_state.attachments = []
+                        os.makedirs("data/uploads", exist_ok=True)
+                        for doc in [doc1, doc2, doc3]:
+                            if doc is not None:
+                                path = os.path.join("data/uploads", doc.name)
+                                with open(path, "wb") as f:
+                                    f.write(doc.getbuffer())
+                                st.session_state.attachments.append({"filename": doc.name, "path": path})
+                        st.session_state.step = 5
+                        st.rerun()
 
         render_save_section()
 
