@@ -98,9 +98,13 @@ def main():
                 col_n1, col_n2 = st.columns(2)
                 with col_n1:
                     pn_primer_nombre = st.text_input("Primer Nombre", value=st.session_state.data.get("pn_primer_nombre", ""))
-                    pn_primer_apellido = st.text_input("Primer Apellido", value=st.session_state.data.get("pn_primer_apellido", ""))
                 with col_n2:
                     pn_segundo_nombre = st.text_input("Segundo Nombre", value=st.session_state.data.get("pn_segundo_nombre", ""))
+                
+                col_a1, col_a2 = st.columns(2)
+                with col_a1:
+                    pn_primer_apellido = st.text_input("Primer Apellido", value=st.session_state.data.get("pn_primer_apellido", ""))
+                with col_a2:
                     pn_segundo_apellido = st.text_input("Segundo Apellido", value=st.session_state.data.get("pn_segundo_apellido", ""))
                 
                 rut = st.text_input("RUT / Nro Documento", value=st.session_state.data.get("rut", ""))
