@@ -1,5 +1,6 @@
 import os
 from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
 
 TEMPLATE_PATH = "STONEX/PN - Datos apertura de cuenta Stonex (1).xlsx"
 
@@ -78,11 +79,15 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
         # Mapeo Financiero y Perfilamiento PJ
         safe_write(sheet, 'B87', data.get('necesidad_liquidez', ''))
         safe_write(sheet, 'B88', data.get('ingresos_anuales', ''))
+        safe_write(sheet, 'B89', data.get('ingresos_exacto', ''))
         safe_write(sheet, 'B90', data.get('activos_liquidos', ''))
+        safe_write(sheet, 'B91', data.get('activos_exacto', ''))
         safe_write(sheet, 'B92', data.get('patrimonio_total', ''))
         safe_write(sheet, 'B93', data.get('aportes_adicionales', 'No'))
         safe_write(sheet, 'B94', data.get('tiempo_retiros', ''))
+        safe_write(sheet, 'B95', data.get('banco_origen', ''))
         safe_write(sheet, 'B96', data.get('pais_origen_fondos', 'Chile'))
+        safe_write(sheet, 'B97', data.get('banco_origen', ''))
         safe_write(sheet, 'B98', data.get('origen_fondos', ''))
         
         # Mapeo de Beneficiario/Representante Titular 1
@@ -115,6 +120,7 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
         safe_write(sheet, 'B137', data.get('banco_pais', 'Chile'))
         safe_write(sheet, 'B138', data.get('banco_ciudad', ''))
         safe_write(sheet, 'B139', data.get('banco_nombre', ''))
+        safe_write(sheet, 'B140', data.get('banco_sucursal', ''))
         
         # Casillas Laborales del Representante Legal
         if data.get('situacion_laboral') in ['Empleado', 'Empleado/Independiente']:
@@ -129,10 +135,11 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
             safe_write(sheet, 'D132', data.get('email_emp_rep', ''))
 
         # Campos de inversión
-        safe_write(sheet, 'A101', data.get('monto_inversion', ''))
-        safe_write(sheet, 'B102', 'Canalización de ordenes')
-        safe_write(sheet, 'A103', data.get('fee_anual', '1.0%'))
-        safe_write(sheet, 'A104', '0')
+        safe_write(sheet, 'B101', data.get('monto_inversion', ''))
+        safe_write(sheet, 'B102', data.get('tipo_contrato', 'Canalización de órdenes'))
+        safe_write(sheet, 'B103', data.get('fee_anual', '1.0%'))
+        safe_write(sheet, 'B104', '0')
+        safe_write(sheet, 'B105', data.get('metodo_pago', 'Transferencia'))
     else:
         # Mapeo de Persona Natural
         # Perfilamiento de Riesgo
@@ -186,6 +193,9 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
             safe_write(sheet, 'E78', data.get('con_pais_emi', ''))
             safe_write(sheet, 'E79', data.get('con_tipo_doc', ''))
             safe_write(sheet, 'E80', data.get('con_rut', ''))
+            fill_green = PatternFill(start_color="D9EAD3", end_color="D9EAD3", fill_type="solid")
+            for cell_id in ['E77', 'E78', 'E79', 'E80']:
+                sheet[cell_id].fill = fill_green
             
         # Experiencia de Inversiones
         safe_write(sheet, 'B84', data.get('exp_acciones', 'Nula'))
@@ -197,15 +207,29 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
         # Datos financieros y de Inversión
         safe_write(sheet, 'B92', data.get('necesidad_liquidez', ''))
         safe_write(sheet, 'B93', data.get('ingresos_anuales', ''))
+        safe_write(sheet, 'B94', data.get('ingresos_exacto', ''))
         safe_write(sheet, 'B95', data.get('activos_liquidos', ''))
+        safe_write(sheet, 'B96', data.get('activos_exacto', ''))
         safe_write(sheet, 'B97', data.get('patrimonio_total', ''))
         safe_write(sheet, 'B98', data.get('aportes_adicionales', 'No'))
         safe_write(sheet, 'B101', data.get('tiempo_retiros', 'Más de 10 años'))
         
+        safe_write(sheet, 'B102', data.get('banco_origen', ''))
         safe_write(sheet, 'B103', data.get('pais_origen_fondos', 'Chile'))
         safe_write(sheet, 'B104', data.get('origen_fondos', ''))
-        safe_write(sheet, 'B110', 'No Discrecional')
-        safe_write(sheet, 'B113', 'ACAT')
+        
+        # Campos Inversión Final y Contrato
+        safe_write(sheet, 'A109', data.get('monto_inversion', ''))
+        safe_write(sheet, 'B110', data.get('tipo_contrato', 'Canalización de órdenes'))
+        safe_write(sheet, 'A111', data.get('fee_anual', '1.0%'))
+        safe_write(sheet, 'A112', '0')
+        safe_write(sheet, 'B113', data.get('metodo_pago', 'Transferencia'))
+        
+        # Bancos Habituales PN
+        safe_write(sheet, 'B117', data.get('banco_pais', 'Chile'))
+        safe_write(sheet, 'B118', data.get('banco_ciudad', ''))
+        safe_write(sheet, 'B119', data.get('banco_nombre', ''))
+        safe_write(sheet, 'B120', data.get('banco_sucursal', ''))
         
         # Campos de texto libre
         safe_write(sheet, 'B109', data.get('monto_inversion', ''))

@@ -464,8 +464,12 @@ def main():
                 opc_tiempo = ["Menos de 1 año", "1 - 3 años", "3 - 5 años", "Más de 10 años"]
                 
             ingresos = st.selectbox("Ingresos Anuales Estimados (USD)", opc_ing, index=get_idx(opc_ing, "ingresos_anuales", opc_ing[0]))
+            ingresos_exacto = st.text_input("Monto exacto de ingresos anuales (USD)", value=st.session_state.data.get("ingresos_exacto", ""))
+            
             patrimonio = st.selectbox("Patrimonio Total Estimado (USD)", opc_pat, index=get_idx(opc_pat, "patrimonio_total", opc_pat[0]))
+            
             activos_liq = st.selectbox("Activos Líquidos Estimados (USD)", opc_pat, index=get_idx(opc_pat, "activos_liquidos", opc_pat[0]))
+            activos_exacto = st.text_input("Monto exacto de activos líquidos (USD)", value=st.session_state.data.get("activos_exacto", ""))
             
             opc_liq = ["Baja", "Media", "Alta"]
             nec_liq = st.selectbox("Necesidad de Liquidez", opc_liq, index=get_idx(opc_liq, "necesidad_liquidez", opc_liq[0]))
@@ -478,20 +482,28 @@ def main():
             opc_ori = ["Ahorros / Salario", "Venta de propiedad", "Herencia", "Inversiones previas", "Venta de empresa"]
             origen = st.selectbox("Origen principal de los fondos", opc_ori, index=get_idx(opc_ori, "origen_fondos", opc_ori[0]))
             
+            banco_origen = st.text_input("Banco origen de los fondos", value=st.session_state.data.get("banco_origen", ""))
+            
             opc_pais = ["Chile", "Perú", "Colombia", "Estados Unidos", "Otro"]
             pais_ori = st.selectbox("País de origen de los fondos", opc_pais, index=get_idx(opc_pais, "pais_origen_fondos", "Chile"))
             
             monto = st.text_input("Monto aproximado de inversión inicial (USD)", value=st.session_state.data.get("monto_inversion", "50000"))
             
-            if tipo_cuenta == "Persona Jurídica":
-                st.markdown("---")
-                st.subheader("Bancos Habituales")
-                col_b1, col_b2 = st.columns(2)
-                with col_b1:
-                    banco_pais = st.selectbox("País del Banco Habitual", opc_pais, index=get_idx(opc_pais, "banco_pais", "Chile"))
-                    banco_nombre = st.text_input("Nombre del Banco", value=st.session_state.data.get("banco_nombre", ""))
-                with col_b2:
-                    banco_ciudad = st.text_input("Ciudad del Banco Habitual", value=st.session_state.data.get("banco_ciudad", ""))
+            opc_cont = ["Canalización de órdenes", "Gestión de portafolio"]
+            tipo_contrato = st.selectbox("Tipo de contrato", opc_cont, index=get_idx(opc_cont, "tipo_contrato", opc_cont[0]))
+            
+            opc_pago = ["Transferencia", "Transferencia de activos", "ACAT", "ACH", "Otros"]
+            metodo_pago = st.selectbox("Método de pago", opc_pago, index=get_idx(opc_pago, "metodo_pago", opc_pago[0]))
+            
+            st.markdown("---")
+            st.subheader("Bancos Habituales")
+            col_b1, col_b2 = st.columns(2)
+            with col_b1:
+                banco_pais = st.selectbox("País del Banco Habitual", opc_pais, index=get_idx(opc_pais, "banco_pais", "Chile"))
+                banco_nombre = st.text_input("Nombre del Banco", value=st.session_state.data.get("banco_nombre", ""))
+            with col_b2:
+                banco_ciudad = st.text_input("Ciudad del Banco Habitual", value=st.session_state.data.get("banco_ciudad", ""))
+                banco_sucursal = st.text_input("Sucursal", value=st.session_state.data.get("banco_sucursal", ""))
             
             col1, col2 = st.columns(2)
             with col1:
@@ -501,14 +513,13 @@ def main():
             with col2:
                 if st.form_submit_button("Siguiente ->"):
                     data_update = {
-                        "ingresos_anuales": ingresos, "patrimonio_total": patrimonio, "activos_liquidos": activos_liq,
+                        "ingresos_anuales": ingresos, "ingresos_exacto": ingresos_exacto, 
+                        "patrimonio_total": patrimonio, "activos_liquidos": activos_liq, "activos_exacto": activos_exacto,
                         "necesidad_liquidez": nec_liq, "aportes_adicionales": aportes, "tiempo_retiros": tiempo_ret,
-                        "origen_fondos": origen, "pais_origen_fondos": pais_ori, "monto_inversion": monto
+                        "origen_fondos": origen, "banco_origen": banco_origen, "pais_origen_fondos": pais_ori, 
+                        "monto_inversion": monto, "tipo_contrato": tipo_contrato, "metodo_pago": metodo_pago,
+                        "banco_pais": banco_pais, "banco_ciudad": banco_ciudad, "banco_nombre": banco_nombre, "banco_sucursal": banco_sucursal
                     }
-                    if tipo_cuenta == "Persona Jurídica":
-                        data_update.update({
-                            "banco_pais": banco_pais, "banco_ciudad": banco_ciudad, "banco_nombre": banco_nombre
-                        })
                     st.session_state.data.update(data_update)
                     st.session_state.step = 4
                     st.rerun()
