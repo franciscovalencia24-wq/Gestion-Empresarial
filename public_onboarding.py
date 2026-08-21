@@ -72,6 +72,10 @@ def main():
         else:
             st.session_state.step = 1
             st.session_state.data = {}
+            
+    if "pending_toast" in st.session_state:
+        st.toast(st.session_state.pending_toast)
+        del st.session_state["pending_toast"]
         
     step = st.session_state.step
     
@@ -85,12 +89,14 @@ def main():
         st.session_state.step = 1
         st.rerun()
         
-    # Scroll to Top (Gamification & UX hack)
+    # Scroll to Top (Gamification & UX hack) - Forced re-render by appending step
     components.html(
-        """
+        f"""
         <script>
+            /* Render trigger for step {step} */
             var body = window.parent.document.querySelector(".main");
-            if (body) { body.scrollTop = 0; }
+            if (body) {{ body.scrollTop = 0; }}
+            window.parent.scrollTo(0, 0);
         </script>
         """,
         height=0
@@ -250,7 +256,7 @@ def main():
                             "con_pais_emi": con_pais_emi, "con_rut": con_rut, "difiere_dir": difiere_dir,
                             "acepta_correo": acepta_correo
                         })
-                        st.toast("¡Excelente! Datos iniciales listos. Vamos al siguiente paso 🚀")
+                        st.session_state.pending_toast = "¡Excelente! Datos iniciales listos. Vamos al siguiente paso 🚀"
                         st.session_state.step = 2
                         st.rerun()
             else:
@@ -378,7 +384,7 @@ def main():
                             "ciud_emp_rep": ciud_emp_rep, "dir_emp_rep": dir_emp_rep, "tel_emp_rep": tel_emp_rep,
                             "email_emp_rep": email_emp_rep
                         })
-                        st.toast("¡Excelente! Datos de la empresa listos. Vamos al siguiente paso 🚀")
+                        st.session_state.pending_toast = "¡Excelente! Datos de la empresa listos. Vamos al siguiente paso 🚀"
                         st.session_state.step = 2
                         st.rerun()
 
@@ -471,6 +477,7 @@ def main():
                             "exp_alternativas": exp_alt
                         })
                     st.session_state.data.update(data_update)
+                    st.session_state.pending_toast = "¡Perfil guardado! Estás avanzando rápido 🔥"
                     st.session_state.step = 3
                     st.rerun()
 
@@ -546,7 +553,7 @@ def main():
                         "banco_pais": banco_pais, "banco_ciudad": banco_ciudad, "banco_nombre": banco_nombre, "banco_sucursal": banco_sucursal
                     }
                     st.session_state.data.update(data_update)
-                    st.toast("¡Información financiera completada! Ya casi terminamos ✨")
+                    st.session_state.pending_toast = "¡Información financiera completada! Ya casi terminamos ✨"
                     st.session_state.step = 4
                     st.rerun()
 
@@ -586,7 +593,7 @@ def main():
                                 with open(path, "wb") as f:
                                     f.write(doc.getbuffer())
                                 st.session_state.attachments.append({"filename": doc.name, "path": path})
-                        st.toast("¡Solicitud completada! Preparando todo... 🎉")
+                        st.session_state.pending_toast = "¡Solicitud completada! Preparando todo... 🎉"
                         st.session_state.step = 5
                         st.rerun()
 
