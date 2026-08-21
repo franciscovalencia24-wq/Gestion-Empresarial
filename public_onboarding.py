@@ -94,9 +94,11 @@ def main():
         f"""
         <script>
             /* Render trigger for step {step} */
-            var body = window.parent.document.querySelector(".main");
-            if (body) {{ body.scrollTop = 0; }}
-            window.parent.scrollTo(0, 0);
+            setTimeout(function() {{
+                var elements = window.parent.document.querySelectorAll('.stApp, .main, [data-testid="stAppViewContainer"]');
+                elements.forEach(function(el) {{ el.scrollTo({{ top: 0, behavior: 'smooth' }}); }});
+                window.parent.scrollTo({{ top: 0, behavior: 'smooth' }});
+            }}, 200);
         </script>
         """,
         height=0
@@ -522,10 +524,12 @@ def main():
             monto = st.text_input("Monto aproximado de inversión inicial (USD)", value=st.session_state.data.get("monto_inversion", "50000"))
             
             opc_cont = ["Canalización de órdenes", "Gestión de portafolio"]
-            tipo_contrato = st.selectbox("Tipo de contrato", opc_cont, index=get_idx(opc_cont, "tipo_contrato", opc_cont[0]))
+            tipo_contrato = st.selectbox("Tipo de contrato", opc_cont, index=get_idx(opc_cont, "tipo_contrato", opc_cont[0]), help="Puede mantener la opción por defecto y definirlo posteriormente con el asesor financiero.")
+            st.caption("💡 *Sugerencia: Si no está seguro, puede dejarlo como está y definirlo posteriormente con su asesor.*")
             
             opc_pago = ["Transferencia", "Transferencia de activos", "ACAT", "ACH", "Otros"]
-            metodo_pago = st.selectbox("Método de pago", opc_pago, index=get_idx(opc_pago, "metodo_pago", opc_pago[0]))
+            metodo_pago = st.selectbox("Método de pago", opc_pago, index=get_idx(opc_pago, "metodo_pago", opc_pago[0]), help="Elija ACAT si planea realizar transferencia de activos.")
+            st.caption("💡 *Sugerencia: Si planea realizar una transferencia de activos, seleccione la opción ACAT.*")
             
             st.markdown("---")
             st.subheader("Bancos Habituales")
