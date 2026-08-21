@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import os
 import importlib
@@ -84,7 +85,29 @@ def main():
         st.session_state.step = 1
         st.rerun()
         
-    # Barra de progreso
+    # Scroll to Top (Gamification & UX hack)
+    components.html(
+        """
+        <script>
+            var body = window.parent.document.querySelector(".main");
+            if (body) { body.scrollTop = 0; }
+        </script>
+        """,
+        height=0
+    )
+
+    # Mensajes motivacionales
+    mensajes_progreso = {
+        1: "Paso 1 de 5: ¡Empecemos con tus datos básicos! 🏁",
+        2: "Paso 2 de 5: Tu perfil de riesgo es clave para protegerte 🛡️",
+        3: "Paso 3 de 5: ¡Ya vas por la mitad, excelente ritmo! 🔥",
+        4: "Paso 4 de 5: ¡Último paso! Solo nos faltan los documentos 📂",
+        5: "Paso 5 de 5: ¡Todo listo! 🎉"
+    }
+    if tipo_cuenta == "Persona Jurídica" and step == 1:
+        mensajes_progreso[1] = "Paso 1 de 5: ¡Empecemos con los datos de tu empresa! 🏢"
+        
+    st.markdown(f"**{mensajes_progreso.get(step, '')}**")
     st.progress(step / 5)
     
     def get_idx(opciones, clave, default):
@@ -92,7 +115,7 @@ def main():
         return opciones.index(val) if val in opciones else 0
 
     if step == 1:
-        st.header("1. Datos Personales" if tipo_cuenta == "Persona Natural" else "1. Datos de la Empresa y Representante")
+        st.header("1. Datos Personales 👤" if tipo_cuenta == "Persona Natural" else "1. Datos de la Empresa y Representante 🏢")
         if tipo_cuenta == "Persona Natural":
             st.info("""
 **Información a adjuntar Persona Natural:**
@@ -227,6 +250,7 @@ def main():
                             "con_pais_emi": con_pais_emi, "con_rut": con_rut, "difiere_dir": difiere_dir,
                             "acepta_correo": acepta_correo
                         })
+                        st.toast("¡Excelente! Datos iniciales listos. Vamos al siguiente paso 🚀")
                         st.session_state.step = 2
                         st.rerun()
             else:
@@ -354,13 +378,14 @@ def main():
                             "ciud_emp_rep": ciud_emp_rep, "dir_emp_rep": dir_emp_rep, "tel_emp_rep": tel_emp_rep,
                             "email_emp_rep": email_emp_rep
                         })
+                        st.toast("¡Excelente! Datos de la empresa listos. Vamos al siguiente paso 🚀")
                         st.session_state.step = 2
                         st.rerun()
 
         render_save_section()
 
     elif step == 2:
-        st.header("2. Perfilamiento de Inversión")
+        st.header("2. Perfilamiento de Inversión 📊")
         with st.form("form_step_2"):
             st.info("Estas preguntas son exigidas por la regulación estadounidense (SEC).")
             
@@ -452,7 +477,7 @@ def main():
         render_save_section()
 
     elif step == 3:
-        st.header("3. Origen de Fondos e Información Financiera")
+        st.header("3. Origen de Fondos e Información Financiera 💰")
         with st.form("form_step_3"):
             if tipo_cuenta == "Persona Jurídica":
                 opc_ing = ["Menos de 50.000", "50.000-99.999", "100.000-199.999", "200.000-499.999", "500.000-999.999", "1.000.000-2.499.999", "Más de 2.500.000"]
@@ -521,13 +546,14 @@ def main():
                         "banco_pais": banco_pais, "banco_ciudad": banco_ciudad, "banco_nombre": banco_nombre, "banco_sucursal": banco_sucursal
                     }
                     st.session_state.data.update(data_update)
+                    st.toast("¡Información financiera completada! Ya casi terminamos ✨")
                     st.session_state.step = 4
                     st.rerun()
 
         render_save_section()
 
     elif step == 4:
-        st.header("4. Carga de Documentos Obligatorios")
+        st.header("4. Carga de Documentos Obligatorios 📄")
         st.write("Para procesar la transferencia de su cuenta (ACAT), requerimos los siguientes documentos.")
         
         with st.form("form_step_4"):
@@ -560,6 +586,7 @@ def main():
                                 with open(path, "wb") as f:
                                     f.write(doc.getbuffer())
                                 st.session_state.attachments.append({"filename": doc.name, "path": path})
+                        st.toast("¡Solicitud completada! Preparando todo... 🎉")
                         st.session_state.step = 5
                         st.rerun()
 
