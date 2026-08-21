@@ -187,14 +187,21 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
         if data.get('estado_civil') == 'Casado/a':
             safe_write(sheet, 'B77', data.get('con_nombres', ''))
             safe_write(sheet, 'B78', data.get('con_apellidos', ''))
-            safe_write(sheet, 'E77', data.get('con_fecha_nac', ''))
             safe_write(sheet, 'B79', data.get('con_sit_lab', ''))
             safe_write(sheet, 'B80', data.get('con_nac', ''))
-            safe_write(sheet, 'E78', data.get('con_pais_emi', ''))
-            safe_write(sheet, 'E79', data.get('con_tipo_doc', ''))
-            safe_write(sheet, 'E80', data.get('con_rut', ''))
+            
+            safe_write(sheet, 'D77', data.get('con_fecha_nac', ''))
+            safe_write(sheet, 'D78', data.get('con_pais_emi', ''))
+            safe_write(sheet, 'D79', data.get('con_tipo_doc', ''))
+            safe_write(sheet, 'D80', data.get('con_rut', ''))
+            
+            if data.get('con_sit_lab') in ['Empleado', 'Empleado/Independiente']:
+                safe_write(sheet, 'F77', data.get('con_cargo', ''))
+                safe_write(sheet, 'F78', data.get('con_empresa', ''))
+                safe_write(sheet, 'F79', data.get('con_rubro', ''))
+                
             fill_green = PatternFill(start_color="D9EAD3", end_color="D9EAD3", fill_type="solid")
-            for cell_id in ['E77', 'E78', 'E79', 'E80']:
+            for cell_id in ['D77', 'D78', 'D79', 'D80', 'F77', 'F78', 'F79']:
                 sheet[cell_id].fill = fill_green
             
         # Experiencia de Inversiones
@@ -212,6 +219,9 @@ def generate_stonex_excel(data, output_filename="Onboarding_Stonex.xlsx"):
         safe_write(sheet, 'B96', data.get('activos_exacto', ''))
         safe_write(sheet, 'B97', data.get('patrimonio_total', ''))
         safe_write(sheet, 'B98', data.get('aportes_adicionales', 'No'))
+        if data.get('aportes_adicionales') == 'No':
+            safe_write(sheet, 'B99', '')
+            safe_write(sheet, 'B100', '')
         safe_write(sheet, 'B101', data.get('tiempo_retiros', 'Más de 10 años'))
         
         safe_write(sheet, 'B102', data.get('banco_origen', ''))

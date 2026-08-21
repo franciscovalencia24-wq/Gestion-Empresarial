@@ -228,6 +228,20 @@ def main():
                     con_nac = st.selectbox("Nacionalidad Cónyuge", opc_nac, index=get_idx(opc_nac, "con_nac", "Chilena"))
                 with cc8:
                     con_sit_lab = st.selectbox("Situación Laboral Cónyuge", opc_sit, index=get_idx(opc_sit, "con_sit_lab", "Empleado"))
+                    
+                st.info("💡 Si su cónyuge es Empleado o Independiente, por favor indique su cargo y empresa.")
+                cc9, cc10, cc11 = st.columns(3)
+                with cc9:
+                    con_cargo = st.text_input("Cargo del Cónyuge", value=st.session_state.data.get("con_cargo", ""))
+                with cc10:
+                    con_empresa = st.text_input("Empresa del Cónyuge", value=st.session_state.data.get("con_empresa", ""))
+                with cc11:
+                    con_rubro = st.text_input("Rubro de la Empresa", value=st.session_state.data.get("con_rubro", ""))
+                    
+                # Guardamos los valores dinámicos para que no se pierdan en el submit
+                st.session_state.data["con_cargo"] = con_cargo
+                st.session_state.data["con_empresa"] = con_empresa
+                st.session_state.data["con_rubro"] = con_rubro
                 
                 submitted = st.form_submit_button("Siguiente ->")
                 if submitted:
@@ -253,9 +267,10 @@ def main():
                             "telefono": telefono, "pais_residencia": pais_res, "nacionalidad": nac, "ciudadania": ciud,
                             "tipo_documento": tipo_doc, "pais_emisor_doc": pais_emi, "estado_civil": estado_civil,
                             "cantidad_hijos": cantidad_hijos, "situacion_laboral": sit_lab, "ocupacion": ocupacion, "pep": pep,
-                            "con_nombres": con_nombres, "con_apellidos": con_apellidos, "con_fecha_nac": str(con_fecha_nac),
+                        "con_nombres": con_nombres, "con_apellidos": con_apellidos, "con_fecha_nac": str(con_fecha_nac),
                             "con_sit_lab": con_sit_lab, "con_nac": con_nac, "con_tipo_doc": con_tipo_doc,
                             "con_pais_emi": con_pais_emi, "con_rut": con_rut, "difiere_dir": difiere_dir,
+                            "con_cargo": st.session_state.data.get("con_cargo", ""), "con_empresa": st.session_state.data.get("con_empresa", ""), "con_rubro": st.session_state.data.get("con_rubro", ""),
                             "acepta_correo": acepta_correo
                         })
                         st.session_state.pending_toast = "¡Excelente! Datos iniciales listos. Vamos al siguiente paso 🚀"
@@ -593,7 +608,8 @@ def main():
                         os.makedirs("data/uploads", exist_ok=True)
                         for doc in [doc1, doc2, doc3]:
                             if doc is not None:
-                                path = os.path.join("data/uploads", doc.name)
+                                # Usar absolute path para evitar que smtplib/MIME falle si cwd cambia
+                                path = os.path.abspath(os.path.join("data/uploads", doc.name))
                                 with open(path, "wb") as f:
                                     f.write(doc.getbuffer())
                                 st.session_state.attachments.append({"filename": doc.name, "path": path})
