@@ -32,6 +32,27 @@ def render_save_section():
             
             st.text_input("Haz clic aquí y copia todo el texto:", value=save_link, key=f"copy_save_link_{new_token}", help="Este es tu enlace único. Si lo pierdes, perderás tu progreso.")
             
+            html_code = f"""
+            <div style="display: flex; justify-content: center;">
+                <button id="copyBtn" style="background-color: #0A2342; color: white; border: none; padding: 10px 24px; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; font-family: sans-serif;">
+                    📋 Copiar Enlace Automáticamente
+                </button>
+            </div>
+            <script>
+                const btn = document.getElementById('copyBtn');
+                btn.addEventListener('click', () => {{
+                    navigator.clipboard.writeText('{save_link}').then(() => {{
+                        btn.innerHTML = '✅ ¡Copiado y Listo!';
+                        setTimeout(() => {{ btn.innerHTML = '📋 Copiar Enlace Automáticamente'; }}, 3000);
+                    }}).catch(err => {{
+                        console.error('Error al copiar: ', err);
+                        btn.innerHTML = '❌ Error al copiar (Cópialo manualmente arriba)';
+                    }});
+                }});
+            </script>
+            """
+            components.html(html_code, height=70)
+            
             st.info("Para retomar más tarde, simplemente pega ese enlace en tu navegador de internet.")
 
 def main():
