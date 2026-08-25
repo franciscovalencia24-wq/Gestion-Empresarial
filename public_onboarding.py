@@ -3,6 +3,7 @@ import streamlit.components.v1 as components
 import pandas as pd
 import os
 import importlib
+import datetime
 import src.stonex_onboarding.fill_excel as fill_excel_module
 importlib.reload(fill_excel_module)
 from src.stonex_onboarding.fill_excel import generate_stonex_excel
@@ -27,9 +28,11 @@ def render_save_section():
             save_link = f"{base_url}/?token={new_token}"
             
             st.success("Tu progreso ha sido guardado de forma segura.")
-            st.write("**Copia y guarda este enlace único:**")
-            st.code(save_link, language="text")
-            st.info("Cuando quieras retomar, simplemente pega este enlace en tu navegador de internet y volverás exactamente donde quedaste.")
+            st.markdown("⚠️ **IMPORTANTE:** Debes **COPIAR** el siguiente enlace si deseas continuar en otro momento o desde otro dispositivo.")
+            
+            st.text_input("Haz clic aquí y copia todo el texto:", value=save_link, key=f"copy_save_link_{new_token}", help="Este es tu enlace único. Si lo pierdes, perderás tu progreso.")
+            
+            st.info("Para retomar más tarde, simplemente pega ese enlace en tu navegador de internet.")
 
 def main():
     st.title("Portal de Registro Clientes")
@@ -153,7 +156,7 @@ def main():
                 
                 rut = st.text_input("RUT / Nro Documento", value=st.session_state.data.get("rut", ""))
                 email = st.text_input("Correo Electrónico", value=st.session_state.data.get("email", ""))
-                fecha_nacimiento = st.date_input("Fecha de Nacimiento", value=pd.to_datetime(st.session_state.data.get("fecha_nacimiento", "1980-01-01")).date())
+                fecha_nacimiento = st.date_input("Fecha de Nacimiento", value=pd.to_datetime(st.session_state.data.get("fecha_nacimiento", "1980-01-01")).date(), min_value=datetime.date(1900, 1, 1), max_value=datetime.date(2100, 1, 1))
                 
                 col_d1, col_d2 = st.columns(2)
                 with col_d1:
@@ -215,7 +218,7 @@ def main():
                 with cc3:
                     con_rut = st.text_input("Número de Documento / RUT Cónyuge", value=st.session_state.data.get("con_rut", ""))
                 with cc4:
-                    con_fecha_nac = str(st.date_input("Fecha Nacimiento Cónyuge", value=pd.to_datetime(st.session_state.data.get("con_fecha_nac", "1980-01-01")).date()))
+                    con_fecha_nac = str(st.date_input("Fecha Nacimiento Cónyuge", value=pd.to_datetime(st.session_state.data.get("con_fecha_nac", "1980-01-01")).date(), min_value=datetime.date(1900, 1, 1), max_value=datetime.date(2100, 1, 1)))
                     
                 cc5, cc6 = st.columns(2)
                 with cc5:
@@ -330,9 +333,9 @@ def main():
                     tel_rep = st.text_input("Teléfono Representante", value=st.session_state.data.get("telefono_rep", ""))
                     porc_part = st.text_input("% de Participación", value=st.session_state.data.get("porcentaje_part", ""))
                 with col4:
-                    fecha_nac_rep = st.date_input("Fecha Nacimiento", value=pd.to_datetime(st.session_state.data.get("fecha_nac_rep", "1980-01-01")).date())
-                    fecha_emi_doc = st.date_input("Fecha Emisión Documento", value=pd.to_datetime(st.session_state.data.get("fecha_emi_doc", "2020-01-01")).date())
-                    fecha_exp_doc = st.date_input("Fecha Expiración Documento", value=pd.to_datetime(st.session_state.data.get("fecha_exp_doc", "2030-01-01")).date())
+                    fecha_nac_rep = st.date_input("Fecha Nacimiento", value=pd.to_datetime(st.session_state.data.get("fecha_nac_rep", "1980-01-01")).date(), min_value=datetime.date(1900, 1, 1), max_value=datetime.date(2100, 1, 1))
+                    fecha_emi_doc = st.date_input("Fecha Emisión Documento", value=pd.to_datetime(st.session_state.data.get("fecha_emi_doc", "2020-01-01")).date(), min_value=datetime.date(1900, 1, 1), max_value=datetime.date(2100, 1, 1))
+                    fecha_exp_doc = st.date_input("Fecha Expiración Documento", value=pd.to_datetime(st.session_state.data.get("fecha_exp_doc", "2030-01-01")).date(), min_value=datetime.date(1900, 1, 1), max_value=datetime.date(2100, 1, 1))
                     opc_td = ["ID Nacional", "Pasaporte", "Documento Gubernamental"]
                     tipo_doc = st.selectbox("Tipo de Documento", opc_td, index=get_idx(opc_td, "tipo_doc", "ID Nacional"))
                     pais_emi = st.selectbox("País Emisor Documento", opc_pais, index=get_idx(opc_pais, "pais_emisor_doc", "Chile"))
