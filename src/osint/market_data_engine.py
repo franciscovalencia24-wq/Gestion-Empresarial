@@ -278,8 +278,15 @@ class MarketDataEngine:
         return results
 
     def fetch_reuters_news(self):
-        logging.info("Descargando noticias globales (RSS)...")
-        rss_urls = [("Yahoo Finance", "https://finance.yahoo.com/news/rssindex")]
+        logging.info("Descargando noticias globales (RSS Institucionales)...")
+        import urllib.parse
+        q_reuters = urllib.parse.quote("economy OR markets site:reuters.com when:1d")
+        
+        rss_urls = [
+            ("Reuters", f"https://news.google.com/rss/search?q={q_reuters}&hl=en-US&gl=US&ceid=US:en"),
+            ("Wall Street Journal", "https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml"),
+            ("CNBC Markets", "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10000664")
+        ]
         today_start = datetime.datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
         
         for source_name, url in rss_urls:
@@ -531,10 +538,12 @@ class MarketDataEngine:
                     news = self.db.query(MarketNews).filter(MarketNews.fuente != "Google News Chile").order_by(MarketNews.fecha_publicacion.desc()).limit(15).all()
             news_text = "\n".join([f"- {n.titular} (Fuente: {n.fuente}, Fecha: {n.fecha_publicacion}) : {n.resumen}" for n in news])
             
-        market_status_text = "RENDIMIENTO ACTUAL DEL MERCADO HOY (Básate en esto para tu análisis de impacto):\n"
+        market_status_text = "RENDIMIENTO ACTUAL DEL MERCADO HOY (IMPORTANTE: Esto es solo contexto del cierre actual. NO bases la predicción prospectiva (efecto) de la noticia en estos rendimientos. El efecto DEBE inferirse únicamente de la lógica de la noticia, ignorando si el mercado hoy cerró al alza o a la baja):\n"
         for region, indices in global_stats.items():
             for idx in indices:
                 market_status_text += f"- {region} ({idx['nombre']}): {idx['efecto']}\n"
+        for c in commodity_stats:
+            market_status_text += f"- COMMODITY ({c['nombre']}): {c.get('efecto', 'NEUTRAL')} (Precio: {c.get('valor', '')})\n"
         
         from src.osint.indicadores import get_tpm_today
         tpm_real = get_tpm_today() or 4.5
@@ -603,52 +612,53 @@ class MarketDataEngine:
         {market_status_text}
         
         {focus_instruction}
-        IMPORTANTE: La explicación en 'explicacion_interna' DEBE coincidir causalmente con el RENDIMIENTO ACTUAL del mercado proporcionado arriba. Si el mercado en USA está al ALZA, explica por qué la noticia generó u ocurrió en un día de ALZA (ej. optimismo, menor regulación temida, etc.), NUNCA expliques una baja si el mercado real subió.
+        IMPORTANTE: La explicación en 'explicacion_interna' y los 'efectos' DEBEN ser tu predicción prospectiva (hacia el futuro) de lo que pasará producto de la noticia. Si hay guerra, predice ALZA de petróleo. El EFECTO es el resultado *posible* que puede suceder a consecuencia de la noticia en vista, por ende el reporte y el JSON deben coincidir en esta predicción prospectiva.
         Devuelve SOLO un JSON con esta estructura exacta:
         {{
             "titulo_principal": "TÍTULO DE IMPACTO EN MAYÚSCULAS",
             "titulo_documento": "Título muy corto, MÁXIMO 58 caracteres. Será el nombre del PDF.",
             "noticia_completa": "El texto periodístico de 4-5 oraciones profundizando en la noticia. (No des consejos).",
-            "fuente_noticia": "Fuente real de la noticia extraída del texto (ej: Diario Financiero, Reuters, etc. NO inventes).",
+            "fuente_noticia": "Usa la 'Fuente:' explícita que acompaña a la noticia seleccionada (ej: Reuters, Wall Street Journal). ESTRICTAMENTE PROHIBIDO poner 'Yahoo Finance' si la noticia dice explícitamente (Fuente: Reuters).",
             "fecha_noticia": "Usa ESTRICTAMENTE la fecha y hora que viene en el texto de NOTICIAS HOY. Si la hora viene en formato UTC (ejemplo terminada en Z), réstale 4 horas para ajustarla a Chile. NO inventes fechas pasadas ni uses la fecha de tus ejemplos. Formato final: DD de Mes, YYYY - HH:MM hrs",
-            "prompt_imagen": "Un prompt corto en inglés (max 10 palabras) que describa la noticia para generar una imagen abstracta. (Ej: 'stock market crash red arrows')",
-            "post_linkedin": "El post completo para RRSS para LinkedIn. REQUISITO DE TITULARES Y EXTENSIÓN ÁGIL: El post DEBE comenzar con un Titular Periodístico de Impacto en Mayúsculas (ej: 🚨 WALL STREET EN EXPECTATIVA ANTE LA FED) seguido de 3 párrafos concisos y ágiles (entre 1.100 y 1.400 caracteres brutos en total). Integra datos oficiales y estadísticas clave para diferenciarte de la competencia. Separa con dobles saltos de línea (\\n\\n). Finaliza EXACTAMENTE con este bloque literal:\n\n¿Qué podría significar esto para tus ahorros e inversiones?\nDescubre cómo preparar tu portafolio ante estos nuevos desafíos. Escríbenos para una asesoría patrimonial integral y optimiza tu estrategia de inversión.\n\n📧 contacto@fv-inversiones.com | 📱 WhatsApp: +56966779662\n\nAgrega de 3 a 5 HASHTAGS al final (ej: #Inversiones #Mercados).",
+            "prompt_imagen": "Un prompt fotográfico en inglés (max 10 palabras) para ilustrar la noticia. PROHIBIDO pedir 'charts', 'graphs', 'screens', 'stock market lines' o gráficos de velas. Pide SOLAMENTE fotografía del mundo real, como 'corporate executives shaking hands', 'oil refinery at sunset', o 'modern wall street architecture'.",
+            "post_linkedin": "El post completo para RRSS para LinkedIn. REQUISITO DE TITULARES Y EXTENSIÓN ÁGIL: El post DEBE comenzar con un Titular Periodístico de Impacto en Mayúsculas (ej: 🚨 WALL STREET EN EXPECTATIVA ANTE LA FED) seguido de 3 párrafos concisos y ágiles (entre 1.100 y 1.400 caracteres brutos en total). Integra datos oficiales y estadísticas clave para diferenciarte de la competencia. Separa con dobles saltos de línea (\\n\\n). Finaliza EXACTAMENTE con este bloque literal:\n\n¿Qué podría significar esto para tus ahorros e inversiones?\nDescubre cómo preparar tu portafolio ante estos nuevos desafíos. Escríbenos para una asesoría patrimonial integral y optimiza tu estrategia de inversión.\n\n📧 contacto@fv-inversiones.com | 📱 WhatsApp: +56966779662\n\nAgrega de 3 a 5 HASHTAGS únicos e hiper-relevantes a la temática específica de la noticia (ej. empresas o commodities específicos mencionados). Tienes estrictamente prohibido usar hashtags genéricos repetitivos como #Inversiones, #Mercados, #MercadosFinancieros, #WallStreet o #Chile.",
             "explicacion_interna": "Una explicación detallada (dirigida a los asesores de FV) de la lógica económica/financiera detrás de la noticia elegida y cómo fundamenta de forma causal los impactos (alzas y bajas) predichos en los commodities e índices. Sirve para responder dudas de clientes.",
             "explicacion_multifondos": "Un texto explicativo de unas 3-4 líneas (para clientes) justificando los movimientos proyectados (ALZA o BAJA) específicos de los Multifondos chilenos en base a la noticia y los mercados globales. Se incluirá en la presentación.",
             "impacto_local": {{
                 "fondos_mutuos": [
-                    {{"nombre": "GLOBAL", "efecto": "BAJA", "relevancia": "IMPORTANTE"}},
-                    {{"nombre": "USA", "efecto": "BAJA", "relevancia": "MODERADA"}},
-                    {{"nombre": "EUROPA", "efecto": "NEUTRAL", "relevancia": "LEVE"}},
-                    {{"nombre": "ASIA", "efecto": "ALZA", "relevancia": "IMPORTANTE"}},
-                    {{"nombre": "EMERGENTES", "efecto": "BAJA", "relevancia": "MODERADA"}},
-                    {{"nombre": "LATAM", "efecto": "BAJA", "relevancia": "LEVE"}},
-                    {{"nombre": "RV LOCAL", "efecto": "ALZA", "relevancia": "IMPORTANTE"}}
+                    {{"nombre": "GLOBAL", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "USA", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "EUROPA", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "ASIA", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "EMERGENTES", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "LATAM", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "RV LOCAL", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}}
                 ],
                 "multifondos": [
-                    {{"nombre": "Fondo A", "efecto": "BAJA", "relevancia": "IMPORTANTE"}},
-                    {{"nombre": "Fondo B", "efecto": "BAJA", "relevancia": "IMPORTANTE"}},
-                    {{"nombre": "Fondo C", "efecto": "NEUTRAL", "relevancia": "MODERADA"}},
-                    {{"nombre": "Fondo D", "efecto": "NEUTRAL", "relevancia": "LEVE"}},
-                    {{"nombre": "Fondo E", "efecto": "ALZA", "relevancia": "IMPORTANTE"}}
+                    {{"nombre": "Fondo A", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "Fondo B", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "Fondo C", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "Fondo D", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "Fondo E", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}}
                 ],
                 "commodities": [
-                    {{"nombre": "PETRÓLEO WTI", "efecto": "ALZA", "relevancia": "IMPORTANTE"}},
-                    {{"nombre": "ORO", "efecto": "ALZA", "relevancia": "IMPORTANTE"}},
-                    {{"nombre": "COBRE CASH", "efecto": "BAJA", "relevancia": "IMPORTANTE"}},
-                    {{"nombre": "PLATA", "efecto": "BAJA", "relevancia": "LEVE"}},
-                    {{"nombre": "GAS NATURAL", "efecto": "ALZA", "relevancia": "IMPORTANTE"}}
+                    {{"nombre": "PETRÓLEO WTI", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "ORO", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "COBRE CASH", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "PLATA", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "GAS NATURAL", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}}
                 ],
                 "indices_globales": [
-                    {{"nombre": "S&P 500", "efecto": "ALZA", "relevancia": "IMPORTANTE"}},
-                    {{"nombre": "NASDAQ 100", "efecto": "ALZA", "relevancia": "MODERADA"}},
-                    {{"nombre": "IPSA", "efecto": "NEUTRAL", "relevancia": "LEVE"}},
-                    {{"nombre": "EURO STOXX 50", "efecto": "BAJA", "relevancia": "MODERADA"}}
+                    {{"nombre": "S&P 500", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "NASDAQ 100", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "IPSA", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
+                    {{"nombre": "EURO STOXX 50", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}}
                 ]
             }}
         }}
-        Recuerda usar solo BAJA, ALZA, NEUTRAL para efecto y IMPORTANTE, MODERADA, LEVE para relevancia.
-        IMPORTANTE: Devuelve un JSON strictly válido. Escapa las comillas internas con \\" y los saltos de línea dentro de los textos con \\n.
+        Recuerda usar SOLO "BAJA", "ALZA" o "NEUTRAL" para efecto y "IMPORTANTE", "MODERADA" o "LEVE" para relevancia.
+        IMPORTANTE: NO copies la palabra <EVALUAR>. DEBES evaluar e interpretar tú mismo la noticia y calcular de forma lógica el efecto y la relevancia para CADA UNO de los ítems.
+        Devuelve un JSON strictly válido. Escapa las comillas internas con \\" y los saltos de línea dentro de los textos con \\n.
         """
         try:
             logging.info("Solicitando análisis de la noticia...")
@@ -730,13 +740,22 @@ class MarketDataEngine:
                 "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"  # Torres corporativas de Wall St.
             ]
             
+            import urllib.parse
+            prompt_img = data.get('prompt_imagen', 'financial stock market') + ", professional 8k photograph, cinematic lighting, corporate business, depth of field, sharp focus, highly detailed, photorealistic"
+            safe_prompt = urllib.parse.quote(prompt_img)
+            
+            # 1. Intentar SIEMPRE primero con la IA Generativa. 
+            # CLAVE: Usamos model=flux para fotorealismo absoluto y tamaño 1200x1200 (cuadrado) para que el CSS cover recorte bien en cualquier formato.
+            data['imagen_noticia'] = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1200&height=1200&model=flux&nologo=true"
+            
+            # Guardamos la lógica predefinida en el diccionario por si falla la descarga (timeout de la IA)
             import random
             if is_bullish:
-                data['imagen_noticia'] = random.choice(bullish_images)
+                data['imagen_fallback'] = random.choice(bullish_images)
             elif is_bearish:
-                data['imagen_noticia'] = random.choice(bearish_images)
+                data['imagen_fallback'] = random.choice(bearish_images)
             else:
-                data['imagen_noticia'] = random.choice(neutral_images)
+                data['imagen_fallback'] = random.choice(neutral_images)
             
             data['ltm_stats'] = self.fetch_ltm_variations()
 
@@ -862,7 +881,7 @@ class MarketDataEngine:
             logging.error(f"Error descargando imagen {url}: {e}")
         return ""
 
-    def render_infographic(self, global_stats, ai_data, mode="auto"):
+    def render_infographic(self, global_stats, commodity_stats, ai_data, mode="auto"):
         logging.info("Renderizando infografía completa a PNG...")
         
         # Cargar logos oficiales desde la carpeta de marca assets/brand
@@ -884,13 +903,13 @@ class MarketDataEngine:
         map_b64 = self.get_base64_image("assets/world_map.svg")
         
         if not news_img_b64:
-            # Fallback estatico si falla pollinations: imagen financiera genérica
-            fallback_url = "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+            # Fallback estatico si falla pollinations (Timeout o servidor saturado)
+            fallback_url = ai_data.get('imagen_fallback', "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80")
             news_img_b64 = self.download_to_base64(fallback_url)
             if not news_img_b64:
                 news_img_b64 = map_b64
 
-        # Sobrescribir el efecto y relevancia matemático con la predicción de la IA para índices globales
+        # Sobrescribir el efecto matemático con la predicción de la IA para índices globales
         if 'impacto_local' in ai_data and 'indices_globales' in ai_data['impacto_local']:
             predicciones = {str(item.get('nombre', '')).upper(): item for item in ai_data['impacto_local']['indices_globales']}
             for region, indices in global_stats.items():
@@ -899,6 +918,13 @@ class MarketDataEngine:
                     if nombre_upper in predicciones:
                         idx['efecto'] = predicciones[nombre_upper].get('efecto', idx['efecto'])
                         idx['relevancia'] = predicciones[nombre_upper].get('relevancia', idx['relevancia'])
+        
+        # Cruzar valores reales con las predicciones de commodities
+        if 'impacto_local' in ai_data and 'commodities' in ai_data['impacto_local']:
+            valores_reales = {str(c.get('nombre', '')).upper(): c.get('valor', 'N/D') for c in commodity_stats}
+            for cm in ai_data['impacto_local']['commodities']:
+                nm = str(cm.get('nombre', '')).upper()
+                cm['valor'] = valores_reales.get(nm, 'N/D')
         
         # Agregar datos al diccionario final
         ai_data['impacto_global'] = global_stats
@@ -1066,7 +1092,7 @@ class MarketDataEngine:
             "fri": next_fri.strftime("%d.%m.%y")
         }
 
-    def render_carousel(self, global_stats, ai_data):
+    def render_carousel(self, global_stats, commodity_stats, ai_data):
         logging.info("Renderizando carrusel PDF...")
         
         env = Environment(loader=FileSystemLoader('src/web/templates'))
@@ -1196,9 +1222,9 @@ class MarketDataEngine:
             if mode == "cochilco" and hasattr(self, 'cochilco_chart_b64'):
                 ai_data['imagen_noticia'] = self.cochilco_chart_b64
                 
-            img_file = self.render_infographic(global_stats, ai_data, mode)
+            img_file = self.render_infographic(global_stats, commodity_stats, ai_data, mode)
             if mode not in ["weekly", "audio"]:
-                self.render_carousel(global_stats, ai_data)
+                self.render_carousel(global_stats, commodity_stats, ai_data)
             
             date_folder = datetime.date.today().strftime('%Y-%m-%d')
             out_dir = f"linkedin_posts/{date_folder}"
