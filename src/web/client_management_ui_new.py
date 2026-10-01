@@ -178,10 +178,15 @@ def render_client_profile(is_b2b=False):
         k_fecha_vig = f"fecha_vig_{rut}"
         k_doc_legal = f"doc_legal_{rut}"
 
-        col_title, col_btn = st.columns([0.8, 0.2])
         if not is_b2b:
+            col_title, col_btn = st.columns([0.8, 0.2])
             col_title.markdown(f"## 👤 {rut} - Perfil Integral del Cliente")
-        if col_btn.button("🔄 Refrescar Datos", help="Recarga la información desde la Base de Datos"):
+            btn_container = col_btn
+        else:
+            _, col_btn = st.columns([0.8, 0.2])
+            btn_container = col_btn
+            
+        if btn_container.button("🔄 Refrescar Datos", help="Recarga la información desde la Base de Datos"):
             for key in [k_hered, k_prop, k_poliza, k_na, k_test, k_nota, k_alerta, k_debt, k_comp, k_tipo_persona, k_socios, k_repres, k_fecha_const, k_notaria, k_repertorio, k_fecha_vig, k_doc_legal]:
                 if key in st.session_state:
                     del st.session_state[key]
@@ -449,55 +454,19 @@ def render_client_profile(is_b2b=False):
         db_360.close()
 
         if has_360_data:
-            col_m1, col_m2, col_m3 = st.columns(3)
-            col_m1.metric("Masa Patrimonial Bruta", f"${masa_patrimonial:,.0f}")
-            col_m2.metric("Flujo Inm. Mensual", f"${flujo_neto_inmobiliario:,.0f}")
-            col_m3.metric("Brecha Sucesoria Mensual", f"${brecha:,.0f}")
-            
-            col_b1, col_b2, col_b3 = st.columns(3)
-            with col_b1:
-                if not is_b2b:
+            if not is_b2b:
+                col_m1, col_m2, col_m3 = st.columns(3)
+                col_m1.metric("Masa Patrimonial Bruta", f"${masa_patrimonial:,.0f}")
+                col_m2.metric("Flujo Inm. Mensual", f"${flujo_neto_inmobiliario:,.0f}")
+                col_m3.metric("Brecha Sucesoria Mensual", f"${brecha:,.0f}")
+                
+                col_b1, col_b2 = st.columns([1, 2])
+                with col_b1:
                     if st.button("📊 Abrir Reporte 360", key=f"btn_360_{rut}", width="stretch"):
                         st.session_state.main_nav = "📑 Reporte Patrimonial 360"
                         from src.web.report_generator_ui import load_client_data_to_session
                         load_client_data_to_session(rut)
                         st.rerun()
-            
-            with col_b2:
-                if st.button("📄 Descargar 360 (PDF)", key=f"btn_360_pdf_{rut}", width="stretch"):
-                    with st.spinner("Generando PDF..."):
-                        from src.web.report_generator_ui import load_client_data_to_session, auto_generate_markdown
-                        from src.utils.pdf_generator import generate_reporte_360_from_markdown
-                        load_client_data_to_session(rut)
-                        texto = auto_generate_markdown({})
-                        pdf_bytes = generate_reporte_360_from_markdown(texto, "Reporte Patrimonial 360°")
-                        if pdf_bytes:
-                            st.session_state[f'dl_pdf_bytes_{rut}'] = pdf_bytes
-                            st.rerun()
-                if st.session_state.get(f'dl_pdf_bytes_{rut}'):
-                    b = st.session_state[f'dl_pdf_bytes_{rut}']
-                    st.download_button("⬇️ Guardar PDF", data=b, file_name=f"Reporte_360_{rut.replace('.','').replace('-','')}.pdf", mime="application/pdf", key=f"dl_btn_pdf_{rut}", type="primary", width="stretch")
-                        
-            with col_b3:
-                if st.button("📝 Descargar 360 (DOCX)", key=f"btn_360_docx_{rut}", width="stretch"):
-                    with st.spinner("Generando DOCX..."):
-                        from src.web.report_generator_ui import load_client_data_to_session
-                        from src.utils.docx_generator_macro import generar_docx_reporte_360
-                        import tempfile
-                        load_client_data_to_session(rut)
-                        data_360 = st.session_state.get('reporte_360_data', {})
-                        path = os.path.join(tempfile.gettempdir(), f"Reporte_360_{rut.replace('.','').replace('-','')}.docx")
-                        generar_docx_reporte_360(data_360, path)
-                        
-                        with open(path, "rb") as f:
-                            b = f.read()
-                        os.remove(path)
-                        st.session_state[f'dl_docx_bytes_{rut}'] = b
-                        st.rerun()
-                if st.session_state.get(f'dl_docx_bytes_{rut}'):
-                    b = st.session_state[f'dl_docx_bytes_{rut}']
-                    st.download_button("⬇️ Guardar DOCX", data=b, file_name=f"Reporte_360_{rut.replace('.','').replace('-','')}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", key=f"dl_btn_docx_{rut}", type="primary", width="stretch")
-                        
         else:
             if not is_b2b:
                 st.info("Sin planificación 360 configurada")
@@ -507,45 +476,8 @@ def render_client_profile(is_b2b=False):
                     from src.web.report_generator_ui import load_client_data_to_session
                     load_client_data_to_session(rut)
                     st.rerun()
-            else:
-                # En modo B2B, permitimos generar el PDF/DOCX vacío si quieren
-                col_b1, col_b2 = st.columns(2)
-                with col_b1:
-                    if st.button("📄 Descargar 360 (PDF)", key=f"btn_360_pdf_empty_{rut}", width="stretch"):
-                        with st.spinner("Generando PDF..."):
-                            from src.web.report_generator_ui import load_client_data_to_session, auto_generate_markdown
-                            from src.utils.pdf_generator import generate_reporte_360_from_markdown
-                            load_client_data_to_session(rut)
-                            texto = auto_generate_markdown({})
-                            pdf_bytes = generate_reporte_360_from_markdown(texto, "Reporte Patrimonial 360°")
-                            if pdf_bytes:
-                                st.session_state[f'dl_pdf_bytes_empty_{rut}'] = pdf_bytes
-                                st.rerun()
-                    if st.session_state.get(f'dl_pdf_bytes_empty_{rut}'):
-                        b = st.session_state[f'dl_pdf_bytes_empty_{rut}']
-                        st.download_button("⬇️ Guardar PDF", data=b, file_name=f"Reporte_360_{rut.replace('.','').replace('-','')}.pdf", mime="application/pdf", key=f"dl_btn_pdf_empty_{rut}", type="primary", width="stretch")
-                            
-                with col_b2:
-                    if st.button("📝 Descargar 360 (DOCX)", key=f"btn_360_docx_empty_{rut}", width="stretch"):
-                        with st.spinner("Generando DOCX..."):
-                            from src.web.report_generator_ui import load_client_data_to_session
-                            from src.utils.docx_generator_macro import generar_docx_reporte_360
-                            import tempfile
-                            load_client_data_to_session(rut)
-                            data_360 = st.session_state.get('reporte_360_data', {})
-                            path = os.path.join(tempfile.gettempdir(), f"Reporte_360_{rut.replace('.','').replace('-','')}.docx")
-                            generar_docx_reporte_360(data_360, path)
-                            
-                            with open(path, "rb") as f:
-                                b = f.read()
-                            os.remove(path)
-                            st.session_state[f'dl_docx_bytes_empty_{rut}'] = b
-                            st.rerun()
-                    if st.session_state.get(f'dl_docx_bytes_empty_{rut}'):
-                        b = st.session_state[f'dl_docx_bytes_empty_{rut}']
-                        st.download_button("⬇️ Guardar DOCX", data=b, file_name=f"Reporte_360_{rut.replace('.','').replace('-','')}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", key=f"dl_btn_docx_empty_{rut}", type="primary", width="stretch")
-        
-        st.markdown("---")
+        if not is_b2b:
+            st.markdown("---")
     
         # --- TABLAS DINÁMICAS ---
         if st.session_state.get(k_tipo_persona, "PN") == "PN":
@@ -1635,4 +1567,23 @@ def render_client_profile(is_b2b=False):
         
             st.rerun()
         
+            st.rerun()
+        
         st.markdown("---")
+        
+        # Botón PDF al final de la página (solicitud del usuario)
+        st.markdown("### 📄 Descarga de Documentos")
+        if st.button("📄 Descargar 360 (PDF)", key=f"btn_360_pdf_bottom_{rut}", width="stretch"):
+            with st.spinner("Generando PDF..."):
+                from src.web.report_generator_ui import load_client_data_to_session, auto_generate_markdown
+                from src.utils.pdf_generator import generate_reporte_360_from_markdown
+                load_client_data_to_session(rut)
+                texto = auto_generate_markdown({})
+                pdf_bytes = generate_reporte_360_from_markdown(texto, "Reporte Patrimonial 360°")
+                if pdf_bytes:
+                    st.session_state[f'dl_pdf_bytes_bottom_{rut}'] = pdf_bytes
+                    st.rerun()
+        if st.session_state.get(f'dl_pdf_bytes_bottom_{rut}'):
+            b = st.session_state[f'dl_pdf_bytes_bottom_{rut}']
+            st.download_button("⬇️ Guardar PDF", data=b, file_name=f"Reporte_360_{rut.replace('.','').replace('-','')}.pdf", mime="application/pdf", key=f"dl_btn_pdf_bottom_{rut}", type="primary", width="stretch")
+
