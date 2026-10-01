@@ -1195,11 +1195,16 @@ def render_client_profile(is_b2b=False):
                             key=f"rad_solic_tipo_{rut}"
                         )
                     
+                        cache_key_excel = f"excel_kyc_{rut}_{solicitud_tipo}"
+                        
                         if "APV" in solicitud_tipo:
                             from src.utils.excel_kyc_generator import generar_excel_apv_reliquidacion
                             from src.utils.kyc_email_generator import generar_comunicacion_apv_reliquidacion
-                        
-                            val = generar_excel_apv_reliquidacion(client_name=client_name_str)
+                            
+                            if cache_key_excel not in st.session_state:
+                                st.session_state[cache_key_excel] = generar_excel_apv_reliquidacion(client_name=client_name_str)
+                            val = st.session_state[cache_key_excel]
+                            
                             comm = generar_comunicacion_apv_reliquidacion(client_name=client_name_str)
                             file_out_name = f"Formulario_APV_Reliquidacion_{client_name_str.replace(' ', '_')}.xlsx"
                             btn_label = "💾 Descargar Excel APV & Reliquidación para Cliente"
@@ -1207,12 +1212,15 @@ def render_client_profile(is_b2b=False):
                             from src.utils.excel_kyc_generator import generar_excel_kyc_corporativo
                             from src.utils.kyc_email_generator import generar_comunicacion_kyc
                         
-                            val = generar_excel_kyc_corporativo(
-                                client_name=client_name_str,
-                                missing_herederos=missing_herederos,
-                                missing_propiedades=missing_propiedades,
-                                missing_polizas=missing_polizas
-                            )
+                            if cache_key_excel not in st.session_state:
+                                st.session_state[cache_key_excel] = generar_excel_kyc_corporativo(
+                                    client_name=client_name_str,
+                                    missing_herederos=missing_herederos,
+                                    missing_propiedades=missing_propiedades,
+                                    missing_polizas=missing_polizas
+                                )
+                            val = st.session_state[cache_key_excel]
+                            
                             comm = generar_comunicacion_kyc(
                                 client_name=client_name_str,
                                 missing_herederos=missing_herederos,
@@ -1270,7 +1278,11 @@ def render_client_profile(is_b2b=False):
                     if st.button("📥 Descargar Plantilla Inventario MFO", width="stretch"):
                         from src.utils.excel_inventory_generator import generar_excel_inventario_mfo
                         client_name_mfo = st.session_state.get('current_client_name', 'Cliente')
-                        excel_mfo_bytes = generar_excel_inventario_mfo(client_name=client_name_mfo)
+                        cache_key_mfo = f"excel_mfo_{rut}"
+                        if cache_key_mfo not in st.session_state:
+                            st.session_state[cache_key_mfo] = generar_excel_inventario_mfo(client_name=client_name_mfo)
+                        excel_mfo_bytes = st.session_state[cache_key_mfo]
+                        
                         st.download_button(
                             label="Descargar Excel Inventario",
                             data=excel_mfo_bytes,
