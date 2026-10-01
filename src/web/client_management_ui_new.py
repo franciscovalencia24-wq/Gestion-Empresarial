@@ -183,8 +183,7 @@ def render_client_profile(is_b2b=False):
             col_title.markdown(f"## 👤 {rut} - Perfil Integral del Cliente")
             btn_container = col_btn
         else:
-            _, col_btn = st.columns([0.8, 0.2])
-            btn_container = col_btn
+            btn_container = st.container()
             
         if btn_container.button("🔄 Refrescar Datos", help="Recarga la información desde la Base de Datos"):
             for key in [k_hered, k_prop, k_poliza, k_na, k_test, k_nota, k_alerta, k_debt, k_comp, k_tipo_persona, k_socios, k_repres, k_fecha_const, k_notaria, k_repertorio, k_fecha_vig, k_doc_legal]:
@@ -196,7 +195,7 @@ def render_client_profile(is_b2b=False):
             db = SessionLocal()
             prospect = db.query(Prospect).filter(Prospect.rut == rut).first()
         
-            df_hered = pd.DataFrame(columns=["RUT", "Relación", "Nombre", "Fecha de Nacimiento", "% Asignación"])
+            df_hered = pd.DataFrame(columns=["RUT", "Relación", "Nombre", "Fecha de Nacimiento", "% Asignación", "Es Estudiante"])
             df_prop = pd.DataFrame(columns=["Nombre/Alias", "Comuna", "ROL", "Dirección", "Destino", "Fojas", "Número", "Año", "% de Derecho", "Avalúo Fiscal (CLP)", "Valor Com. (UF)", "Deuda Hipotecaria", "Institución Hipoteca", "Monto Inicial (UF)", "Saldo Actual (UF)", "Monto Asegurado (UF)", "Tasación (UF)", "Tasa Interés (%)", "Tipo Tasa", "Fecha Escritura", "Dividendo", "Cuota Actual", "Total Cuotas", "Arrendada", "Monto Arriendo", "Moneda Arriendo", "Fecha Contrato Arriendo", "Meses Reajuste Arriendo", "Contribuciones Trim.", "Gastos Comunes Mensuales", "Mantención Anual (CLP)", "Plusvalía Esperada (%)", "__fecha_act_cuota"])
             df_poliza = pd.DataFrame(columns=["Aseguradora", "Tipo", "Monto (UF)", "Prima", "Coberturas", "Análisis IA", "Beneficiarios"])
             df_debt = pd.DataFrame(columns=["Institución", "Tipo Crédito", "Monto Original", "Monto Actual", "Carga Financiera", "Otorgamiento", "Vencimiento", "Mora", "Observaciones"])
@@ -217,7 +216,8 @@ def render_client_profile(is_b2b=False):
                 if heirs:
                     df_hered = pd.DataFrame([{
                         "RUT": h.rut, "Relación": h.relacion, "Nombre": h.nombre,
-                        "Fecha de Nacimiento": h.fecha_nacimiento, "% Asignación": h.porcentaje_asignacion
+                        "Fecha de Nacimiento": h.fecha_nacimiento, "% Asignación": h.porcentaje_asignacion,
+                        "Es Estudiante": h.es_estudiante
                     } for h in heirs])
                 
                 props = db.query(ClientProperty).filter(ClientProperty.prospect_id == prospect.id).all()
@@ -516,6 +516,10 @@ def render_client_profile(is_b2b=False):
                                 max_value=100.0,
                                 step=1.0,
                                 format="%.2f%%"
+                            ),
+                            "Es Estudiante": st.column_config.CheckboxColumn(
+                                "Es Estudiante (18 a 24 años)",
+                                default=False
                             )
                         }
                     )
@@ -1394,7 +1398,8 @@ def render_client_profile(is_b2b=False):
                                     relacion=row.get("Relación", ""),
                                     nombre=row.get("Nombre", ""),
                                     fecha_nacimiento=fecha_nac,
-                                    porcentaje_asignacion=float(row.get("% Asignación", 0.0) or 0.0)
+                                    porcentaje_asignacion=float(row.get("% Asignación", 0.0) or 0.0),
+                                    es_estudiante=bool(row.get("Es Estudiante", False))
                                 )
                                 db.add(nuevo_heredero)
                         
