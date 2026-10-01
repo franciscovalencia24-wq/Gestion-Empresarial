@@ -18,12 +18,11 @@ def create_checkpoint(description="", export_to_cloud=True, export_to_usb=True):
         os.makedirs(backup_dir)
         
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    safe_desc = description.replace(' ', '_')
-    zip_filename = f"BDSENIOR_Backup_{timestamp}_{safe_desc}.zip"
+    zip_filename = f"BDSENIOR_Backup_AltusCore_B2B_Release_{timestamp}.zip"
     zip_path = os.path.join(backup_dir, zip_filename)
     
     # Exclusiones
-    exclude_dirs = ['.git', 'venv', '__pycache__', '.pytest_cache', 'backups']
+    exclude_dirs = ['.git', 'venv', '.venv', '__pycache__', '.pytest_cache', 'backups']
     exclude_files = ['.env'] # NUNCA respaldar secretos en crudo
     
     print(f"[*] Comprimiendo el ecosistema en {zip_filename}...")

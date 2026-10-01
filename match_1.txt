@@ -1,0 +1,420 @@
+Created At: 2026-09-25T23:30:21-03:00
+Completed At: 2026-09-25T23:30:23-03:00
+The following changes were made by the multi_replace_file_content tool to: c:\Users\franc\OneDrive\Documentos\PROYECTOS\BD SENIOR\src\web\company_management_ui.py. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -503,8 +503,7 @@
+ 
+
+         st.markdown("---")
+
+ 
+
+-        # 5. TABLAS EDITABLES CON ST.DATA_EDITOR
+
+-        tab1, tab2, tab3, tab4, tab5 = st.tabs([
+
++        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+
+             "🟢 Facturas Emitidas / Abonos",
+
+             "🔴 Facturas de Compra / Gastos",
+
+             "🤝 Movimientos Cuentas Socios (Francisco & Natalia)",
+
+@@ -511,4 +511,5 @@
+-            "🏦 Desglose por Cuentas Corrientes"
+
++            "🏦 Desglose por Cuentas Corrientes",
+
++            "🏢 Administración B2B (Reporte 360)"
+
+         ])
+
+ 
+
+         with tab1:
+
+@@ -952,6 +952,190 @@
+                     }
+
+                 )
+
+ 
+
++        with tab6:
+
++            st.markdown("##### 🏢 Administración de Empresas y Cupos B2B (Reporte 360)")
+
++            from src.database.models import EmpresaB2B, EjecutivoB2B
+
++            from src.core.config import B2B_LICENSE_TIERS
+
++            import uuid
+
++            import io
+
++            
+
++            # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
+
++            st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
+
++            
+
++            empresas_db = db.query(EmpresaB2B).all()
+
++            
+
++            col_b1, col_b2 = st.columns([1, 1])
+
++            with col_b1:
+
++                st.markdown("**Registrar Nueva Empresa**")
+
++                with st.form("form_nueva_empresa_b2b"):
+
++                    n_rut_empresa = st.text_input("RUT Empresa (ej: 76.123.456-7)")
+
++                    n_razon_social = st.text_input("Razón Social")
+
++                    n_contacto = st.text_input("Contacto Comercial (Nombre, Email)")
+
++                    n_plan = st.selectbox("Plan Contratado", list(B2B_LICENSE_TIERS.keys()))
+
++                    submit_new_emp = st.form_submit_button("Registrar Empresa B2B")
+
++                    
+
++                    if submit_new_emp:
+
++                        if n_rut_empresa and n_razon_social:
+
++                            check_exist = db.query(EmpresaB2B).filter_by(rut=n_rut_empresa).first()
+
++                            if not check_exist:
+
++                                plan_cupos = B2B_LICENSE_TIERS[n_plan]["max_users"]
+
++                                if plan_cupos == float('inf'): plan_cupos = 9999
+
++                                new_emp = EmpresaB2B(
+
++                                    rut=n_rut_empresa,
+
++                                    razon_social=n_razon_social,
+
++                                    contacto_comercial=n_contacto,
+
++                                    plan_contratado=n_plan,
+
++                                    cupo_licencias=plan_cupos,
+
++                                    estado_activo=True
+
++                                )
+
++                                db.add(new_emp)
+
++                                db.commit()
+
++                                try:
+
++                                    from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+
++                                    safe_upload_with_streamlit_ui()
+
++                                except: pass
+
++                                st.success("✅ Empresa B2B Registrada con éxito.")
+
++                                st.rerun()
+
++                            else:
+
++                                st.error("⚠️ El RUT de la empresa ya existe.")
+
++                        else:
+
++                            st.warning("Debe ingresar al menos RUT y Razón Social.")
+
++
+
++            with col_b2:
+
++                st.markdown("**Seleccionar Empresa Existente**")
+
++                if not empresas_db:
+
++                    st.info("No hay empresas registradas.")
+
++                    empresa_sel_b2b = None
+
++                else:
+
++                    empresa_opts = {f"{e.razon_social} ({e.rut})": e for e in empresas_db}
+
++                    sel_emp_str = st.selectbox("Empresa:", list(empresa_opts.keys()))
+
++                    empresa_sel_b2b = empresa_opts[sel_emp_str]
+
++                    
+
++                    # Mostrar Panel de Cupos
+
++                    if empresa_sel_b2b:
+
++                        total_contratado = empresa_sel_b2b.cupo_licencias
+
++                        ejecutivos_asociados = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).count()
+
++                        saldo = total_contratado - ejecutivos_asociados
+
++                        
+
++                        st.markdown(f"""
+
++                        <div style='background-color: #1e293b; padding: 15px; border-radius: 10px; border-left: 5px solid #10b981; margin-top: 15px;'>
+
++                            <h5 style='color: #f8fafc; margin: 0;'>Panel de Cupos: {empresa_sel_b2b.plan_contratado}</h5>
+
++                            <p style='color: #e2e8f0; font-size: 0.95rem; margin-top: 8px; margin-bottom: 0;'>
+
++                                • <b>Cupos Contratados:</b> {total_contratado}<br/>
+
++                                • <b>Ejecutivos Cargados:</b> {ejecutivos_asociados}<br/>
+
++                                • <b>Saldo Disponible:</b> <span style='color: {"#10b981" if saldo > 0 else "#ef4444"}; font-weight: bold;'>{saldo}</span>
+
++                            </p>
+
++                        </div>
+
++                        """, unsafe_allow_html=True)
+
++            
+
++            st.markdown("---")
+
++            if empresa_sel_b2b:
+
++                st.markdown(f"###### 2️⃣ Gestión de Ejecutivos para **{empresa_sel_b2b.razon_social}**")
+
++                
+
++                # Importador masivo
+
++                with st.expander("📥 Importar Nómina Masiva (Excel/CSV)"):
+
++                    st.caption("El archivo debe contener las columnas: RUT, Nombre Completo, Correo Corporativo, Cargo")
+
++                    nomina_file = st.file_uploader("Sube el archivo Excel o CSV", type=["xlsx", "csv"])
+
++                    if nomina_file and st.button("Procesar Nómina", type="primary"):
+
++                        try:
+
++                            if nomina_file.name.endswith('.csv'):
+
++                                df_nomina = pd.read_csv(nomina_file)
+
++                            else:
+
++                                df_nomina = pd.read_excel(nomina_file)
+
++                                
+
++                            required_cols = ["RUT", "Nombre Completo"]
+
++                            missing = [c for c in required_cols if c not in df_nomina.columns]
+
++                            if missing:
+
++                                st.error(f"⚠️ Faltan columnas requeridas: {', '.join(missing)}")
+
++                            else:
+
++                                added_count = 0
+
++                                dup_count = 0
+
++                                no_quota = 0
+
++                                for _, row in df_nomina.iterrows():
+
++                                    current_count = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).count()
+
++                                    if current_count >= empresa_sel_b2b.cupo_licencias:
+
++                                        no_quota += 1
+
++                                        continue
+
++                                        
+
++                                    r_rut = str(row.get("RUT", "")).strip()
+
++                                    r_nombre = str(row.get("Nombre Completo", "")).strip()
+
++                                    r_correo = str(row.get("Correo Corporativo", "")).strip() if "Correo Corporativo" in df_nomina.columns else ""
+
++                                    r_cargo = str(row.get("Cargo", "")).strip() if "Cargo" in df_nomina.columns else ""
+
++                                    
+
++                                    if r_rut and r_nombre:
+
++                                        check_exec = db.query(EjecutivoB2B).filter_by(rut=r_rut).first()
+
++                                        if not check_exec:
+
++                                            new_token = str(uuid.uuid4())
+
++                                            new_exec = EjecutivoB2B(
+
++                                                empresa_id=empresa_sel_b2b.id,
+
++                                                rut=r_rut,
+
++                                                nombre_completo=r_nombre,
+
++                                                correo_corporativo=r_correo,
+
++                                                cargo=r_cargo,
+
++                                                token_acceso=new_token,
+
++                                                estado_onboarding="Pendiente"
+
++                                            )
+
++                                            db.add(new_exec)
+
++                                            added_count += 1
+
++                                        else:
+
++                                            dup_count += 1
+
++                                
+
++                                if added_count > 0:
+
++                                    db.commit()
+
++                                    try:
+
++                                        from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+
++                                        safe_upload_with_streamlit_ui()
+
++                                    except: pass
+
++                                
+
++                                st.success(f"✅ Nómina procesada: {added_count} nuevos, {dup_count} omitidos (duplicados), {no_quota} omitidos (sin cupo).")
+
++                                time.sleep(1)
+
++                                st.rerun()
+
++                                
+
++                        except Exception as ex_import:
+
++                            st.error(f"Error procesando nómina: {str(ex_import)}")
+
++                
+
++                # Tabla de Monitoreo
+
++                ejecutivos_list = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).all()
+
++                if ejecutivos_list:
+
++                    data_execs = []
+
++                    # Construir url base usando localhost temporalmente si no hay dominio config
+
++                    base_url = "https://app.altuscore.cl/"
+
++                    for exc in ejecutivos_list:
+
++                        if not exc.token_acceso:
+
++                            exc.token_acceso = str(uuid.uuid4())
+
++                            db.commit()
+
++                        
+
++                        enlace = f"{base_url}?b2b_token={exc.token_acceso}"
+
++                        data_execs.append({
+
++                            "ID": exc.id,
+
++                            "RUT": exc.rut,
+
++                            "Nombre Completo": exc.nombre_completo,
+
++                            "Correo": exc.correo_corporativo,
+
++                            "Cargo": exc.cargo,
+
++                            "Estado": exc.estado_onboarding,
+
++                            "Enlace Acceso": enlace
+
++                        })
+
++                    
+
++                    df_execs = pd.DataFrame(data_execs)
+
++                    st.dataframe(
+
++                        df_execs,
+
++                        width="stretch",
+
++                        hide_index=True,
+
++                        column_config={
+
++                            "Enlace Acceso": st.column_config.LinkColumn("Enlace Acceso (Copiar)"),
+
++                        }
+
++                    )
+
++                    
+
++                    csv_links = df_execs.to_csv(index=False).encode('utf-8')
+
++                    st.download_button(
+
++                        label="📥 Exportar Nómina y Enlaces Únicos (CSV)",
+
++                        data=csv_links,
+
++                        file_name=f"Enlaces_B2B_{empresa_sel_b2b.razon_social}.csv",
+
++                        mime="text/csv"
+
++                    )
+
++                else:
+
++                    st.info("No hay ejecutivos cargados para esta empresa.")
+
++
+
+     except Exception as e:
+
+         import traceback
+
+         st.error(f"Error en UI de Gestión Empresarial: {str(e)}")
+
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.

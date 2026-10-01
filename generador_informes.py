@@ -1,6 +1,10 @@
 import os
 import markdown
-from xhtml2pdf import pisa
+try:
+    from xhtml2pdf import pisa
+    XHTML2PDF_AVAILABLE = True
+except (ImportError, OSError):
+    XHTML2PDF_AVAILABLE = False
 import base64
 from datetime import datetime
 import io
@@ -38,6 +42,20 @@ def get_altus_logo_b64():
     return ""
 
 def generar_pdf_bytes(titulo, contenido_md):
+    if not XHTML2PDF_AVAILABLE:
+        from fpdf import FPDF
+        pdf = FPDF()
+        pdf.add_page()
+        pdf.set_font("Arial", "B", 16)
+        pdf.cell(200, 10, txt=f"Reporte: {titulo}", ln=True, align="C")
+        pdf.set_font("Arial", "", 12)
+        pdf.cell(200, 10, txt="Modo de compatibilidad (falta libreria Cairo).", ln=True)
+        pdf.multi_cell(0, 10, txt=contenido_md[:3000].encode('ascii', 'replace').decode('ascii'))
+        try:
+            return pdf.output(dest='S').encode('latin1')
+        except:
+            return b""
+            
     fv_b64 = get_fv_logo_b64()
     altus_b64 = get_altus_logo_b64()
     fecha_hoy = datetime.now().strftime("%d-%m-%Y")

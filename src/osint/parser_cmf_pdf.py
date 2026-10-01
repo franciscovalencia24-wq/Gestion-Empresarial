@@ -71,7 +71,7 @@ def parse_cmf_insurance_pdf(file_path_or_bytes):
             aseguradora = aseguradora.replace("\ufffd", "Ñ")
             
             # Inferir Tipo de Bien Asegurado
-            tipo_bien = inferir_tipo_bien(coberturas_str)
+            tipo_bien = inferir_tipo_bien(coberturas_str, contratante, colectiva_individual)
             
             result_list.append({
                 "compania": aseguradora,
@@ -110,20 +110,33 @@ def parse_cmf_insurance_pdf(file_path_or_bytes):
         print(f"Error parsing PDF: {e}")
         return pd.DataFrame(), []
 
-def inferir_tipo_bien(coberturas_str):
+def inferir_tipo_bien(coberturas_str, contratante, colectivo_individual):
     """
-    Infiere el tipo de bien asegurado basado en las palabras clave de las coberturas.
+    Infiere el tipo de bien asegurado basado en las palabras clave de las coberturas,
+    el contratante y si es colectiva o individual.
     """
     text = coberturas_str.lower()
-    if "vehículo" in text or "auto" in text or "responsabilidad civil por daños causados por el vehículo" in text:
+    contra = contratante.lower() if contratante else ""
+    col = colectivo_individual.lower() if colectivo_individual else ""
+    
+    is_bank = "banco" in contra or "cencosud" in contra or "falabella" in contra or "ripley" in contra or "cmr" in contra or "tarjeta" in contra or "banchile" in contra or "scotiabank" in contra or "itau" in contra or "bci" in contra or "santander" in contra or "estado" in contra
+    
+    if "desgravamen" in text or "desgravámen" in text or (is_bank and "colectiv" in col and ("vida" in text or "cesantía" in text or "fallecimiento" in text)):
+        return "Desgravamen Bancario/Retail"
+        
+    if "vehículo" in text or "auto" in text or "responsabilidad civil por daños causados por el vehículo" in text or "vehiculo" in text:
         return "Vehículo"
-    elif "hipotecario" in text or "incendio" in text or "sismo" in text or "terremoto" in text:
-        return "Inmueble / Hipotecario"
-    elif "salud" in text or "catastrófico" in text or "dental" in text or "enfermedad" in text:
-        return "Salud"
-    elif "vida" in text or "fallecimiento" in text or "accidentes personales" in text:
-        return "Vida / Accidentes"
-    elif "consumo" in text or "tarjeta" in text or "fraude" in text:
-        return "Crédito Consumo / Tarjeta"
-    else:
-        return "Otros / Mixto"
+        
+    if "fraude" in text or "robo" in text or "incendio" in text or "sismo" in text or "terremoto" in text or "hogar" in text or "daños" in text or "salud" in text or "dental" in text or "enfermedad" in text:
+        return "Generales/Daños/Robo"
+        
+    if "invalidez" in text or "accidentes" in text or "fractura" in text or "incapacidad" in text:
+        return "Invalidez/Accidentes"
+        
+    if "vida" in text or "fallecimiento" in text or "sobrevivencia" in text:
+        return "Vida Individual"
+        
+    if is_bank:
+        return "Desgravamen Bancario/Retail"
+        
+    return "Generales/Daños/Robo"

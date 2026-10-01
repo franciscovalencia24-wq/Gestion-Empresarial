@@ -99,7 +99,7 @@ def render_mobile_chat_ui():
     if not st.session_state["remote_auth_ok"]:
         st.warning("🔒 **Acceso Remoto Protegido**")
         pin = st.text_input("Ingresa tu PIN de Seguridad (ej. 2026):", type="password", key="remote_pin_input")
-        if st.button("🔓 Desbloquear Chat Móvil", use_container_width=True):
+        if st.button("🔓 Desbloquear Chat Móvil", width="stretch"):
             if pin in ["2026", "2024", "1234"]:
                 st.session_state["remote_auth_ok"] = True
                 st.success("¡PIN Correcto! Conectado a Antigravity.")
@@ -111,21 +111,21 @@ def render_mobile_chat_ui():
     # 3. Sidebar Quick Info & Controls
     with st.sidebar:
         st.subheader("⚡ Accesos Rápidos de 1-Tap")
-        if st.button("📊 Generar Infografía 4K", use_container_width=True):
+        if st.button("📊 Generar Infografía 4K", width="stretch"):
             process_user_mobile_message("Generar Infografía 4K")
             st.rerun()
-        if st.button("🔄 Sincronizar Excel de Gestión", use_container_width=True):
+        if st.button("🔄 Sincronizar Excel de Gestión", width="stretch"):
             process_user_mobile_message("Sincronizar Excel de Gestión")
             st.rerun()
-        if st.button("📄 Generar Reporte PDF", use_container_width=True):
+        if st.button("📄 Generar Reporte PDF", width="stretch"):
             process_user_mobile_message("Generar Reporte PDF")
             st.rerun()
-        if st.button("☁️ Respaldo a Google Cloud", use_container_width=True):
+        if st.button("☁️ Respaldo a Google Cloud", width="stretch"):
             process_user_mobile_message("Respaldo a Google Cloud")
             st.rerun()
 
         st.divider()
-        if st.button("🗑️ Limpiar Historial de Chat", use_container_width=True):
+        if st.button("🗑️ Limpiar Historial de Chat", width="stretch"):
             clear_chat_history()
             st.success("Historial borrado.")
             st.rerun()
@@ -164,11 +164,11 @@ def render_mobile_chat_ui():
                     if approval_status == "PENDING":
                         col_acc, col_rej = st.columns(2)
                         with col_acc:
-                            if st.button("✅ APROBAR EN PC", key=f"btn_acc_{msg_id}", use_container_width=True, type="primary"):
+                            if st.button("✅ APROBAR EN PC", key=f"btn_acc_{msg_id}", width="stretch", type="primary"):
                                 execute_approved_command(msg_id)
                                 st.rerun()
                         with col_rej:
-                            if st.button("❌ RECHAZAR", key=f"btn_rej_{msg_id}", use_container_width=True):
+                            if st.button("❌ RECHAZAR", key=f"btn_rej_{msg_id}", width="stretch"):
                                 reject_command(msg_id)
                                 st.rerun()
                     elif approval_status == "APPROVED":
@@ -189,7 +189,7 @@ def render_mobile_chat_ui():
                 label_visibility="collapsed"
             )
         with col_send:
-            submitted = st.form_submit_button("Enviar 📤", use_container_width=True)
+            submitted = st.form_submit_button("Enviar 📤", width="stretch")
 
         if submitted and user_input.strip():
             process_user_mobile_message(user_input.strip())

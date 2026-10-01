@@ -1,0 +1,6 @@
+2026/08/10-14:05:30.951 ecc Reusing MANIFEST C:\Users\franc\OneDrive\Documentos\PROYECTOS\BD SENIOR\data\whatsapp_session_test\Default\Local Storage\leveldb/MANIFEST-000001
+2026/08/10-14:05:30.955 ecc Recovering log #3
+2026/08/10-14:05:30.958 ecc Reusing old log C:\Users\franc\OneDrive\Documentos\PROYECTOS\BD SENIOR\data\whatsapp_session_test\Default\Local Storage\leveldb/000003.log 
+2026/08/10-14:05:41.111 6e4c Level-0 table #5: started
+2026/08/10-14:05:41.117 6e4c Level-0 table #5: 22686 bytes OK
+2026/08/10-14:05:41.120 6e4c Delete type=0 #3

@@ -1,0 +1,171 @@
+Created At: 2026-09-30T11:28:20-03:00
+Completed At: 2026-09-30T11:28:20-03:00
+File Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/company_management_ui.py`
+Total Lines: 439
+Total Bytes: 26378
+Showing lines 20 to 100
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+20:         </div>
+
+21:     </div>
+
+22:     """, unsafe_allow_html=True)
+
+23:     db = SessionLocal()
+
+24:     try:
+
+25:         from src.database.models import EmpresaB2B, EjecutivoB2B
+
+26:         from src.core.config import B2B_LICENSE_TIERS
+
+27:         import uuid
+
+28:         import io
+
+29:         import time
+
+30:         
+
+31:         # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
+
+32:         st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
+
+33:         
+
+34:         empresas_db = db.query(EmpresaB2B).all()
+
+35:         
+
+36:         col_b1, col_b2 = st.columns([1, 1])
+
+37:         with col_b1:
+
+38:             st.markdown("**Registrar Nueva Empresa**")
+
+39:             with st.form("form_nueva_empresa_b2b"):
+
+40:                 n_rut_empresa = st.text_input("RUT Empresa (ej: 76.123.456-7)")
+
+41:                 n_razon_social = st.text_input("Razón Social")
+
+42:                 n_contacto = st.text_input("Contacto Comercial (Nombre, Email)")
+
+43:                 n_plan = st.selectbox("Plan Contratado", list(B2B_LICENSE_TIERS.keys()))
+
+44:                 submit_new_emp = st.form_submit_button("Registrar Empresa B2B")
+
+45:                 
+
+46:                 if submit_new_emp:
+
+47:                     if n_rut_empresa and n_razon_social:
+
+48:                         check_exist = db.query(EmpresaB2B).filter_by(rut=n_rut_empresa).first()
+
+49:                         if not check_exist:
+
+50:                             plan_cupos = B2B_LICENSE_TIERS[n_plan]["max_users"]
+
+51:                             if plan_cupos == float('inf'): plan_cupos = 9999
+
+52:                             new_emp = EmpresaB2B(
+
+53:                                 rut=n_rut_empresa,
+
+54:                                 razon_social=n_razon_social,
+
+55:                                 contacto_comercial=n_contacto,
+
+56:                                 plan_contratado=n_plan,
+
+57:                                 cupo_licencias=plan_cupos,
+
+58:                                 estado_activo=True
+
+59:                             )
+
+60:                             db.add(new_emp)
+
+61:                             db.commit()
+
+62:                             try:
+
+63:                                 from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+
+64:                                 safe_upload_with_streamlit_ui()
+
+65:                             except: pass
+
+66:                             st.success("✅ Empresa B2B Registrada con éxito.")
+
+67:                             st.rerun()
+
+68:                         else:
+
+69:                             st.error("⚠️ El RUT de la empresa ya existe.")
+
+70:                     else:
+
+71:                         st.warning("Debe ingresar al menos RUT y Razón Social.")
+
+72: 
+
+73:         with col_b2:
+
+74:             st.markdown("**Seleccionar Empresa Existente**")
+
+75:             if not empresas_db:
+
+76:                 st.info("No hay empresas registradas.")
+
+77:                 empresa_sel_b2b = None
+
+78:             else:
+
+79:                 empresa_opts = {f"{e.razon_social} ({e.rut})": e for e in empresas_db}
+
+80:                 sel_emp_str = st.selectbox("Empresa:", list(empresa_opts.keys()))
+
+81:                 empresa_sel_b2b = empresa_opts[sel_emp_str]
+
+82:                 
+
+83:                 # Mostrar Panel de Cupos
+
+84:                 if empresa_sel_b2b:
+
+85:                     total_contratado = empresa_sel_b2b.cupo_licencias
+
+86:                     ejecutivos_asociados = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).count()
+
+87:                     saldo = total_contratado - ejecutivos_asociados
+
+88:                     
+
+89:                     st.markdown(f"""
+
+90:                     <div style='background-color: #1e293b; padding: 15px; border-radius: 10px; border-left: 5px solid #10b981; margin-top: 15px;'>
+
+91:                         <h5 style='color: #f8fafc; margin: 0;'>Panel de Cupos: {empresa_sel_b2b.plan_contratado}</h5>
+
+92:                         <p style='color: #e2e8f0; font-size: 0.95rem; margin-top: 8px; margin-bottom: 0;'>
+
+93:                             • <b>Cupos Contratados:</b> {total_contratado}<br/>
+
+94:                             • <b>Ejecutivos Cargados:</b> {ejecutivos_asociados}<br/>
+
+95:                             • <b>Saldo Disponible:</b> <span style='color: {"#10b981" if saldo > 0 else "#ef4444"}; font-weight: bold;'>{saldo}</span>
+
+96:                         </p>
+
+97:                     </div>
+
+98:                     """, unsafe_allow_html=True)
+
+99:         
+
+100:         st.markdown("---")
+
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+

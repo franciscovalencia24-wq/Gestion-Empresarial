@@ -68,7 +68,7 @@ class ReliquidacionSimulator:
                 break
         return max(0.0, impuesto)
 
-    def calcular_holgura_apv(self, base_imponible_actual: float, tope_apv_b_anual: float) -> dict:
+    def calcular_holgura_apv(self, base_imponible_actual: float, tope_apv_b_anual: float, apv_b_anual: float, total_retenido: float = 0.0, impuesto_unico_retiro: float = 0.0, tasa_override: float = None) -> dict:
         """Calcula cuánto APV-B conviene aportar, evalúa saltos de tramo y recomienda APV-A."""
         base_uta = base_imponible_actual / self.uta_anual_clp if self.uta_anual_clp > 0 else 0
         
@@ -83,25 +83,54 @@ class ReliquidacionSimulator:
         
         utm_valor = self.uta_anual_clp / 12 if self.uta_anual_clp > 0 else 0
         tope_apv_a_clp = utm_valor * 40 # El tope para maximizar el 15% de bonificación estatal es 6 UTM (15% de 40 UTM)
-        str_apv_a = f"APV Régimen A (tope sugerido para bonificación: ${tope_apv_a_clp:,.0f} CLP)"
+        str_apv_a = f"APV Régimen A (tope sugerido para bonificación: CLP {tope_apv_a_clp:,.0f})"
 
-        if factor_actual == 0.0:
-            holgura_optima = 0.0
-            mensaje = f"Ya te encuentras en el tramo exento de IGC. Un APV Régimen B adicional no te generará devolución fiscal. Recomendamos destinar tu liquidez a {str_apv_a} para ganar un 15% de bonificación estatal."
-        else:
-            # Calcular cuánto falta para bajar al tramo anterior
-            piso_tramo_actual_uta = self.tramos_igc[tramo_actual_idx - 1]["hasta"] if tramo_actual_idx > 0 else 0.0
-            monto_para_bajar_tramo_clp = base_imponible_actual - (piso_tramo_actual_uta * self.uta_anual_clp)
+        piso_tramo_actual_uta = self.tramos_igc[tramo_actual_idx - 1]["hasta"] if tramo_actual_idx > 0 else 0.0
+        monto_para_bajar_tramo_clp = base_imponible_actual - (piso_tramo_actual_uta * self.uta_anual_clp)
+        apv_adicional_para_bajar = max(0, monto_para_bajar_tramo_clp - apv_b_anual)
+
+        txt_devolucion = ""
+        if monto_para_bajar_tramo_clp > 0:
+            base_con_bajada = max(0, base_imponible_actual - monto_para_bajar_tramo_clp)
+            igc_con_bajada = self.calcular_igc(base_con_bajada, tasa_override)
+            devolucion_nueva = total_retenido - igc_con_bajada - impuesto_unico_retiro
             
-            holgura_optima = min(monto_para_bajar_tramo_clp, tope_apv_b_anual)
-            
-            if holgura_optima == tope_apv_b_anual:
-                mensaje = f"Puedes aportar el tope máximo legal permitido para tu perfil de ${tope_apv_b_anual:,.0f} CLP y seguirás obteniendo una excelente rebaja tributaria en el tramo del {factor_actual*100:.1f}%."
-                if monto_para_bajar_tramo_clp > tope_apv_b_anual:
-                    mensaje += f" Aunque topes el APV-B, seguirás en este tramo. Si tienes más capacidad de ahorro, te recomendamos derivarlo a {str_apv_a}."
+            if devolucion_nueva > 0:
+                txt_devolucion = f", logrando una devolución de impuestos estimada de **CLP {devolucion_nueva:,.0f}**"
             else:
-                factor_inferior = self.tramos_igc[tramo_actual_idx - 1]["factor"]
-                mensaje = f"Estás tributando en el tramo marginal del {factor_actual*100:.1f}%. El monto exacto para maximizar tu eficiencia es aportar ${holgura_optima:,.0f} CLP al año en APV Régimen B. Con esto lograrás bajar al tramo inferior del {factor_inferior*100:.1f}%. Aportar más de eso será menos eficiente, por lo que el sobrante se recomienda enviar a {str_apv_a}."
+                txt_devolucion = f", reduciendo tu pago de impuestos a **CLP {abs(devolucion_nueva):,.0f}**"
+
+        if factor_actual >= 0.135:
+            tope_apv_b_anual = 600 * self.uf_actual
+            holgura_faltante = max(0.0, tope_apv_b_anual - apv_b_anual)
+            holgura_optima = tope_apv_b_anual
+            
+            txt_bajar_tramo = ""
+            if apv_adicional_para_bajar > 0 and apv_adicional_para_bajar <= holgura_faltante:
+                txt_bajar_tramo = f" Como dato estratégico, si aportas **CLP {apv_adicional_para_bajar:,.0f}** adicionales a tu APV-B actual (alcanzando CLP {monto_para_bajar_tramo_clp:,.0f} en total), lograrás bajar al tramo de impuestos inferior{txt_devolucion}."
+            elif monto_para_bajar_tramo_clp > 0 and apv_b_anual == 0 and monto_para_bajar_tramo_clp <= tope_apv_b_anual:
+                txt_bajar_tramo = f" Como dato estratégico, un aporte de **CLP {monto_para_bajar_tramo_clp:,.0f}** te permitiría bajar al tramo de impuestos inferior{txt_devolucion}."
+            
+            if holgura_faltante > 0 and apv_b_anual > 0:
+                mensaje = f"Estás tributando en el **tramo marginal del {factor_actual*100:.1f}%**. Has aportado **CLP {apv_b_anual:,.0f} en APV-B**. Para optimizar al 100% tu carga tributaria, te sugerimos aportar los **CLP {holgura_faltante:,.0f}** restantes para alcanzar el **tope máximo legal de 600 UF** (CLP {tope_apv_b_anual:,.0f}).{txt_bajar_tramo} Incluso si bajas de tramo, la devolución de impuestos del Régimen B será muy superior al Régimen A. Cabe destacar que el **APV-A no genera devolución de impuestos**, sino un aporte fiscal (bonificación estatal) topado a 6 UTM anuales. Si a estas alturas del año no es posible gestionar el tope de APV por descuento por planilla con tu empleador, puedes realizar un **aporte directo desde tu cuenta corriente**."
+            elif holgura_faltante == 0 and apv_b_anual > 0:
+                mensaje = f"¡Excelente! Estás tributando en un tramo alto (**{factor_actual*100:.1f}%**) y ya has alcanzado el **tope máximo legal de 600 UF en APV-B** (CLP {tope_apv_b_anual:,.0f}), maximizando tu eficiencia fiscal. Si tu capacidad de ahorrar e invertir en instrumentos previsionales voluntarios es mayor al tope de 600 UF en APV-B, deriva el excedente a **{str_apv_a}**. Cabe destacar que el **APV-A no genera devolución de impuestos**, sino un aporte fiscal (bonificación estatal) topado a 6 UTM anuales."
+            else:
+                mensaje = f"Estás tributando en el **tramo marginal del {factor_actual*100:.1f}%**. Te conviene realizar el **tope máximo legal de APV-B de 600 UF** (CLP {tope_apv_b_anual:,.0f}).{txt_bajar_tramo} Incluso si bajas de tramo, la devolución de impuestos del Régimen B será muy superior al Régimen A. Cabe destacar que el **APV-A no genera devolución de impuestos**, sino un aporte fiscal (bonificación estatal) topado a 6 UTM anuales. Si tu capacidad de ahorrar e invertir en instrumentos previsionales voluntarios es mayor al tope de 600 UF en APV-B, deriva el excedente a **{str_apv_a}**. Si a estas alturas del año no es posible gestionar el descuento por planilla con tu empleador, puedes realizar un **aporte directo desde tu cuenta corriente**."
+        elif factor_actual > 0.0:
+            holgura_optima = min(monto_para_bajar_tramo_clp, 600 * self.uf_actual)
+            
+            txt_bajar_tramo = ""
+            if apv_adicional_para_bajar > 0:
+                if apv_b_anual > 0:
+                    txt_bajar_tramo = f" Como dato estratégico, si aportas **CLP {apv_adicional_para_bajar:,.0f}** adicionales a tu APV-B actual (alcanzando CLP {monto_para_bajar_tramo_clp:,.0f} en total), lograrás bajar al tramo de impuestos inferior{txt_devolucion}."
+                else:
+                    txt_bajar_tramo = f" Aporta **CLP {holgura_optima:,.0f} a APV Régimen B** para bajar de tramo{txt_devolucion}."
+
+            mensaje = f"Estás en el **tramo del {factor_actual*100:.1f}%**.{txt_bajar_tramo} Recuerda que el **tope máximo legal** para beneficios en APV-B es de 600 UF. Para ahorros menores, cabe destacar que el **APV-A no genera devolución de impuestos**, sino un aporte fiscal (15%) topado a 6 UTM. Por ello, para montos grandes siempre conviene el Régimen B. Si a estas alturas del año no puedes gestionar el descuento por planilla, haz un **aporte directo desde tu cuenta corriente**."
+        else:
+            holgura_optima = 0.0
+            mensaje = f"Ya te encuentras en el **tramo exento de IGC**. Un APV Régimen B (aunque su tope legal sea 600 UF) **no te generará devolución fiscal**. Recomendamos destinar tu liquidez a **{str_apv_a}**. Cabe destacar que el APV-A no genera devolución de impuestos, sino un aporte fiscal directo a tu cuenta del 15%. Puedes realizar **aportes directos desde tu cuenta corriente**."
             
         return {
             "holgura_optima_clp": holgura_optima,
@@ -118,11 +147,17 @@ class ReliquidacionSimulator:
         retencion_honorarios: float, 
         apv_b_anual: float,
         intereses_hipotecarios: float = 0.0,
+        gastos_educacion: float = 0.0,
         retiro_apvb_anual: float = 0.0,
         tipo_afiliado: str = "No pensionado",
         ganancias_capital: float = 0.0,
-        tasa_override: float = None
+        tasa_override: float = None,
+        deposito_convenido_anual: float = 0.0
     ) -> dict:
+        
+        # 0. Rebajar Depósito Convenido del Sueldo Bruto Anual
+        # El Depósito Convenido se descuenta directamente de los haberes imponibles.
+        sueldo_anual_bruto = max(0, sueldo_anual_bruto - deposito_convenido_anual)
         
         # 1. Renta Tributable por Sueldos
         sueldo_mensual = sueldo_anual_bruto / 12 if sueldo_anual_bruto > 0 else 0
@@ -140,7 +175,8 @@ class ReliquidacionSimulator:
         rebaja_55bis = min(intereses_hipotecarios, tope_55bis)
         
         base_imponible_pre_apv = max(0, ingreso_global - rebaja_55bis)
-        igc_original = self.calcular_igc(base_imponible_pre_apv, tasa_override)
+        igc_original_bruto = self.calcular_igc(base_imponible_pre_apv, tasa_override)
+        igc_original = max(0.0, igc_original_bruto - gastos_educacion)
         
         # 4. Límite Legal APV Régimen B
         tope_apv_anual = 600 * self.uf_actual
@@ -150,12 +186,10 @@ class ReliquidacionSimulator:
             
         apv_efectivo = min(apv_b_anual, tope_apv_anual)
         
-        # 5. Cálculo de Holgura
-        holgura = self.calcular_holgura_apv(base_imponible_pre_apv, tope_apv_anual)
-        
         # 6. Base Imponible Optimizada y Nuevo IGC
         base_imponible_optimizada = max(0, base_imponible_pre_apv - apv_efectivo)
-        igc_optimizado = self.calcular_igc(base_imponible_optimizada, tasa_override)
+        igc_optimizado_bruto = self.calcular_igc(base_imponible_optimizada, tasa_override)
+        igc_optimizado = max(0.0, igc_optimizado_bruto - gastos_educacion)
         
         # 7. Cálculo Impuesto Único por Retiro APV B (Mecánica exacta de Hoja9)
         impuesto_unico_retiro = 0.0
@@ -178,9 +212,12 @@ class ReliquidacionSimulator:
                 
             impuesto_unico_retiro = tasa_impuesto_unico * retiro_apvb_anual
         
-        # 7. Saldo Final
+        # 8. Saldo Final
         total_retenido = retencion_sueldos + retencion_honorarios
         saldo_original = total_retenido - igc_original
+        
+        # 9. Cálculo de Holgura Estratégica (Usamos el retenido y el impuesto único para predecir la devolución si baja de tramo)
+        holgura = self.calcular_holgura_apv(base_imponible_pre_apv, tope_apv_anual, apv_b_anual, total_retenido, impuesto_unico_retiro, tasa_override)
         
         # El saldo optimizado considera el IGC rebajado por el APV, pero se le descuenta el Impuesto Único a pagar por retiros
         saldo_optimizado = total_retenido - igc_optimizado - impuesto_unico_retiro
@@ -202,6 +239,7 @@ class ReliquidacionSimulator:
             "renta_tributable_sueldos": renta_tributable_sueldos_anual,
             "honorarios_presuntos": renta_honorarios_presunta,
             "rebaja_55bis": rebaja_55bis,
+            "credito_55ter": gastos_educacion,
             "base_imponible_pre_apv": base_imponible_pre_apv,
             "igc_original": igc_original,
             "saldo_original": saldo_original,

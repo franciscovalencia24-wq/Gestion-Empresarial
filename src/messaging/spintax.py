@@ -33,7 +33,7 @@ def format_message(template: str, prospect: dict) -> str:
     # Manejar variables con control de errores si vienen vacías
     nombre_limpio = prospect.get("nombre", "")
     if nombre_limpio:
-        nombre_limpio = str(nombre_limpio).split()[0]  # Tomar solo el primer nombre
+        nombre_limpio = str(nombre_limpio).split()[0].title()  # Tomar solo el primer nombre y pasarlo a Formato Título
     spun_text = spun_text.replace("[NOMBRE]", nombre_limpio if nombre_limpio else "colega")
         
     def is_valid_num(val):

@@ -19,6 +19,13 @@ def parse_excel_kyc_file(file_bytes):
         "herederos": [],
         "propiedades": [],
         "polizas": [],
+        "inventarios": [],
+        "datos_financieros": {
+            "gastos_recurrentes": 0.0,
+            "retenciones_2da_cat": 0.0,
+            "intereses_hipotecario": 0.0,
+            "gastos_educacion": 0.0
+        },
         "respuestas_raw": {}
     }
 
@@ -229,6 +236,72 @@ def parse_excel_kyc_file(file_bytes):
                         "Coberturas": answer[:150],
                         "Análisis IA": f"Declaración Cliente KYC: '{answer[:100]}...'"
                     })
+
+            # ----------------------------------------------------
+            # D. PARSER DE INVENTARIO ADICIONAL Y OTROS BIENES
+            # ----------------------------------------------------
+            elif any(kw in item_req_upper for kw in ["INVENTARIO", "VEHÍCULO", "VEHICULO", "COLECCIÓN", "COLECCION", "ARTE", "OTROS BIENES", "TANGIBLE"]):
+                # Intentamos extraer el valor
+                val_clp = 0.0
+                clp_m = re.search(r'[\$]\s*([\d\.\,]+)', answer)
+                m_m = re.search(r'([\d\.\,]+)\s*M\b', answer, re.IGNORECASE)
+                uf_m = re.search(r'([\d\.\,]+)\s*UF', answer, re.IGNORECASE)
+                
+                if m_m:
+                    try: val_clp = float(m_m.group(1).replace(',', '.')) * 1000000.0
+                    except: pass
+                elif clp_m:
+                    try: val_clp = float(clp_m.group(1).replace('.', '').replace(',', '.'))
+                    except: pass
+                elif uf_m:
+                    try:
+                        val_uf = float(uf_m.group(1).replace('.', '').replace(',', '.'))
+                        uf_today = get_uf_today() or 38850.0
+                        val_clp = val_uf * uf_today
+                    except: pass
+                
+                cat = "Vehículos" if "VEHÍCULO" in item_req_upper or "VEHICULO" in item_req_upper else "Otros Bienes / Colecciones"
+                results["inventarios"].append({
+                    "Categoria": cat,
+                    "Descripcion": answer[:290],
+                    "Valor Comercial": val_clp,
+                    "Deuda Asociada": 0.0,
+                    "Observaciones": f"Extraído de KYC: {item_req[:50]}"
+                })
+
+            # ----------------------------------------------------
+            # E. PARSER DE DATOS FINANCIEROS Y TRIBUTARIOS
+            # ----------------------------------------------------
+            elif any(kw in item_req_upper for kw in ["GASTOS RECURRENTES", "RETENCIONES", "INTERESES DIVIDENDO", "GASTOS EN EDUCACIÓN", "GASTOS EN EDUCACION"]):
+                val_clp = 0.0
+                clp_m = re.search(r'[\$]\s*([\d\.\,]+)', answer)
+                m_m = re.search(r'([\d\.\,]+)\s*M\b', answer, re.IGNORECASE)
+                k_m = re.search(r'([\d\.\,]+)\s*k\b', answer, re.IGNORECASE)
+                
+                if m_m:
+                    try: val_clp = float(m_m.group(1).replace(',', '.')) * 1000000.0
+                    except: pass
+                elif k_m:
+                    try: val_clp = float(k_m.group(1).replace(',', '.')) * 1000.0
+                    except: pass
+                elif clp_m:
+                    try: val_clp = float(clp_m.group(1).replace('.', '').replace(',', '.'))
+                    except: pass
+                
+                if "GASTOS RECURRENTES" in item_req_upper:
+                    if "MES" in answer.upper():
+                        val_clp *= 12
+                    elif "TRIMESTRE" in answer.upper() or "TRIMESTRAL" in answer.upper():
+                        val_clp *= 4
+                    results["datos_financieros"]["gastos_recurrentes"] += val_clp
+                elif "RETENCIONES" in item_req_upper:
+                    results["datos_financieros"]["retenciones_2da_cat"] += val_clp
+                elif "DIVIDENDO" in item_req_upper:
+                    if "MES" in answer.upper():
+                        val_clp *= 12
+                    results["datos_financieros"]["intereses_hipotecario"] += val_clp
+                elif "EDUCACIÓN" in item_req_upper or "EDUCACION" in item_req_upper:
+                    results["datos_financieros"]["gastos_educacion"] += val_clp
 
     except Exception as e:
         logging.error(f"Error parseando Excel KYC: {e}")

@@ -1,3 +1,4 @@
+import sqlalchemy
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -70,7 +71,7 @@ from src.database.models import Base
 
 Base.metadata.create_all(bind=engine)
 
-st.set_page_config(page_title="Altus AI - FV Asesorías", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="Altus Core - FV Asesorías", layout="wide", initial_sidebar_state="expanded")
 
 # --- IDENTIDAD VISUAL Y DISEÑO PREMIUM ---
 LOGO_PATH = os.path.join(root_path, "assets", "brand", "fv_logo_vector_pure.svg")
@@ -526,7 +527,7 @@ def render_portfolio_auditor():
         st.session_state.audit_data = None
 
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("📊 GENERAR AUDITORÍA COMPARATIVA", help="Inicia un análisis exhaustivo cruzando la cartera actual del cliente contra el mercado (TAC y retornos oficiales).", type="primary", use_container_width=True):
+    if st.button("📊 GENERAR AUDITORÍA COMPARATIVA", help="Inicia un análisis exhaustivo cruzando la cartera actual del cliente contra el mercado (TAC y retornos oficiales).", type="primary", width="stretch"):
         sum_c = sum(pesos_c.values()) if pesos_c else 0
         sum_p = sum(pesos_p.values()) if pesos_p else 0
         
@@ -689,7 +690,7 @@ def render_portfolio_auditor():
                                                  fmt_pct(calc_real_with_fixed_infl(r_p_3, 3, INFL_3Y)), 
                                                  fmt_pct(calc_real_with_fixed_infl(r_p_5, 5, INFL_5Y))]
         })
-        st.dataframe(df_rent, use_container_width=True, hide_index=True)
+        st.dataframe(df_rent, width="stretch", hide_index=True)
 
         # 5. Comparativa Legal y de Salida (Formato Comercial)
         if "Seguro" in vehiculo:
@@ -888,7 +889,7 @@ def render_portfolio_auditor():
             template='plotly_white',
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
         )
-        st.plotly_chart(fig_evol, use_container_width=True)
+        st.plotly_chart(fig_evol, width="stretch")
         st.caption("ℹ️ El gráfico muestra la proyección neta de costos (TAC). Si la curva de la propuesta está bajo la competencia pese a mejores fondos, indica que las comisiones son ineficientes.")
 
         with st.expander("Metodología: ¿Cómo se calcula este patrimonio?"):
@@ -965,7 +966,7 @@ def render_portfolio_auditor():
                 </div>
             """, unsafe_allow_html=True)
     
-    st.button("📄 Descargar Auditoría PDF para Cliente", help="Descarga el PDF detallado del análisis comparativo listo para ser enviado por correo.", use_container_width=True)
+    st.button("📄 Descargar Auditoría PDF para Cliente", help="Descarga el PDF detallado del análisis comparativo listo para ser enviado por correo.", width="stretch")
 
 def render_infoprobidad_ui():
     st.subheader("🏛️ Minería PEP (Altos Patrimonios Gubernamentales)")
@@ -975,7 +976,7 @@ def render_infoprobidad_ui():
     
     col_e1, col_e2 = st.columns([2, 1])
     with col_e2:
-        if st.button("⚖️ Extraer Altos Patrimonios", help="Inicia la minería de datos de declaraciones de patrimonio e intereses (PEP) en InfoProbidad.", use_container_width=True):
+        if st.button("⚖️ Extraer Altos Patrimonios", help="Inicia la minería de datos de declaraciones de patrimonio e intereses (PEP) en InfoProbidad.", width="stretch"):
             with st.spinner("Realizando Minería Furtiva en InfoProbidad..."):
                 from src.osint.scraper_infoprobidad import minar_infoprobidad
                 try:
@@ -989,7 +990,7 @@ def render_infoprobidad_ui():
     st.markdown("Busca a un prospecto o empresario para ver si registra audiencias con Ministros, Alcaldes u otras Autoridades Públicas.")
     
     lobby_name = st.text_input("Nombre o RUT del Prospecto a Investigar:", placeholder="Ej: Juan Pérez o 12.345.678-9")
-    if st.button("🔍 Escanear Red de Influencia", type="primary", use_container_width=True):
+    if st.button("🔍 Escanear Red de Influencia", type="primary", width="stretch"):
         if lobby_name:
             with st.spinner(f"Rastreando reuniones y audiencias de {lobby_name}..."):
                 from src.osint.scraper_lobby import LobbyScraper
@@ -1010,6 +1011,7 @@ def render_campaign_launcher():
     st.markdown("Automatización de contacto para clientes de Alto Patrimonio (Arquitectura Anti-Ban)")
 
     # --- PANEL DE ESTADÍSTICAS GLOBALES ---
+    from sqlalchemy import text
     with engine.connect() as con:
         total_universo = con.execute(text("SELECT COUNT(*) FROM prospects")).scalar()
         contactables = con.execute(text("SELECT COUNT(*) FROM prospects WHERE telefono IS NOT NULL AND telefono != 'No encontrado'")).scalar()
@@ -1028,33 +1030,70 @@ def render_campaign_launcher():
     # --- MODO DE OPERACIÓN ---
     st.subheader("🎯 Modo de Operación (CRM)")
     modo_crm = st.radio("Selecciona la base de datos a gestionar:", 
-                        ["Prospección de Nuevos Clientes", "Fidelización de Clientes Actuales ⭐"], horizontal=True)
+                        ["Prospección de Nuevos Clientes", "Retargeting de Prospectos 🔄", "Fidelización de Clientes Actuales ⭐", "Archivo / Descartados 🗑️"], horizontal=True)
     is_mode_clients = "Fidelización" in modo_crm
+    is_mode_discarded = "Archivo" in modo_crm
+    is_mode_retargeting = "Retargeting" in modo_crm
 
-    # Consultar la Base de Datos
-    cliente_filter = 1 if is_mode_clients else 0
-    with engine.connect() as con:
-        df = pd.read_sql(f"SELECT * FROM prospects WHERE status_contacto != 'Contactado' AND es_cliente = {cliente_filter} AND telefono IS NOT NULL AND nombre IS NOT NULL AND telefono != 'None' AND nombre != 'None'", con=con)
+    # Consultar la Base de Datos (Usamos session_state para evitar el reseteo del scroll en la tabla)
+    cache_key = f"df_cache_{modo_crm}"
+    if cache_key not in st.session_state:
+        with engine.connect() as con:
+            if is_mode_discarded:
+                raw_df = pd.read_sql("SELECT * FROM prospects WHERE (status_contacto LIKE 'Descartado%' OR status_contacto = 'No Contactar' OR telefono LIKE '%ERROR%' OR telefono = 'No encontrado' OR LENGTH(telefono) < 8) AND telefono IS NOT NULL AND nombre IS NOT NULL", con=con)
+            elif is_mode_retargeting:
+                raw_df = pd.read_sql("SELECT * FROM prospects WHERE status_contacto IN ('Contactado', 'En Reunión', 'Propuesta Enviada') AND es_cliente = 0 AND telefono IS NOT NULL AND nombre IS NOT NULL AND telefono NOT LIKE '%ERROR%'", con=con)
+            else:
+                cliente_filter = 1 if is_mode_clients else 0
+                contactado_filter = "" if is_mode_clients else "status_contacto != 'Contactado' AND status_contacto != 'En Reunión' AND status_contacto != 'Propuesta Enviada' AND status_contacto != 'No Contactar' AND "
+                query = f"SELECT * FROM prospects WHERE {contactado_filter}(status_contacto NOT LIKE 'Descartado%' OR status_contacto IS NULL) AND es_cliente = {cliente_filter} AND telefono IS NOT NULL AND nombre IS NOT NULL AND telefono != 'None' AND nombre != 'None' AND telefono NOT LIKE '%ERROR%' AND telefono != 'No encontrado' AND LENGTH(telefono) >= 8"
+                raw_df = pd.read_sql(query, con=con)
+                
+        # Limpiar y unificar variables categóricas una sola vez
+        cols_a_estandarizar = ['ciudad', 'nombre_asesor', 'supervisor', 'tipo_negocio', 'origen_info', 'titulo_profesional']
+        for col in cols_a_estandarizar:
+            if col in raw_df.columns:
+                raw_df[col] = raw_df[col].apply(lambda c: str(c).strip().title() if pd.notna(c) and str(c).strip() else None)
+        
+        if 'telefono' in raw_df.columns:
+            def format_phone(p):
+                if pd.isna(p): return p
+                c = ''.join(filter(str.isdigit, str(p)))
+                if len(c) == 8: return f"+569{c}"
+                if len(c) == 9: return f"+56{c}"
+                if len(c) >= 11 and c.startswith("56"): return f"+{c}"
+                return p
+            raw_df['telefono'] = raw_df['telefono'].apply(format_phone)
+
+        st.session_state[cache_key] = raw_df
+
+    df = st.session_state[cache_key]
 
     if df.empty:
         st.warning("No tienes perfiles en estado Pendiente aptos para mensajear en este modo.")
         return
 
-    # Limpiar y unificar variables categóricas
-    cols_a_estandarizar = ['ciudad', 'nombre_asesor', 'supervisor', 'tipo_negocio', 'origen_info', 'titulo_profesional']
-    for col in cols_a_estandarizar:
-        if col in df.columns:
-            df[col] = df[col].apply(lambda c: str(c).strip().title() if pd.notna(c) and str(c).strip() else None)
-
     # SIDEBAR - FILTROS DINÁMICOS (Original Style)
     st.sidebar.markdown("---")
     st.sidebar.header("🔍 Filtros de Segmentación")
-    min_amount = st.sidebar.number_input("Inversión mínima ($)", min_value=0, value=0, step=1000000)
-    
+
     filter_keys = ['filtro_ciudad', 'filtro_asesor', 'filtro_superv', 'filtro_negocio', 'filtro_origen', 'filtro_titulo']
     for k in filter_keys:
         if k not in st.session_state:
             st.session_state[k] = []
+            
+    if 'filtro_inversion' not in st.session_state:
+        st.session_state['filtro_inversion'] = 0
+
+    if st.sidebar.button("🧹 Limpiar todos los filtros", width="stretch"):
+        st.session_state['filtro_inversion'] = 0
+        for k in filter_keys:
+            st.session_state[k] = []
+        if cache_key in st.session_state:
+            del st.session_state[cache_key]
+        st.rerun()
+
+    min_amount = st.sidebar.number_input("Inversión mínima ($)", min_value=0, step=1000000, key="filtro_inversion")
 
     def get_mask_except(skip_col=None):
         mask = pd.Series(True, index=df.index)
@@ -1090,6 +1129,17 @@ def render_campaign_launcher():
     
     st.subheader(f"👥 Meta de Hoy ({len(filtered_df)} Prospectos Segmentados)")
     
+    # Botones de Selección Masiva
+    col_s1, col_s2, col_s3 = st.columns([1, 1, 2])
+    with col_s1:
+        if st.button("☑️ Seleccionar Todos", width="stretch"):
+            st.session_state['select_all_toggle'] = True
+            st.rerun()
+    with col_s2:
+        if st.button("☐ Quitar Selección", width="stretch"):
+            st.session_state['select_all_toggle'] = False
+            st.rerun()
+            
     # Tabla Interactiva de Selección
     display_df = filtered_df.copy()
     def clp_format(val):
@@ -1097,19 +1147,31 @@ def render_campaign_launcher():
         return f"$ {int(val):,}".replace(",", ".")
     if 'monto_suscrito' in display_df.columns:
         display_df['monto_suscrito'] = display_df['monto_suscrito'].apply(clp_format)
-    display_df.insert(0, "Descartar", False)
+        
+    default_select = st.session_state.get('select_all_toggle', False)
+    display_df.insert(0, "Seleccionar", default_select)
 
     edited_df = st.data_editor(
         display_df,
+        key=f"data_editor_prospects_{modo_crm}",
         column_config={
-            "Descartar": st.column_config.CheckboxColumn("❌ Omitir", help="Márcalo si NO quieres escribirle.", default=False),
-            "id": None, "rut": "RUT", "nombre": "Nombre", "telefono": "Teléfono", "ciudad": "Ciudad", "monto_suscrito": "Monto"
+            "Seleccionar": st.column_config.CheckboxColumn("✅ Enviar", help="Márcalo para INCLUIRLO en la campaña de mensajes.", default=False),
+            "id": None, "rut": "RUT", "nombre": "Nombre (Doble clic para corregir)", "telefono": "Teléfono", "ciudad": "Ciudad", "monto_suscrito": "Monto"
         },
-        disabled=["rut", "nombre", "telefono", "ciudad", "monto_suscrito"], 
-        hide_index=True, use_container_width=True
+        disabled=["rut", "telefono", "ciudad", "monto_suscrito"], 
+        hide_index=True, width="stretch"
     )
     
-    prospectos_ignorados = edited_df[edited_df["Descartar"] == True]["rut"].tolist()
+    # RESCATE DE DATOS: Guardar automáticamente cualquier edición en la columna "nombre" a la base de datos
+    changed_names = edited_df[edited_df['nombre'] != display_df['nombre']]
+    if not changed_names.empty:
+        with engine.connect() as con:
+            for _, row in changed_names.iterrows():
+                con.execute(text("UPDATE prospects SET nombre = :nombre WHERE rut = :rut"), {"nombre": row['nombre'], "rut": row['rut']})
+            con.commit()
+        st.toast(f"✅ Se guardaron {len(changed_names)} cambio(s) en la base de datos.", icon="💾")
+            
+    prospectos_seleccionados = edited_df[edited_df["Seleccionar"] == True]["rut"].tolist()
 
     # CONSTRUCTOR DE MENSAJE (3 Bloques + Adjunto)
     st.markdown("---")
@@ -1118,25 +1180,55 @@ def render_campaign_launcher():
     col_a, col_b = st.columns(2)
     with col_a:
         st.markdown("**1. Tono del Saludo**")
-        default_saludo = "Hola [NOMBRE], ¿cómo estás? Te contacto para compartirte mis comentarios mensuales." if is_mode_clients else "Buen día [NOMBRE], mi nombre es Francisco Valencia y trabajo como Asesor de Inversiones Senior."
-        saludo_txt = st.text_area("Opciones de Inicio", default_saludo, height=70)
+        default_saludo = "Hola [NOMBRE], espero que estés muy bien. Te contacto para nuestra actualización periódica." if is_mode_clients else "{Hola|Buen día} [NOMBRE], mi nombre es Francisco Valencia, Asesor Financiero Senior en Principal Financial Group."
+        saludo_txt = st.text_area("Opciones de Inicio", default_saludo, height=70, key="saludo_txt_v5")
         st.markdown("<br>**3. Enviar un Documento Adjunto**", unsafe_allow_html=True)
         uploaded_file = st.file_uploader("Arrastra aquí un PDF o Imagen", type=["pdf", "png", "jpg", "jpeg"])
 
     with col_b:
         st.markdown("**2. Cuerpo (La Propuesta)**")
-        default_cuerpo = "Adjunto encontrarás nuestro más reciente informe. Me gustaría revisar en conjunto tus inversiones mediante videollamada[TXT_PRESENCIAL]." if is_mode_clients else "Le escribo brevemente para proponerle una breve llamada para analizar expectativas de rentabilidad y aspectos tributarios clave[TXT_PRESENCIAL]."
-        cuerpo_txt = st.text_area("Propuesta central", default_cuerpo, height=150)
+        default_cuerpo = "Te adjunto nuestro último informe de visión de mercado. Me gustaría que revisemos juntos el rendimiento de tu portafolio y evaluemos si es prudente hacer algún rebalanceo táctico. ¿Qué día te acomoda que conversemos [TXT_PRESENCIAL]?" if is_mode_clients else "Me especializo en entregar una asesoría patrimonial integral a personas y empresas, operando con un nivel de servicio y exclusividad equivalente al de un *Family Office*.\n\nMás allá de la gestión tradicional de inversiones, me enfoco en la planificación patrimonial estratégica y construir para mis clientes un *Reporte Patrimonial 360°*. Todo esto es impulsado por *ALTUS AI*, un software cuantitativo privado que he diseñado para consolidar las inversiones, bienes raíces, seguros, deudas, beneficiarios y sociedades en una sola vista inteligente. Esto nos permite *detectar ineficiencias fiscales*, *determinar el impuesto a la herencia*, optimizar tu rentabilidad global, entre muchas otras cosas.\n\n¿Tendrás 10 minutos en los próximos días para explicarte y mostrarte un ejemplo real de cómo se ve este nivel de asesoría?"
+        cuerpo_txt = st.text_area("Propuesta central", default_cuerpo, height=200, key="cuerpo_txt_v6")
         st.markdown("**4. Firma Institucional**")
-        default_firma = "*Francisco Valencia*\n*Asesor de Inversiones Senior*\n*+569 66779662*"
-        firma_txt = st.text_area("Cierre", default_firma, height=80)
+        default_firma = "Saludos cordiales,\n*Francisco Valencia*\nAsesor Financiero Senior | Principal Financial Group\nwww.linkedin.com/in/francisco-javier-valencia-aguila"
+        firma_txt = st.text_area("Cierre", default_firma, height=100, key="firma_txt_v4")
 
     mensaje_spintax = f"{saludo_txt}\n\n{cuerpo_txt}\n\n{firma_txt}"
 
-    # ACCIONES DE ENVÍO
+    # ACCIONES DE ENVÍO Y GESTIÓN
     c_btn1, c_btn2 = st.columns(2)
-    if c_btn1.button("🚀 INICIAR CAMPAÑA WHATSAPP", type="primary", use_container_width=True):
-        df_a_enviar = filtered_df[~filtered_df["rut"].isin(prospectos_ignorados)]
+    
+    if not is_mode_discarded:
+        if c_btn2.button("🗑️ MOVER A DESCARTADOS (No contactar)", type="secondary", width="stretch"):
+            if len(prospectos_seleccionados) == 0:
+                st.error("Selecciona al menos un prospecto con la casilla ✅ Enviar para descartarlo.")
+            else:
+                with engine.connect() as con:
+                    rut_list_str = "','".join(prospectos_seleccionados)
+                    con.execute(text(f"UPDATE prospects SET status_contacto = 'Descartado' WHERE rut IN ('{rut_list_str}')"))
+                    con.commit()
+                if cache_key in st.session_state:
+                    del st.session_state[cache_key]
+                st.success(f"{len(prospectos_seleccionados)} prospectos movidos a Archivo/Descartados.")
+                time.sleep(1)
+                st.rerun()
+    else:
+        if c_btn2.button("♻️ RESTAURAR SELECCIONADOS", type="secondary", width="stretch"):
+            if len(prospectos_seleccionados) == 0:
+                st.error("Selecciona al menos un prospecto con la casilla ✅ Enviar para restaurarlo.")
+            else:
+                with engine.connect() as con:
+                    rut_list_str = "','".join(prospectos_seleccionados)
+                    con.execute(text(f"UPDATE prospects SET status_contacto = 'Pendiente' WHERE rut IN ('{rut_list_str}')"))
+                    con.commit()
+                if cache_key in st.session_state:
+                    del st.session_state[cache_key]
+                st.success(f"{len(prospectos_seleccionados)} prospectos restaurados a Pendiente.")
+                time.sleep(1)
+                st.rerun()
+
+    if c_btn1.button("🚀 INICIAR CAMPAÑA WHATSAPP", type="primary", width="stretch"):
+        df_a_enviar = edited_df[edited_df["Seleccionar"] == True]
         if len(df_a_enviar) == 0:
             st.error("No hay nadie seleccionado para enviar.")
             return
@@ -1147,10 +1239,12 @@ def render_campaign_launcher():
         
         attachment_path = None
         if uploaded_file:
-            import tempfile
-            with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp:
-                tmp.write(uploaded_file.getvalue())
-                attachment_path = tmp.name
+            import os
+            os.makedirs("data/temp_attachment", exist_ok=True)
+            original_filename = uploaded_file.name
+            attachment_path = os.path.join("data", "temp_attachment", original_filename)
+            with open(attachment_path, "wb") as f:
+                f.write(uploaded_file.getvalue())
 
         try:
             from src.messaging.whatsapp_web import WhatsAppBot
@@ -1180,24 +1274,35 @@ def render_campaign_launcher():
                 status_text.text(f"Enviando a {first_name} ({row['telefono']})...")
                 exito, error = bot.send_attachment_and_message(row['telefono'], msg_final, attachment_path=attachment_path, antiban=manager)
                 if exito:
-                    mark_contacted(row['id'], status='Enviado')
+                    mark_contacted(row['id'], status='Contactado')
+                else:
+                    if error == "Número no registrado en WhatsApp":
+                        mark_contacted(row['id'], status='Descartado (Número Inválido)')
+                        st.warning(f"Descartado automáticamente a {first_name}: {error}")
+                    else:
+                        st.error(f"Fallo al enviar a {first_name}: {error}")
                 
                 prog_bar.progress((index + 1) / len(df_a_enviar))
-                if index < len(df_a_enviar) - 1:
+                if index < len(df_a_enviar) - 1 and exito:
                     manager.random_wait(index)
             
+            time.sleep(3) # Tiempo de gracia extra final para asegurar que la red terminó de enviar todo
             bot.close()
             st.balloons()
             st.success("Campaña completada.")
         except Exception as e:
             st.error(f"Error en el robot: {e}")
         finally:
+            if cache_key in st.session_state:
+                del st.session_state[cache_key]
             if attachment_path and os.path.exists(attachment_path): os.remove(attachment_path)
 
-    if c_btn2.button("🧪 Ejecutar Simulacro (A/B Test)", use_container_width=True):
-        st.info("Modo Simulacro: Previsualización de los 3 primeros mensajes")
+    if c_btn2.button("🧪 Ejecutar Simulacro (A/B Test)", width="stretch"):
+        st.info("Modo Simulacro: Previsualización de los 3 primeros mensajes (Considerando las correcciones de nombres hechas en la tabla)")
         from src.messaging.spintax import format_message
-        df_test = filtered_df[~filtered_df["rut"].isin(prospectos_ignorados)].head(3)
+        
+        # Simulacro usa los prospectos editados que NO han sido ignorados
+        df_test = edited_df[~edited_df["rut"].isin(prospectos_ignorados)].head(3)
         for lead in df_test.to_dict('records'):
             st.write(f"📝 **{lead['nombre']}**: {format_message(mensaje_spintax, lead)}")
 
@@ -1246,7 +1351,7 @@ def render_unified_vault():
             region = st.text_input("Filtrar por Región (Opcional)", placeholder="Ej: METROPOLITANA")
         with col_o2:
             st.info("💡 Este scraper busca: Constituciones, Posesiones Efectivas, Expropiaciones y más.")
-            if st.button("🚀 Iniciar Escaneo OSINT", help="Busca en el Diario Oficial constituciones de sociedades, posesiones efectivas y eventos de liquidez.", type="primary", use_container_width=True):
+            if st.button("🚀 Iniciar Escaneo OSINT", help="Busca en el Diario Oficial constituciones de sociedades, posesiones efectivas y eventos de liquidez.", type="primary", width="stretch"):
                 from src.osint.scraper_do import run_scraper
                 with st.spinner("Escaneando el Diario Oficial..."):
                     res = run_scraper(region_target=region if region else None, days_back=dias)
@@ -1260,7 +1365,7 @@ def render_unified_vault():
             rut_empresa = st.text_input("RUT de la Empresa (Proyectar Flujo):", placeholder="Ej: 76.123.456-7")
         with col_m2:
             st.info("💡 Requiere configurar el Ticket de API en el código fuente.")
-            if st.button("💰 Detectar Órdenes de Compra", type="primary", use_container_width=True):
+            if st.button("💰 Detectar Órdenes de Compra", type="primary", width="stretch"):
                 if rut_empresa:
                     with st.spinner(f"Consultando la red de Mercado Público para {rut_empresa}..."):
                         from src.osint.scraper_mercadopublico import MercadoPublicoScraper
@@ -1279,7 +1384,7 @@ def render_unified_vault():
     with tab3:
         st.subheader("🎓 Ingesta de Conocimiento Académico")
         st.write("Extrae manuales y leyes del Comité de Acreditación (CAMV) para el cerebro del Agente.")
-        if st.button("📚 Sincronizar Biblioteca Académica", help="Descarga y procesa leyes, circulares y normativas de la CMF/CAMV al cerebro del agente (RAG).", use_container_width=True):
+        if st.button("📚 Sincronizar Biblioteca Académica", help="Descarga y procesa leyes, circulares y normativas de la CMF/CAMV al cerebro del agente (RAG).", width="stretch"):
             from src.osint.scraper_camv import CAMVScraper
             with st.spinner("Mapeando recursos de CAMV..."):
                 scraper = CAMVScraper()
@@ -1294,7 +1399,7 @@ def render_unified_vault():
         with c_e1:
             st.markdown("#### 1. Cazador de RUTs")
             nombre_prospecto = st.text_input("Nombre Completo a investigar:", placeholder="Ej: Juan Perez Cotapos")
-            if st.button("🆔 Ejecutar Rutificador", help="Busca el RUT asociado a los nombres extraídos para enriquecer el perfil.", use_container_width=True, type="primary"):
+            if st.button("🆔 Ejecutar Rutificador", help="Busca el RUT asociado a los nombres extraídos para enriquecer el perfil.", width="stretch", type="primary"):
                 if nombre_prospecto:
                     with st.spinner("Triangulando identidad en registros OSINT..."):
                         from src.osint.scraper_rutificador import RutificadorScraper
@@ -1309,7 +1414,7 @@ def render_unified_vault():
         with c_e2:
             st.markdown("#### 2. Cosechador de Contactos")
             rut_prospecto = st.text_input("RUT a enriquecer (Buró Comercial):", placeholder="Ej: 12345678-9")
-            if st.button("📞 Buscar en Buró Comercial", help="Consulta bases de datos enriquecidas para encontrar teléfonos y correos.", use_container_width=True, type="primary"):
+            if st.button("📞 Buscar en Buró Comercial", help="Consulta bases de datos enriquecidas para encontrar teléfonos y correos.", width="stretch", type="primary"):
                 if rut_prospecto:
                     with st.spinner("Cruzando RUT contra burós privados..."):
                         from src.osint.scraper_transunion import TransUnionScraper
@@ -1326,7 +1431,7 @@ def render_unified_vault():
         col_c1, col_c2 = st.columns(2)
         
         with col_c1:
-            if st.button("📊 Ingestar Tendencias de Mercado", help="Lee los consolidados de la industria (AUM, partícipes, retornos) y los estructura en SQL. Lo usa el módulo de Inteligencia de Mercado.", use_container_width=True):
+            if st.button("📊 Ingestar Tendencias de Mercado", help="Lee los consolidados de la industria (AUM, partícipes, retornos) y los estructura en SQL. Lo usa el módulo de Inteligencia de Mercado.", width="stretch"):
                 with st.spinner("Procesando histórico de tendencias..."):
                     import subprocess
                     result = subprocess.run(["python", "src/osint/ingestor_tendencias.py"], capture_output=True, text=True)
@@ -1335,7 +1440,7 @@ def render_unified_vault():
                     else:
                         st.error(f"Error: {result.stderr}")
                         
-            if st.button("💰 Ingestar Rentabilidad Histórica", help="Procesa las series de tiempo del rendimiento de cada fondo. Lo usa el Auditor de Portafolio para criticar rentabilidades.", use_container_width=True):
+            if st.button("💰 Ingestar Rentabilidad Histórica", help="Procesa las series de tiempo del rendimiento de cada fondo. Lo usa el Auditor de Portafolio para criticar rentabilidades.", width="stretch"):
                 with st.spinner("Procesando rentabilidad..."):
                     import subprocess
                     result = subprocess.run(["python", "src/osint/ingestor_rentabilidad.py"], capture_output=True, text=True)
@@ -1352,7 +1457,7 @@ def render_unified_vault():
             
             st.info(f"📅 **Última Actualización Base de Datos:** {ultima_fecha}")
             
-            if st.button("🔄 Ejecutar Sincronización Semanal (ZIP CMF)", help="Descarga el archivo masivo de la CMF, extrae los TAC y AUM, y cruza los datos con nuestra BD local.", use_container_width=True):
+            if st.button("🔄 Ejecutar Sincronización Semanal (ZIP CMF)", help="Descarga el archivo masivo de la CMF, extrae los TAC y AUM, y cruza los datos con nuestra BD local.", width="stretch"):
                 with st.spinner("Descargando y procesando paquetes semanales de la CMF... esto puede tardar."):
                     res_fm = ingestor_fm.run_weekly_ingestion()
                     if res_fm.get("exito"):
@@ -1402,7 +1507,7 @@ def render_unified_vault():
         
         st.info("💡 **Nota:** Actualmente el robot está configurado para extraer el DL 824 (Renta) y Ley 21.133. Podemos agregar más Códigos u Oficios según lo requieras.")
         
-        if st.button("📥 Sincronizar Biblioteca del Congreso", type="primary", use_container_width=True):
+        if st.button("📥 Sincronizar Biblioteca del Congreso", type="primary", width="stretch"):
             with st.spinner("Conectando con Ley Chile API (BCN) y descargando XMLs legales..."):
                 from src.osint.scraper_bcn import BCNScraper
                 bot = BCNScraper()
@@ -1508,7 +1613,7 @@ def render_blue_ocean_ui():
         if focus == "Personalizado...":
             custom_focus = st.text_input("Escribe el nicho o idea base:")
             
-        if st.button("🪄 Generar Reporte de Negocio", help="Crea un resumen de inteligencia corporativa sobre la empresa investigada para estructurar tu acercamiento.", type="primary", use_container_width=True):
+        if st.button("🪄 Generar Reporte de Negocio", help="Crea un resumen de inteligencia corporativa sobre la empresa investigada para estructurar tu acercamiento.", type="primary", width="stretch"):
             with st.spinner("El Arquitecto está diseñando el Océano Azul..."):
                 target = custom_focus if custom_focus else focus
                 st.session_state.blue_ocean_report = strategist.generate_business_brief(target)
@@ -1520,10 +1625,10 @@ def render_blue_ocean_ui():
             st.divider()
             c_a1, c_a2 = st.columns(2)
             with c_a1:
-                if st.button("💾 Guardar en Playbooks", help="Guarda el reporte generado en el repositorio de Playbooks de Ventas.", use_container_width=True):
+                if st.button("💾 Guardar en Playbooks", help="Guarda el reporte generado en el repositorio de Playbooks de Ventas.", width="stretch"):
                     st.success("Estrategia guardada en la base de conocimientos.")
             with c_a2:
-                if st.button("📅 Agendar Sesión de Diseño", help="Programa una reunión interna para discutir estrategias de acercamiento corporativo.", use_container_width=True):
+                if st.button("📅 Agendar Sesión de Diseño", help="Programa una reunión interna para discutir estrategias de acercamiento corporativo.", width="stretch"):
                     st.info("Sesión agendada para profundizar en este modelo.")
         else:
             st.markdown("""
@@ -1534,6 +1639,16 @@ def render_blue_ocean_ui():
             """, unsafe_allow_html=True)
 
 def main():
+    # --- ROUTING PORTAL B2B (MAGIC LINKS) ---
+    if "b2b_token" in st.query_params or "b2b_token" in st.session_state:
+        if "b2b_token" in st.query_params:
+            st.session_state.b2b_token = st.query_params.get("b2b_token")
+            
+        from src.web.b2b_employee_portal_ui import render_b2b_employee_portal
+        token = st.session_state.b2b_token
+        render_b2b_employee_portal(token)
+        return  # Detiene la carga del CRM principal
+
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
@@ -1563,9 +1678,9 @@ def main():
     # Mostrar Logo Corporativo Oficial FV en Vector Nativo Puro SVG
     svg_sidebar_path = os.path.join(root_path, "assets", "brand", "fv_logo_vector_pure.svg")
     if os.path.exists(svg_sidebar_path):
-        st.sidebar.image(svg_sidebar_path, use_container_width=True)
+        st.sidebar.image(svg_sidebar_path, width="stretch")
     elif os.path.exists(LOGO_PATH):
-        st.sidebar.image(LOGO_PATH, use_container_width=True)
+        st.sidebar.image(LOGO_PATH, width="stretch")
     else:
         st.sidebar.title("💎 FV WealthTech")
         
@@ -1581,12 +1696,52 @@ def main():
 
     nav = st.sidebar.radio("Metodología de Trabajo", [
         "🏠 Inicio",
+        "🌟 Showcase ALTUS CORE",
         "👤 1. Gestión de Clientes",
         "📊 2. Análisis de Inversiones",
         "💼 3. Gestión Comercial",
-        "📥 4. Ingesta de Datos"
+        "📥 4. Ingesta de Datos",
+        "⚖️ 5. Radar Legal (OSINT)",
+        "📑 Reporte Patrimonial 360"
     ], key="main_nav")
     
+    st.sidebar.markdown("---")
+    
+    # [HITO 1] Botón de Respaldo Manual
+    if st.sidebar.button("💾 Respaldar Sistema Completo", width="stretch", type="secondary"):
+        with st.spinner("Creando archivo ZIP de respaldo seguro y sincronizando..."):
+            from src.utils.backup_manager import create_system_backup_sync
+            backup_path, size_mb, cloud_synced_bool, cloud_msg = create_system_backup_sync(upload_to_cloud=True)
+            st.session_state['sys_backup_path'] = backup_path
+            st.session_state['sys_backup_size'] = size_mb
+            st.session_state['sys_backup_cloud_synced'] = cloud_synced_bool
+            st.session_state['sys_backup_cloud_msg'] = cloud_msg
+            st.rerun()
+
+    if st.session_state.get('sys_backup_path') and os.path.exists(st.session_state['sys_backup_path']):
+        backup_path = st.session_state['sys_backup_path']
+        size_mb = st.session_state.get('sys_backup_size', 0)
+        cloud_synced_bool = st.session_state.get('sys_backup_cloud_synced', False)
+        cloud_msg = st.session_state.get('sys_backup_cloud_msg', '')
+        
+        st.sidebar.success(f"✅ Respaldo generado con éxito ({size_mb:.2f} MB).\n\nRuta: `backups/{os.path.basename(backup_path)}`")
+        
+        if cloud_synced_bool:
+            st.sidebar.success(f"☁️ Respaldo guardado y sincronizado en GCS ({cloud_msg})")
+        else:
+            st.sidebar.info(f"💾 Respaldo guardado localmente (Sincronización Cloud pendiente / sin credenciales: {cloud_msg})")
+
+        with open(backup_path, "rb") as f:
+            st.sidebar.download_button(
+                "📥 Descargar Respaldo (.zip)",
+                data=f.read(),
+                file_name=os.path.basename(backup_path),
+                mime="application/zip",
+                type="primary",
+                use_container_width=True
+            )
+            
+    st.sidebar.markdown("<div style='text-align: center; color: #888; font-size: 0.8rem;'>Powered by <b>Altus Core</b><br>© ALTUS AI SpA</div>", unsafe_allow_html=True)
     st.sidebar.markdown("---")
 
     def set_nav(main_page, sub_key=None, sub_page=None):
@@ -1600,19 +1755,22 @@ def main():
     if nav == "🏠 Inicio":
         import base64
         altus_logo_b64 = ""
-        altus_logo_path = os.path.join(root_path, "assets", "brand", "altus_ai_logo_dark.png")
+        altus_logo_path = os.path.join(root_path, "assets", "brand", "altus_ai_logo_negativo.svg")
         if not os.path.exists(altus_logo_path):
-            altus_logo_path = os.path.join(root_path, "assets", "Logo_ALTUS AI_Principal_Fondo oscuro.png")
+            altus_logo_path = os.path.join(root_path, "assets", "brand", "altus_ai_logo_dark.png")
+            
         if os.path.exists(altus_logo_path):
             with open(altus_logo_path, "rb") as f_alt:
-                altus_logo_b64 = f"data:image/png;base64,{base64.b64encode(f_alt.read()).decode('utf-8')}"
+                ext = altus_logo_path.split('.')[-1].lower()
+                mime = "image/svg+xml" if ext == "svg" else f"image/{ext}"
+                altus_logo_b64 = f"data:{mime};base64,{base64.b64encode(f_alt.read()).decode('utf-8')}"
 
-        img_banner = f'<img src="{altus_logo_b64}" height="75" style="margin-bottom: 15px;"/>' if altus_logo_b64 else ''
+        img_banner = f'<img src="{altus_logo_b64}" height="140" style="margin-bottom: 20px;"/>' if altus_logo_b64 else ''
 
         st.markdown(f"""
         <div style='background: radial-gradient(circle at top right, #3a3a3a 0%, #050505 80%); padding: 45px; border-radius: 15px; margin-bottom: 25px; color: white; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.4); border: 1px solid #D4AF37;'>
             {img_banner}
-            <h1 style='color: white; margin: 0; font-size: 3em; font-weight: 700;'>Bienvenido a <span style="color: #D4AF37;">Altus AI</span></h1>
+            <h1 style='color: white; margin: 0; font-size: 3em; font-weight: 700;'>Bienvenido a <span style="color: #D4AF37;">Altus Core</span></h1>
             <p style='color: #ffffff; margin: 10px 0 0 0; font-size: 1.3em;'>Tu Motor Cuantitativo Patrimonial & Asesoría Integrada 360°</p>
         </div>
         """, unsafe_allow_html=True)
@@ -1622,47 +1780,47 @@ def main():
         
         # SEC 1: CLIENTES
         st.markdown("#### 👥 1. Punto de Partida & Gestión de Clientes")
-        st.button("🎯 Seleccionar o Crear Cliente (Ficha 360°, Herederos, Propiedades & KYC)", on_click=set_nav, args=("👤 1. Gestión de Clientes",), use_container_width=True)
+        st.button("🎯 Seleccionar o Crear Cliente (Ficha 360°, Herederos, Propiedades & KYC)", on_click=set_nav, args=("👤 1. Gestión de Clientes",), width="stretch")
 
         st.markdown("---")
 
         # SEC 2: ANÁLISIS DE INVERSIONES (TODAS LAS 7 HERRAMIENTAS VISIBLES EN INICIO)
         st.markdown("#### 📊 2. Hub de Análisis de Inversiones")
         a1, a2 = st.columns(2)
-        a1.button("📉 Auditor de Portafolio", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Auditor de Portafolio"), use_container_width=True)
-        a2.button("📈 Análisis Técnico y Fundamental", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Análisis Técnico y Fundamental"), use_container_width=True)
+        a1.button("📉 Auditor de Portafolio", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Auditor de Portafolio"), width="stretch")
+        a2.button("📈 Análisis Técnico y Fundamental", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Análisis Técnico y Fundamental"), width="stretch")
 
         a3, a4 = st.columns(2)
-        a3.button("🏢 Valuación de Portafolios (Real Estate)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Valuación de Portafolios"), use_container_width=True)
-        a4.button("🧠 Asesor Patrimonial Senior (Omni AI)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Asesor Patrimonial Senior (Omni)"), use_container_width=True)
+        a3.button("🏢 Valuación de Portafolios (Real Estate)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Valuación de Portafolios"), width="stretch")
+        a4.button("🧠 Asesor Patrimonial Senior (Omni AI)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Asesor Patrimonial Senior (Omni)"), width="stretch")
 
         a5, a6 = st.columns(2)
-        a5.button("📊 Estrategia & Cartolas (Parsing Bancario)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Estrategia & Cartolas"), use_container_width=True)
-        a6.button("🌍 Analista Macro (Consenso & Playbooks)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Analista Macro (Consenso & Playbooks)"), use_container_width=True)
+        a5.button("📊 Estrategia & Cartolas (Parsing Bancario)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Estrategia & Cartolas"), width="stretch")
+        a6.button("🌍 Analista Macro (Consenso & Playbooks)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Analista Macro (Consenso & Playbooks)"), width="stretch")
 
         a7, _ = st.columns([0.5, 0.5])
-        a7.button("🧮 Simuladores Cuantitativos (APV Inteligente, Reliquidación & Créditos)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Simuladores Cuantitativos"), use_container_width=True)
+        a7.button("🧮 Simuladores Cuantitativos (APV Inteligente, Reliquidación & Créditos)", on_click=set_nav, args=("📊 2. Análisis de Inversiones", "sub_nav_analisis", "Simuladores Cuantitativos"), width="stretch")
 
         st.markdown("---")
 
         # SEC 3: GESTIÓN COMERCIAL (TODAS LAS 5 HERRAMIENTAS VISIBLES EN INICIO)
         st.markdown("#### 💼 3. Gestión Comercial & Marketing Pro")
         m1, m2 = st.columns(2)
-        m1.button("🚀 Motor de Campañas & Outreach", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "🚀 Motor de Campañas"), use_container_width=True)
-        m2.button("📊 Embudo CRM (Kanban)", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "📊 Embudo CRM (Kanban)"), use_container_width=True)
+        m1.button("🚀 Motor de Campañas & Outreach", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "🚀 Motor de Campañas"), width="stretch")
+        m2.button("📊 Embudo CRM (Kanban)", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "📊 Embudo CRM (Kanban)"), width="stretch")
 
         m3, m4 = st.columns(2)
-        m3.button("🌊 Innovación & Océanos Azules", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "🌊 Innovación & Océanos Azules"), use_container_width=True)
-        m4.button("🧠 Diseñador de Flujos (Playbooks)", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "🧠 Diseñador de Flujos (Playbook)"), use_container_width=True)
+        m3.button("🌊 Innovación & Océanos Azules", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "🌊 Innovación & Océanos Azules"), width="stretch")
+        m4.button("🧠 Diseñador de Flujos (Playbooks)", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "🧠 Diseñador de Flujos (Playbook)"), width="stretch")
 
         m5, _ = st.columns([0.5, 0.5])
-        m5.button("📱 Generador de Infografías RRSS (4K)", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "📱 Generador de Infografías RRSS"), use_container_width=True)
+        m5.button("📱 Generador de Infografías RRSS (4K)", on_click=set_nav, args=("💼 3. Gestión Comercial", "sub_nav_comercial", "📱 Generador de Infografías RRSS"), width="stretch")
 
         st.markdown("---")
 
         # SEC 4: INGESTA
         st.markdown("#### 📥 4. Central de Operaciones & Ingesta")
-        st.button("🏰 Bóveda de Ingesta Unificada (Scrapers, Cartolas & Data)", on_click=set_nav, args=("📥 4. Ingesta de Datos",), use_container_width=True)
+        st.button("🏰 Bóveda de Ingesta Unificada (Scrapers, Cartolas & Data)", on_click=set_nav, args=("📥 4. Ingesta de Datos",), width="stretch")
 
         st.markdown("---")
 
@@ -1687,23 +1845,11 @@ def main():
         def set_subanalisis(val):
             st.session_state.sub_nav_analisis = val
 
-        # Menú Rápido de 4 Pilares Funcionales
-        st.markdown("##### 📌 Menú de Pilares Estratégicos de Análisis:")
-        b1, b2, b3, b4, b5 = st.columns(5)
-        
-        if b1.button("🏠 Inicio Hub", use_container_width=True): set_subanalisis("🏠 Landing de Análisis")
-        if b2.button("📁 1. Auditoría & Cartolas", use_container_width=True): set_subanalisis("Pilar 1: Auditoría de Portafolios")
-        if b3.button("🌍 2. Macro & Mercado", use_container_width=True): set_subanalisis("Pilar 2: Inteligencia Macro y Mercado")
-        if b4.button("🧮 3. Modelación Cuantitativa", use_container_width=True): set_subanalisis("Pilar 3: Modelación Cuantitativa")
-        if b5.button("🧠 4. Copilot Omni AI", use_container_width=True): set_subanalisis("Pilar 4: Copilot Patrimonial Omni AI")
-
-        st.markdown("---")
-
         if sub_nav == "🏠 Landing de Análisis":
             st.markdown("""
                 <div style='background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 25px; border-radius: 15px; margin-bottom: 25px; color: white;'>
                     <h1 style='color: white; margin: 0; font-size: 2.2em; font-weight: 900;'>🎯 Hub de Análisis de Inversiones</h1>
-                    <p style='color: #94a3b8; margin: 10px 0 0 0; font-size: 1.1em;'>Suite integral reorganizada en 4 Pilares Estratégicos de Wealth Management.</p>
+                    <p style='color: #94a3b8; margin: 10px 0 0 0; font-size: 1.1em;'>Selecciona una herramienta operativa para comenzar.</p>
                 </div>
             """, unsafe_allow_html=True)
             
@@ -1711,126 +1857,65 @@ def main():
                 st.success(f"📌 Analizando al cliente activo: **{st.session_state.current_client_name}**")
             else:
                 st.info("ℹ️ Puedes seleccionar un cliente activo en 'Gestión de Clientes' para enriquecer los diagnósticos.")
-                
-            st.markdown("#### 🏛️ Selecciona el Pilar de Análisis a Ejecutar:")
-            
-            p1_col, p2_col = st.columns(2)
-            with p1_col:
-                st.markdown("""
-                    <div style='background: #1e293b; padding: 18px; border-radius: 12px; border-left: 5px solid #0284c7; margin-bottom: 12px;'>
-                        <h3 style='color: #38bdf8; margin: 0;'>📁 Pilar 1: Auditoría de Portafolios & Cartolas</h3>
-                        <p style='color: #cbd5e1; font-size: 0.95em; margin: 8px 0 0 0;'>Ingesta inteligente de cartolas bancarias (OCR/AI) + Diagnóstico de sobrecostos, comisiones y asset allocation.</p>
-                    </div>
-                """, unsafe_allow_html=True)
-                st.button("Ingresar a Pilar 1 (Cartolas & Auditoría)", use_container_width=True, on_click=set_subanalisis, args=("Pilar 1: Auditoría de Portafolios",))
 
-            with p2_col:
-                st.markdown("""
-                    <div style='background: #1e293b; padding: 18px; border-radius: 12px; border-left: 5px solid #10b981; margin-bottom: 12px;'>
-                        <h3 style='color: #34d399; margin: 0;'>🌍 Pilar 2: Inteligencia Macro & Mercado</h3>
-                        <p style='color: #cbd5e1; font-size: 0.95em; margin: 8px 0 0 0;'>Análisis Macro (Consenso BCCh, Fed, Playbooks) + Diagnóstico Técnico y Fundamental de activos financieros.</p>
-                    </div>
-                """, unsafe_allow_html=True)
-                st.button("Ingresar a Pilar 2 (Macro & Mercado)", use_container_width=True, on_click=set_subanalisis, args=("Pilar 2: Inteligencia Macro y Mercado",))
-
-            st.markdown("<br>", unsafe_allow_html=True)
-            p3_col, p4_col = st.columns(2)
-            with p3_col:
-                st.markdown("""
-                    <div style='background: #1e293b; padding: 18px; border-radius: 12px; border-left: 5px solid #f59e0b; margin-bottom: 12px;'>
-                        <h3 style='color: #fbbf24; margin: 0;'>🧮 Pilar 3: Modelación Cuantitativa & Bienes Raíces</h3>
-                        <p style='color: #cbd5e1; font-size: 0.95em; margin: 8px 0 0 0;'>Valuación Real Estate + Simuladores Cuantitativos (APV Régimen A/B, Reliquidación Tributaria, Créditos).</p>
-                    </div>
-                """, unsafe_allow_html=True)
-                st.button("Ingresar a Pilar 3 (Simuladores & Real Estate)", use_container_width=True, on_click=set_subanalisis, args=("Pilar 3: Modelación Cuantitativa",))
-
-            with p4_col:
-                st.markdown("""
-                    <div style='background: #1e293b; padding: 18px; border-radius: 12px; border-left: 5px solid #8b5cf6; margin-bottom: 12px;'>
-                        <h3 style='color: #c084fc; margin: 0;'>🧠 Pilar 4: Copilot Patrimonial Senior (Omni AI)</h3>
-                        <p style='color: #cbd5e1; font-size: 0.95em; margin: 8px 0 0 0;'>Co-piloto cognitivo senior para síntesis patrimonial integral 360° y preparación de comité de inversión.</p>
-                    </div>
-                """, unsafe_allow_html=True)
-                st.button("Ingresar a Pilar 4 (Copilot Omni AI)", use_container_width=True, on_click=set_subanalisis, args=("Pilar 4: Copilot Patrimonial Omni AI",))
-
-        # PILAR 1: AUDITORÍA Y CARTOLAS
-        elif sub_nav in ["Pilar 1: Auditoría de Portafolios", "Estrategia & Cartolas", "Auditor de Portafolio"]:
-            st.markdown("""
-                <div style='background: linear-gradient(135deg, #0284c7 0%, #0f172a 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; color: white;'>
-                    <h2 style='color: white; margin: 0;'>📁 Pilar 1: Auditoría de Portafolios & Cartolas Bancarias</h2>
-                    <p style='color: #e0f2fe; margin: 5px 0 0 0;'>Ingesta automatizada de cartolas + Evaluación de riesgos, comisiones y asignación estratégica.</p>
-                </div>
-            """, unsafe_allow_html=True)
+            st.markdown("### 📁 Auditoría & Cartolas")
+            c1, c2 = st.columns(2)
+            c1.button("📊 Ingesta & Parsing de Cartolas OCR", width="stretch", on_click=set_subanalisis, args=("Cartolas",))
+            c2.button("🔍 Diagnóstico & Auditoría de Portafolio", width="stretch", on_click=set_subanalisis, args=("Auditor de Portafolio",))
             
-            tab_p1_cartolas, tab_p1_auditor = st.tabs(["📊 1.1 Ingesta & Parsing de Cartolas OCR/AI", "🔍 1.2 Diagnóstico & Auditoría de Portafolio"])
-            
-            with tab_p1_cartolas:
-                from src.web.cartolas_ui import render_cartolas_ui
-                render_cartolas_ui()
-                
-            with tab_p1_auditor:
-                from src.web.app import render_portfolio_auditor
-                render_portfolio_auditor()
+            st.markdown("### 🌍 Inteligencia Macro & Mercado")
+            c3, c4 = st.columns(2)
+            c3.button("🌍 Consenso Macro & Playbooks", width="stretch", on_click=set_subanalisis, args=("Analista Macro",))
+            c4.button("📈 Análisis Técnico y Fundamental", width="stretch", on_click=set_subanalisis, args=("Análisis Técnico y Fundamental",))
 
-        # PILAR 2: INTELIGENCIA MACRO Y MERCADO
-        elif sub_nav in ["Pilar 2: Inteligencia Macro y Mercado", "Analista Macro (Consenso & Playbooks)", "Análisis Técnico y Fundamental"]:
-            st.markdown("""
-                <div style='background: linear-gradient(135deg, #059669 0%, #0f172a 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; color: white;'>
-                    <h2 style='color: white; margin: 0;'>🌍 Pilar 2: Inteligencia Macro & Análisis de Mercado</h2>
-                    <p style='color: #d1fae5; margin: 5px 0 0 0;'>Visión macroeconómica institucional + Análisis técnico/fundamental de instrumentos financieros.</p>
-                </div>
-            """, unsafe_allow_html=True)
+            st.markdown("### 🧮 Modelación Cuantitativa")
+            c5, c6, c7 = st.columns(3)
+            c5.button("🏢 Valuación Real Estate", width="stretch", on_click=set_subanalisis, args=("Valuación de Portafolios",))
+            c6.button("🏛️ APV Inteligente", width="stretch", on_click=set_subanalisis, args=("APV Inteligente",))
+            c7.button("⚖️ Reliquidación", width="stretch", on_click=set_subanalisis, args=("Reliquidación",))
             
-            tab_p2_macro, tab_p2_tecnico = st.tabs(["🌍 2.1 Consenso Macro, Banco Central & Playbooks", "📈 2.2 Análisis Técnico y Fundamental de Activos"])
-            
-            with tab_p2_macro:
-                from src.web.macro_chat_ui import render_macro_chat_ui
-                render_macro_chat_ui()
-                
-            with tab_p2_tecnico:
-                from src.web.analysis_hub_ui import render_analysis_hub
-                render_analysis_hub()
+            c8, c9, c10 = st.columns(3)
+            c8.button("💰 Crédito vs Inversión", width="stretch", on_click=set_subanalisis, args=("Comparador Crédito vs Inversión",))
+            c9.button("🏦 Retiro Cuenta 2", width="stretch", on_click=set_subanalisis, args=("Retiro Cuenta 2",))
+            c10.button("💸 Rescate Excesos AFP", width="stretch", on_click=set_subanalisis, args=("Rescate Excesos AFP (DPE)",))
 
-        # PILAR 3: MODELACIÓN CUANTITATIVA Y REAL ESTATE
-        elif sub_nav in ["Pilar 3: Modelación Cuantitativa", "Valuación de Portafolios", "Simuladores Cuantitativos"]:
-            st.markdown("""
-                <div style='background: linear-gradient(135deg, #d97706 0%, #0f172a 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; color: white;'>
-                    <h2 style='color: white; margin: 0;'>🧮 Pilar 3: Modelación Cuantitativa & Bienes Raíces</h2>
-                    <p style='color: #fef3c7; margin: 5px 0 0 0;'>Modelos matemáticos para optimización inmobiliaria, tributaria y previsional.</p>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            tab_p3_re, tab_p3_apv, tab_p3_reliq, tab_p3_credito = st.tabs([
-                "🏢 3.1 Valuación Real Estate & Cap Rates",
-                "🏛️ 3.2 APV Inteligente (Régimen A/B)",
-                "⚖️ 3.3 Reliquidación Tributaria (Global Comp.)",
-                "💰 3.4 Comparador Crédito vs Inversión"
-            ])
-            
-            with tab_p3_re:
-                from src.web.valuation_ui import render_valuation_ui
-                render_valuation_ui()
-                
-            with tab_p3_apv:
-                from src.web.simulators_ui import render_apv_simulator
-                render_apv_simulator(38000)
-                
-            with tab_p3_reliq:
-                from src.web.simulators_ui import render_reliquidacion_simulator
-                render_reliquidacion_simulator(66000, 38000)
-                
-            with tab_p3_credito:
-                from src.web.simulators_ui import render_credito_vs_inversion_simulator
-                render_credito_vs_inversion_simulator()
+            st.markdown("### 🧠 Copilot Omni AI")
+            st.button("🧠 Asesor Patrimonial Senior (Omni AI)", width="stretch", on_click=set_subanalisis, args=("Asesor Patrimonial Senior (Omni)",))
 
-        # PILAR 4: COPILOT OMNI AI
-        elif sub_nav in ["Pilar 4: Copilot Patrimonial Omni AI", "Asesor Patrimonial Senior (Omni)"]:
-            st.markdown("""
-                <div style='background: linear-gradient(135deg, #7c3aed 0%, #0f172a 100%); padding: 20px; border-radius: 12px; margin-bottom: 20px; color: white;'>
-                    <h2 style='color: white; margin: 0;'>🧠 Pilar 4: Copilot Patrimonial Senior (Omni AI)</h2>
-                    <p style='color: #ede9fe; margin: 5px 0 0 0;'>Co-piloto cognitivo ejecutivo para dictamen patrimonial integral 360°.</p>
-                </div>
-            """, unsafe_allow_html=True)
+        elif sub_nav == "Cartolas":
+            from src.web.cartolas_ui import render_cartolas_ui
+            render_cartolas_ui()
+        elif sub_nav == "Auditor de Portafolio":
+            from src.web.app import render_portfolio_auditor
+            render_portfolio_auditor()
+        elif sub_nav == "Analista Macro":
+            from src.web.macro_chat_ui import render_macro_chat_ui
+            render_macro_chat_ui()
+        elif sub_nav == "Análisis Técnico y Fundamental":
+            from src.web.analysis_hub_ui import render_analysis_hub
+            render_analysis_hub()
+        elif sub_nav == "Valuación de Portafolios":
+            from src.web.valuation_ui import render_valuation_ui
+            render_valuation_ui()
+        elif sub_nav == "Simulador Real Estate":
+            from src.web.real_estate_simulator_ui import render_real_estate_simulator
+            render_real_estate_simulator()
+        elif sub_nav == "APV Inteligente":
+            from src.web.simulators_ui import render_apv_simulator
+            render_apv_simulator(38000)
+        elif sub_nav == "Reliquidación":
+            from src.web.simulators_ui import render_reliquidacion_simulator
+            render_reliquidacion_simulator()
+        elif sub_nav == "Comparador Crédito vs Inversión":
+            from src.web.simulators_ui import render_credito_vs_inversion_simulator
+            render_credito_vs_inversion_simulator()
+        elif sub_nav == "Retiro Cuenta 2":
+            from src.web.simulators_ui import render_cuenta2_simulator
+            render_cuenta2_simulator()
+        elif sub_nav == "Rescate Excesos AFP (DPE)":
+            from src.web.simulators_ui import render_dpe_simulator
+            render_dpe_simulator()
+        elif sub_nav == "Asesor Patrimonial Senior (Omni)":
             from src.web.app import render_omni_advisor_ui
             render_omni_advisor_ui()
 
@@ -1850,12 +1935,12 @@ def main():
         def set_subcomercial(val):
             st.session_state.sub_nav_comercial = val
 
-        if c1.button("🏠 Inicio Hub", use_container_width=True): set_subcomercial("🏠 Landing Comercial")
-        if c2.button("🚀 Campañas", use_container_width=True): set_subcomercial("🚀 Motor de Campañas")
-        if c3.button("📊 CRM (Kanban)", use_container_width=True): set_subcomercial("📊 Embudo CRM (Kanban)")
-        if c4.button("🌊 Innovación", use_container_width=True): set_subcomercial("🌊 Innovación & Océanos Azules")
-        if c5.button("🧠 Flujogramas", use_container_width=True): set_subcomercial("🧠 Diseñador de Flujos (Playbook)")
-        if c6.button("📱 Infografías", use_container_width=True): set_subcomercial("📱 Generador de Infografías RRSS")
+        if c1.button("🏠 Inicio Hub", width="stretch"): set_subcomercial("🏠 Landing Comercial")
+        if c2.button("🚀 Campañas", width="stretch"): set_subcomercial("🚀 Motor de Campañas")
+        if c3.button("📊 CRM (Kanban)", width="stretch"): set_subcomercial("📊 Embudo CRM (Kanban)")
+        if c4.button("🌊 Innovación", width="stretch"): set_subcomercial("🌊 Innovación & Océanos Azules")
+        if c5.button("🧠 Flujogramas", width="stretch"): set_subcomercial("🧠 Diseñador de Flujos (Playbook)")
+        if c6.button("📱 Infografías", width="stretch"): set_subcomercial("📱 Generador de Infografías RRSS")
 
         st.markdown("---")
 
@@ -1868,15 +1953,15 @@ def main():
             """, unsafe_allow_html=True)
             
             m1, m2 = st.columns(2)
-            m1.button("🚀 3.1 Motor de Campañas & Outreach", on_click=set_subcomercial, args=("🚀 Motor de Campañas",), use_container_width=True)
-            m2.button("📊 3.2 Embudo CRM (Kanban)", on_click=set_subcomercial, args=("📊 Embudo CRM (Kanban)",), use_container_width=True)
+            m1.button("🚀 3.1 Motor de Campañas & Outreach", on_click=set_subcomercial, args=("🚀 Motor de Campañas",), width="stretch")
+            m2.button("📊 3.2 Embudo CRM (Kanban)", on_click=set_subcomercial, args=("📊 Embudo CRM (Kanban)",), width="stretch")
 
             m3, m4 = st.columns(2)
-            m3.button("🌊 3.3 Innovación & Océanos Azules", on_click=set_subcomercial, args=("🌊 Innovación & Océanos Azules",), use_container_width=True)
-            m4.button("🧠 3.4 Diseñador de Flujos (Playbooks)", on_click=set_subcomercial, args=("🧠 Diseñador de Flujos (Playbook)",), use_container_width=True)
+            m3.button("🌊 3.3 Innovación & Océanos Azules", on_click=set_subcomercial, args=("🌊 Innovación & Océanos Azules",), width="stretch")
+            m4.button("🧠 3.4 Diseñador de Flujos (Playbooks)", on_click=set_subcomercial, args=("🧠 Diseñador de Flujos (Playbook)",), width="stretch")
 
             m5, _ = st.columns([0.5, 0.5])
-            m5.button("📱 3.5 Generador de Infografías RRSS (4K)", on_click=set_subcomercial, args=("📱 Generador de Infografías RRSS",), use_container_width=True)
+            m5.button("📱 3.5 Generador de Infografías RRSS (4K)", on_click=set_subcomercial, args=("📱 Generador de Infografías RRSS",), width="stretch")
 
         elif sub_nav_com == "🚀 Motor de Campañas":
             from src.web.app import render_campaign_launcher
@@ -1900,6 +1985,27 @@ def main():
     elif nav == "📥 4. Ingesta de Datos":
         from src.web.app import render_unified_vault
         render_unified_vault()
+
+    # ----------------------------------------------------
+    # ⚖️ 5. RADAR LEGAL (OSINT)
+    # ----------------------------------------------------
+    elif nav == "⚖️ 5. Radar Legal (OSINT)":
+        from src.web.radar_legal_ui import render_radar_legal
+        render_radar_legal()
+
+    # ----------------------------------------------------
+    # 📑 6. REPORTE PATRIMONIAL 360
+    # ----------------------------------------------------
+    elif nav == "📑 Reporte Patrimonial 360":
+        from src.web.report_generator_ui import render_report_generator_ui
+        render_report_generator_ui()
+
+    # ----------------------------------------------------
+    # 🌟 SHOWCASE COMERCIAL (CATÁLOGO DE SOLUCIONES)
+    # ----------------------------------------------------
+    elif nav == "🌟 Showcase ALTUS CORE":
+        from src.web.showcase_commercial_ui import render_showcase
+        render_showcase(set_nav)
 
 
 

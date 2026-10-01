@@ -31,7 +31,7 @@ def render_macro_chat_ui():
     with colB:
         st.write("")
         st.write("")
-        if st.button("🤖 Generar Consenso IA para este Mes", type="primary", use_container_width=True):
+        if st.button("🤖 Generar Consenso IA para este Mes", type="primary", width="stretch"):
             st.session_state.trigger_consensus = True
             
     st.markdown("---")
@@ -142,7 +142,7 @@ def render_macro_chat_ui():
                             data=f_pdf.read(),
                             file_name=f"Informe_Consenso_Macro_{periodo_actual}.pdf",
                             mime="application/pdf",
-                            use_container_width=True
+                            width="stretch"
                         )
                 except Exception as e_pdf:
                     st.error(f"Error generando PDF: {e_pdf}")
@@ -166,14 +166,14 @@ def render_macro_chat_ui():
                             data=f_docx.read(),
                             file_name=f"Informe_Consenso_Macro_{periodo_actual}.docx",
                             mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                            use_container_width=True
+                            width="stretch"
                         )
                 except Exception as e_docx:
                     st.error(f"Error generando Word: {e_docx}")
 
             st.markdown("---")
             st.markdown("### 🌐 Publicación Web Automática")
-            if st.button("🚀 Publicar Consenso en fv-inversiones.com", use_container_width=True):
+            if st.button("🚀 Publicar Consenso en fv-inversiones.com", width="stretch"):
                 with st.spinner("Conectando con Vercel y actualizando repositorio..."):
                     import src.utils.web_publisher
                     import importlib
@@ -186,11 +186,45 @@ def render_macro_chat_ui():
                         st.error(f"Error publicando: {msg}")
 
     with tab2:
-        c1, c2 = st.columns(2)
+        st.markdown("### 📥 Motores de Ingesta Autónoma")
+        c1, c2, c3 = st.columns(3)
+        
         with c1:
-            st.subheader("🌐 Ingesta Web (Robots OSINT)")
+            st.subheader("📧 Sincronización IMAP (Correos)")
+            st.write("Conecta al correo institucional, descarga PDFs de bancos y extrae su texto para Consenso.")
+            if st.button("Sincronizar Bandeja de Entrada", width="stretch"):
+                with st.spinner(f"Leyendo correos y extrayendo PDFs para {periodo_actual}..."):
+                    import os
+                    from src.intelligence.imap_ingestion_engine import IMAPIngestionEngine
+                    from src.osint.market_consensus_engine import MarketConsensusEngine
+                    
+                    # 1. IMAP Sync
+                    cuentas = []
+                    if os.getenv("IMAP_USER") and os.getenv("IMAP_PASS"):
+                        cuentas.append((os.getenv("IMAP_USER"), os.getenv("IMAP_PASS")))
+                    for i in range(1, 10):
+                        if os.getenv(f"IMAP_USER_{i}") and os.getenv(f"IMAP_PASS_{i}"):
+                            cuentas.append((os.getenv(f"IMAP_USER_{i}"), os.getenv(f"IMAP_PASS_{i}")))
+                    
+                    for u, p in set(cuentas):
+                        imap_engine = IMAPIngestionEngine(u, p)
+                        if imap_engine.connect():
+                            imap_engine.check_market_research_emails()
+                            imap_engine.close()
+                            
+                    # 2. Consensus Engine (Parse PDFs & Send to MacroAnalyst)
+                    consensus_engine = MarketConsensusEngine()
+                    consensus_engine.process_pending_files()
+                    
+                    st.success("✅ Correos sincronizados y analizados por la IA.")
+                    import time
+                    time.sleep(2)
+                    st.rerun()
+
+        with c2:
+            st.subheader("🤖 Ingesta Web (Robots OSINT)")
             st.write("Dispara los robots para extraer la visión de las páginas públicas (SURA, Banchile, Santander, etc.)")
-            if st.button("Ejecutar Scrapers Institucionales", use_container_width=True):
+            if st.button("Ejecutar Scrapers Institucionales", width="stretch"):
                 with st.spinner(f"Desplegando robots web OSINT para {periodo_actual}..."):
                     import importlib
                     import src.osint.institutional_scraper
@@ -213,8 +247,8 @@ def render_macro_chat_ui():
                     time.sleep(2.5)
                     st.rerun()
 
-        with c2:
-            st.subheader("📄 Ingesta de Documentos o URLs (JP Morgan)")
+        with c3:
+            st.subheader("📄 Ingesta Manual (JP Morgan)")
             st.write("Sube PDFs/PPTs largos o pega una URL interactiva para que el Robot le tome foto a los gráficos.")
             inst_name = st.text_input("Nombre de la Institución:")
             mes_pdf = st.selectbox("¿A qué período corresponde?", periodos_historicos, index=0)
@@ -228,7 +262,7 @@ def render_macro_chat_ui():
             else:
                 doc_file = st.file_uploader("Seleccionar Archivo", type=['pdf', 'pptx'])
             
-            if st.button("Procesar Ingesta con IA", use_container_width=True):
+            if st.button("Procesar Ingesta con IA", width="stretch"):
                 if not inst_name:
                     st.warning("Debes indicar el nombre de la institución.")
                 elif tipo_doc != "Multimodal desde URL (Pantallazo Autónomo)" and doc_file is None:
@@ -340,7 +374,7 @@ def render_macro_chat_ui():
             
             c_save, c_dl = st.columns(2)
             with c_save:
-                if st.button("💾 Guardar en Historial del Cliente", use_container_width=True):
+                if st.button("💾 Guardar en Historial del Cliente", width="stretch"):
                     current_rut = st.session_state.get("current_client_rut")
                     last_query = st.session_state.get("macro_last_query", "Consulta no registrada")
                     if current_rut:

@@ -79,7 +79,7 @@ def render_technical_analysis_ui():
                 fig.update_layout(height=800, template="plotly_dark", xaxis_rangeslider_visible=False,
                                   margin=dict(l=20, r=20, t=40, b=20))
                                   
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width="stretch")
                 
                 # 5. Agente de IA
                 st.markdown("### 4. Opinión Fundada de Altus AI")

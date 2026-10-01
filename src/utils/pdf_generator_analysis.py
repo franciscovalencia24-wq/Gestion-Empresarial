@@ -2,7 +2,11 @@ import os
 import io
 import base64
 from datetime import datetime
-from xhtml2pdf import pisa
+try:
+    from xhtml2pdf import pisa
+    XHTML2PDF_AVAILABLE = True
+except (ImportError, OSError):
+    XHTML2PDF_AVAILABLE = False
 import markdown
 
 try:
@@ -38,7 +42,7 @@ def generar_pdf_analisis_integral(ticker, tech_opinion, fund_opinion, integral_o
     
     # Resolver nombre de destinatario
     if is_generic:
-        destinatario = "Reporte de Mercado (Carácter General)"
+        destinatario = "Reporte de Mercado (CarÃ¡cter General)"
     else:
         nombre_cliente = get_client_name(client_rut)
         destinatario = nombre_cliente
@@ -82,10 +86,10 @@ def generar_pdf_analisis_integral(ticker, tech_opinion, fund_opinion, integral_o
                   </td>
                   <td style="width: 4%; border: none; padding: 0; margin: 0;"></td>
                   <td style="width: 48%; vertical-align: top; background-color: {bg_rec}; border: 1px solid {color_rec}; padding: 12px;">
-                      <h3 style="color: {color_rec}; margin-top: 0; margin-bottom: 4px; font-size: 10.5pt; border-bottom: 1px solid {color_rec}; padding-bottom: 4px;">Posición Altus AI</h3>
+                      <h3 style="color: {color_rec}; margin-top: 0; margin-bottom: 4px; font-size: 10.5pt; border-bottom: 1px solid {color_rec}; padding-bottom: 4px;">PosiciÃ³n Altus AI</h3>
                       <div style="font-size: 10pt; margin-top: 4px; line-height: 1.5;">
                           <strong style="font-size: 13pt; color: {color_rec};">{recomendacion}</strong><br>
-                          <strong>Convicción:</strong> {conviccion}<br>
+                          <strong>ConvicciÃ³n:</strong> {conviccion}<br>
                           <div style="margin-top: 8px; color: #334155;">{justificacion}</div>
                       </div>
                   </td>
@@ -93,7 +97,7 @@ def generar_pdf_analisis_integral(ticker, tech_opinion, fund_opinion, integral_o
           </table>
           
           <div style="margin-bottom: 10px; background-color: #f0f9ff; padding: 15px; border-left: 4px solid #0369a1; page-break-inside: avoid;">
-            <h2 style="color: #0369a1; margin-top: 0; margin-bottom: 8px; font-size: 12.5pt;">Conclusión Integral (Técnico + Fundamental)</h2>
+            <h2 style="color: #0369a1; margin-top: 0; margin-bottom: 8px; font-size: 12.5pt;">ConclusiÃ³n Integral (TÃ©cnico + Fundamental)</h2>
             <div style="font-size: 11pt; line-height: 1.55; color: #1e293b;">{conclusion}</div>
         </div>
         '''
@@ -101,15 +105,15 @@ def generar_pdf_analisis_integral(ticker, tech_opinion, fund_opinion, integral_o
         # Fallback si por alguna razon llega un string
         integral_html = f'''
           <div style="margin-bottom: 10px; background-color: #f0f9ff; padding: 15px; border-left: 4px solid #0369a1; page-break-inside: avoid;">
-              <h2 style="color: #0369a1; margin-top: 0; margin-bottom: 8px; font-size: 12.5pt;">Conclusión Integral (Técnico + Fundamental)</h2>
+              <h2 style="color: #0369a1; margin-top: 0; margin-bottom: 8px; font-size: 12.5pt;">ConclusiÃ³n Integral (TÃ©cnico + Fundamental)</h2>
               <div style="font-size: 11pt; line-height: 1.55; color: #1e293b;">{markdown.markdown(integral_opinion)}</div>
           </div>
           '''
         recom_html = ""
 
     # Convertir opiniones independientemente a HTML
-    tech_html = markdown.markdown(tech_opinion if tech_opinion else "No se solicitó análisis técnico.", extensions=['extra', 'nl2br'])
-    fund_html = markdown.markdown(fund_opinion if fund_opinion else "No se solicitó análisis fundamental.", extensions=['extra', 'nl2br'])
+    tech_html = markdown.markdown(tech_opinion if tech_opinion else "No se solicitÃ³ anÃ¡lisis tÃ©cnico.", extensions=['extra', 'nl2br'])
+    fund_html = markdown.markdown(fund_opinion if fund_opinion else "No se solicitÃ³ anÃ¡lisis fundamental.", extensions=['extra', 'nl2br'])
 
     target_html = ""
     if target_price and target_price != "N/A":
@@ -129,14 +133,14 @@ def generar_pdf_analisis_integral(ticker, tech_opinion, fund_opinion, integral_o
     {integral_html if not recom_html else ""}
 
     <div style="margin-bottom: 15px; page-break-before: always;">
-        <h2 style="color: #104b3c; border-bottom: 2px solid #D4AF37; margin-bottom: 8px; font-size: 16pt;">Análisis Cuantitativo (Técnico)</h2>
+        <h2 style="color: #104b3c; border-bottom: 2px solid #D4AF37; margin-bottom: 8px; font-size: 16pt;">AnÃ¡lisis Cuantitativo (TÃ©cnico)</h2>
         <div style="background-color: transparent; padding: 0;">
             {tech_html}
         </div>
     </div>
 
     <div style="margin-bottom: 15px; page-break-before: always;">
-        <h2 style="color: #104b3c; border-bottom: 2px solid #D4AF37; margin-bottom: 8px; font-size: 16pt;">Análisis Corporativo (Fundamental)</h2>
+        <h2 style="color: #104b3c; border-bottom: 2px solid #D4AF37; margin-bottom: 8px; font-size: 16pt;">AnÃ¡lisis Corporativo (Fundamental)</h2>
         <div style="background-color: transparent; padding: 0;">
             {fund_html}
         </div>
@@ -145,23 +149,23 @@ def generar_pdf_analisis_integral(ticker, tech_opinion, fund_opinion, integral_o
     <pdf:nextpage />
     
     <div style="margin-bottom: 25px;">
-        <h1 style="color: #104b3c; border-bottom: 2px solid #D4AF37; margin-bottom: 20px; font-size: 20pt; text-align: left;">Anexos: Gráficos y Metodología</h1>
+        <h1 style="color: #104b3c; border-bottom: 2px solid #D4AF37; margin-bottom: 20px; font-size: 20pt; text-align: left;">Anexos: GrÃ¡ficos y MetodologÃ­a</h1>
         
         {f'<div style="text-align: center; margin-bottom: 20px;"><img src="{chart_b64}" style="width: 100%; border: 1px solid #e2e8f0; border-radius: 5px;"></div>' if chart_b64 else ""}
         
         <div style="background-color: #f8fafc; padding: 15px; margin-bottom: 20px;">
-            <h3 style="color: #104b3c; font-size: 14pt; margin-top: 0; margin-bottom: 10px;">Descripción de la Metodología</h3>
-            <p><strong>Análisis Cuantitativo (Técnico):</strong> Examina el comportamiento histórico del precio y el volumen de un activo utilizando modelos matemáticos y estadísticos. Nuestro sistema emplea Inteligencia Artificial para identificar patrones algorítmicos, fuerza de tendencia y momentum, lo cual permite anticipar posibles puntos de entrada o salida con precisión probabilística.</p>
-            <p><strong>Análisis Corporativo (Fundamental):</strong> Evalúa el valor intrínseco de una empresa analizando sus estados financieros, ventajas competitivas, márgenes operativos y entorno macroeconómico. La IA procesa y pondera esta información para determinar si el activo está subvaluado o sobrevaluado frente a sus perspectivas de crecimiento a largo plazo.</p>
+            <h3 style="color: #104b3c; font-size: 14pt; margin-top: 0; margin-bottom: 10px;">DescripciÃ³n de la MetodologÃ­a</h3>
+            <p><strong>AnÃ¡lisis Cuantitativo (TÃ©cnico):</strong> Examina el comportamiento histÃ³rico del precio y el volumen de un activo utilizando modelos matemÃ¡ticos y estadÃ­sticos. Nuestro sistema emplea Inteligencia Artificial para identificar patrones algorÃ­tmicos, fuerza de tendencia y momentum, lo cual permite anticipar posibles puntos de entrada o salida con precisiÃ³n probabilÃ­stica.</p>
+            <p><strong>AnÃ¡lisis Corporativo (Fundamental):</strong> EvalÃºa el valor intrÃ­nseco de una empresa analizando sus estados financieros, ventajas competitivas, mÃ¡rgenes operativos y entorno macroeconÃ³mico. La IA procesa y pondera esta informaciÃ³n para determinar si el activo estÃ¡ subvaluado o sobrevaluado frente a sus perspectivas de crecimiento a largo plazo.</p>
         </div>
 
         <div style="background-color: #f8fafc; padding: 15px;">
-            <h3 style="color: #104b3c; font-size: 14pt; margin-top: 0; margin-bottom: 10px;">Justificación de Indicadores Utilizados</h3>
+            <h3 style="color: #104b3c; font-size: 14pt; margin-top: 0; margin-bottom: 10px;">JustificaciÃ³n de Indicadores Utilizados</h3>
             <p style="margin-bottom: 10px;">Nuestro modelo cuantitativo selecciona rigurosamente estos indicadores por las siguientes razones:</p>
             <ul>
-                <li style="margin-bottom: 5px;"><strong>MACD (Moving Average Convergence Divergence):</strong> Es esencial para medir la fuerza subyacente y la dirección de la tendencia. Permite detectar divergencias y confirmar si el momentum está acelerando o agotándose.</li>
-                <li style="margin-bottom: 5px;"><strong>RSI (Relative Strength Index):</strong> Cuantifica la magnitud de los cambios recientes en el precio para identificar condiciones de sobrecompra o sobreventa. Es crítico para evitar entradas tardías en el ciclo del mercado.</li>
-                <li style="margin-bottom: 5px;"><strong>Bandas de Bollinger:</strong> Miden la volatilidad extrema. Cuando el precio perfora estas bandas, indica estadísticamente un evento atípico, ofreciendo señales claras de compresión o reversión inminente.</li>
+                <li style="margin-bottom: 5px;"><strong>MACD (Moving Average Convergence Divergence):</strong> Es esencial para medir la fuerza subyacente y la direcciÃ³n de la tendencia. Permite detectar divergencias y confirmar si el momentum estÃ¡ acelerando o agotÃ¡ndose.</li>
+                <li style="margin-bottom: 5px;"><strong>RSI (Relative Strength Index):</strong> Cuantifica la magnitud de los cambios recientes en el precio para identificar condiciones de sobrecompra o sobreventa. Es crÃ­tico para evitar entradas tardÃ­as en el ciclo del mercado.</li>
+                <li style="margin-bottom: 5px;"><strong>Bandas de Bollinger:</strong> Miden la volatilidad extrema. Cuando el precio perfora estas bandas, indica estadÃ­sticamente un evento atÃ­pico, ofreciendo seÃ±ales claras de compresiÃ³n o reversiÃ³n inminente.</li>
             </ul>
         </div>
     </div>
@@ -279,7 +283,7 @@ def generar_pdf_analisis_integral(ticker, tech_opinion, fund_opinion, integral_o
                           <tr style="border: none; background-color: transparent;">
                               <td style="text-align: right; vertical-align: middle; border: none; padding-right: 12px;">
                                   <span style="font-size: 11pt; color: #0A2342; font-weight: bold;">Digital Family Office Analytics</span><br>
-                                  <span style="font-size: 8pt; color: #6b7280;">Fecha de Emisión: {fecha_actual}</span>
+                                  <span style="font-size: 8pt; color: #6b7280;">Fecha de EmisiÃ³n: {fecha_actual}</span>
                               </td>
                               <td style="text-align: right; width: 80px; vertical-align: middle; border: none; padding: 0;">
                                   <img src="{altus_b64}" width="65">
@@ -291,13 +295,13 @@ def generar_pdf_analisis_integral(ticker, tech_opinion, fund_opinion, integral_o
           </table>
           
           <div style="text-align: right; font-size: 8pt; color: #6b7280; margin-bottom: 5px;">
-              Reporte generado por <strong>Altus AI</strong>. Este documento es confidencial y para uso exclusivo de FV Asesorías e Inversiones y sus clientes. No constituye una oferta vinculante ni asesoría financiera garantizada.
+              Reporte generado por <strong>Altus AI</strong>. Este documento es confidencial y para uso exclusivo de FV AsesorÃ­as e Inversiones y sus clientes. No constituye una oferta vinculante ni asesorÃ­a financiera garantizada.
           </div>
   
           <table style="width: 100%; background-color: #f8fafc; padding: 4px; margin-bottom: 5px;">
               <tr>
                   <td style="width: 50%; border-left: 3px solid #cbd5e1; padding-left: 10px;">
-                      <strong>Atención a:</strong> {destinatario} <br>
+                      <strong>AtenciÃ³n a:</strong> {destinatario} <br>
                       <strong>Instrumento Analizado:</strong> {ticker}
                   </td>
                   <td style="width: 50%; border-left: 3px solid #cbd5e1; padding-left: 10px; vertical-align: top;">
@@ -309,16 +313,16 @@ def generar_pdf_analisis_integral(ticker, tech_opinion, fund_opinion, integral_o
         {contenido_html}
 
         <div class="disclaimer">
-            <strong>Aviso Legal:</strong> Las visiones y proyecciones presentadas en este documento han sido procesadas mediante inteligencia artificial cuantitativa (Altus AI) cruzando múltiples visiones de mercado. Este documento no constituye una recomendación de inversión vinculante, sino una herramienta de información estratégica basada en cálculos algorítmicos. Los mercados son volátiles y las rentabilidades pasadas no garantizan retornos futuros. FV Asesorías e Inversiones limita su responsabilidad al análisis puramente matemático.
+            <strong>Aviso Legal:</strong> Las visiones y proyecciones presentadas en este documento han sido procesadas mediante inteligencia artificial cuantitativa (Altus AI) cruzando mÃºltiples visiones de mercado. Este documento no constituye una recomendaciÃ³n de inversiÃ³n vinculante, sino una herramienta de informaciÃ³n estratÃ©gica basada en cÃ¡lculos algorÃ­tmicos. Los mercados son volÃ¡tiles y las rentabilidades pasadas no garantizan retornos futuros. FV AsesorÃ­as e Inversiones limita su responsabilidad al anÃ¡lisis puramente matemÃ¡tico.
         </div>
         
         <div class="corp-desc">
-            <strong>Sobre FV Asesorías e Inversiones</strong><br>
-            FV Asesorías e Inversiones somos un Multi-Family Office Digital impulsado por nuestro software cuantitativo privado de Inteligencia Artificial (ALTUS AI). Combinamos la agilidad tecnológica de una WealthTech con la exclusividad de una oficina patrimonial privada, auditando en 360° la situación tributaria, inmobiliaria, composición familiar, seguros e inversiones para proteger su legado a través de las generaciones.
+            <strong>Sobre FV AsesorÃ­as e Inversiones</strong><br>
+            FV AsesorÃ­as e Inversiones somos un Multi-Family Office Digital impulsado por nuestro software cuantitativo privado de Inteligencia Artificial (ALTUS AI). Combinamos la agilidad tecnolÃ³gica de una WealthTech con la exclusividad de una oficina patrimonial privada, auditando en 360Â° la situaciÃ³n tributaria, inmobiliaria, composiciÃ³n familiar, seguros e inversiones para proteger su legado a travÃ©s de las generaciones.
         </div>
 
         <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-left: 3px solid #0A2342; padding: 6px 10px; margin-top: 8px; font-size: 7.5pt; color: #334155; line-height: 1.3; font-family: Helvetica, Arial, sans-serif;">
-            <strong>🔒 Ciberseguridad & Resguardo Patrimonial:</strong> Toda la información analizada por Altus AI se encuentra protegida bajo cifrado nativo <strong>AES-256 bits</strong> y transmisión <strong>TLS 1.3</strong> de grado bancario. Garantizamos estricta confidencialidad bajo Secreto Patrimonial y cumplimiento riguroso de la Ley N° 19.628 de Protección de Datos Personales en Chile.
+            <strong>ðŸ”’ Ciberseguridad & Resguardo Patrimonial:</strong> Toda la informaciÃ³n analizada por Altus AI se encuentra protegida bajo cifrado nativo <strong>AES-256 bits</strong> y transmisiÃ³n <strong>TLS 1.3</strong> de grado bancario. Garantizamos estricta confidencialidad bajo Secreto Patrimonial y cumplimiento riguroso de la Ley NÂ° 19.628 de ProtecciÃ³n de Datos Personales en Chile.
         </div>
         
     </body>

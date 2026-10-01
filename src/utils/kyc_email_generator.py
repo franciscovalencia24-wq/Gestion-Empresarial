@@ -98,6 +98,7 @@ def generar_comunicacion_apv_reliquidacion(client_name="José González Daza", a
     """
     c_name = client_name.strip() if client_name else "José González Daza"
     first_name = c_name.split()[0] if c_name else "José"
+    
     clean_file_name = f"Formulario_APV_Reliquidacion_{c_name.replace(' ', '_')}.xlsx"
     
     asunto = f"Planificación APV & Optimización Tributaria (Reliquidación IGC) | {c_name}"
@@ -155,4 +156,12 @@ Quedo muy atento por esa vía para correr las simulaciones y entregarte la propu
         "asunto": clean_markdown_formatting(asunto),
         "cuerpo_email": clean_markdown_formatting(cuerpo_email),
         "mensaje_whatsapp": clean_markdown_formatting(mensaje_whatsapp)
+    }
+
+
+def generar_comunicacion_inventario_adicional(client_name="Cliente", advisor_name="Francisco Valencia"):
+    return {
+        "asunto": "Formulario de Inventario Adicional para Planificación Patrimonial",
+        "cuerpo_email": f"Estimado {client_name},\n\nJunto con saludar, te enviamos adjunto el Formulario de Inventario Adicional.\n\nEste archivo nos permite registrar activos de valor que no aparecen en la Carpeta Tributaria ni en las cartolas bancarias (por ejemplo, vehículos, obras de arte, participaciones en sociedades cerradas o préstamos a terceros).\n\nEn el mismo archivo encontrarás ejemplos para guiarte en el llenado.\n\nQuedamos atentos a cualquier duda.\n\nSaludos cordiales,\n{advisor_name}\nFV Asesorías e Inversiones",
+        "mensaje_whatsapp": f"Hola {client_name}, te enviamos por correo el Formulario de Inventario Adicional para registrar los activos que no están en el SII (autos, arte, sociedades). El archivo trae ejemplos para ayudarte a completarlo. Cualquier duda me avisas! Saludos."
     }

@@ -157,7 +157,7 @@ def generate_audit_pdf(client_name, metrics, summary_text=None,
     pdf.cell(0, 7, f"Fecha: {datetime.now().strftime('%d/%m/%Y')}", ln=True)
     pdf.set_font('Helvetica', '', 9)
     pdf.set_text_color(107, 114, 128)
-    pdf.cell(0, 5, "Metodología: Auditoría Patrimonial Wealth 3.0 — Monte Carlo 2.000 trayectorias", ln=True)
+    pdf.cell(0, 5, "Metodología: Auditoría Patrimonial Wealth 3.0 - Monte Carlo 2.000 trayectorias", ln=True)
     pdf.set_text_color(0, 0, 0)
     pdf.ln(3)
 
@@ -169,7 +169,7 @@ def generate_audit_pdf(client_name, metrics, summary_text=None,
 
     pdf.set_font('Helvetica', 'B', 8)
     pdf.set_text_color(107, 114, 128)
-    for lbl, cx in zip(["PATRIMONIO PROYECTADO (MEDIANA)", "TAC — COSTO ANUAL PROPUESTA", "ALPHA TRIBUTARIO"], mx):
+    for lbl, cx in zip(["PATRIMONIO PROYECTADO (MEDIANA)", "TAC - COSTO ANUAL PROPUESTA", "ALPHA TRIBUTARIO"], mx):
         pdf.set_xy(cx, pdf.get_y())
         pdf.cell(col_w, 5, lbl, ln=False)
     pdf.ln(6)
@@ -221,7 +221,7 @@ def generate_audit_pdf(client_name, metrics, summary_text=None,
     else:
         pdf.set_font('Helvetica', 'I', 8)
         pdf.set_text_color(120, 120, 120)
-        pdf.cell(0, 8, "[Estadísticas Monte Carlo no disponibles — ejecute la auditoría desde la plataforma]", ln=True)
+        pdf.cell(0, 8, "[Estadísticas Monte Carlo no disponibles - ejecute la auditoría desde la plataforma]", ln=True)
         pdf.set_text_color(0, 0, 0)
         pdf.ln(4)
 
@@ -281,4 +281,177 @@ def generate_audit_pdf(client_name, metrics, summary_text=None,
         pdf.output(filename, 'F')  # fpdf 1.x
     except TypeError:
         pdf.output(filename)        # fpdf 2.x
+    return filename
+
+class AltusAdoptionReport(FPDF):
+    def header(self):
+        self.set_font('Helvetica', 'B', 16)
+        self.set_text_color(15, 23, 42) # Slate 900
+        self.cell(0, 8, "ALTUS AI SpA", ln=True, align='R')
+        self.set_font('Helvetica', 'B', 10)
+        self.set_text_color(100, 116, 139) # Slate 500
+        self.cell(0, 5, "División Institucional B2B", ln=True, align='R')
+        self.line(10, self.get_y()+2, 200, self.get_y()+2)
+        self.ln(8)
+
+    def footer(self):
+        self.set_y(-15)
+        self.set_font('Helvetica', 'I', 8)
+        self.set_text_color(128, 128, 128)
+        self.cell(0, 10, f'Página {self.page_no()} - Documento Confidencial', 0, 0, 'C')
+
+def generate_adoption_certificate_pdf(empresa_nombre, empresa_rut, plan_contratado, total_contratado, total_cargados, saldo_licencias, activados, tasa_activacion, hash_cert):
+    pdf = AltusAdoptionReport(orientation='P', unit='mm', format='A4')
+    pdf.add_page()
+    
+    def clean_pdf_text(s):
+        if not s: return ""
+        return str(s).encode('latin-1', 'replace').decode('latin-1')
+
+    # Título Principal
+    pdf.set_font('Helvetica', 'B', 14)
+    pdf.set_text_color(15, 23, 42)
+    pdf.cell(0, 10, "CERTIFICADO OFICIAL DE ADOPCIÓN CORPORATIVA", ln=True, align='C')
+    pdf.ln(8)
+    
+    # 1. Datos del Cliente
+    pdf.set_font('Helvetica', 'B', 11)
+    pdf.set_fill_color(241, 245, 249) # Slate 100
+    pdf.cell(0, 8, "  1. DATOS DEL CLIENTE INSTITUCIONAL", ln=True, fill=True)
+    pdf.ln(2)
+    
+    pdf.set_font('Helvetica', 'B', 9)
+    pdf.cell(40, 6, "Razón Social:", ln=False)
+    pdf.set_font('Helvetica', '', 9)
+    pdf.cell(0, 6, clean_pdf_text(empresa_nombre), ln=True)
+    
+    pdf.set_font('Helvetica', 'B', 9)
+    pdf.cell(40, 6, "RUT:", ln=False)
+    pdf.set_font('Helvetica', '', 9)
+    pdf.cell(0, 6, clean_pdf_text(empresa_rut), ln=True)
+    
+    pdf.set_font('Helvetica', 'B', 9)
+    pdf.cell(40, 6, "Plan Contratado:", ln=False)
+    pdf.set_font('Helvetica', '', 9)
+    pdf.cell(0, 6, clean_pdf_text(plan_contratado), ln=True)
+    
+    pdf.set_font('Helvetica', 'B', 9)
+    pdf.cell(40, 6, "Fecha Emisión:", ln=False)
+    pdf.set_font('Helvetica', '', 9)
+    pdf.cell(0, 6, datetime.now().strftime('%d-%m-%Y %H:%M:%S'), ln=True)
+    pdf.ln(6)
+    
+    # 2. Métricas
+    pdf.set_font('Helvetica', 'B', 11)
+    pdf.cell(0, 8, "  2. MÉTRICAS CONSOLIDADAS Y AGREGADAS", ln=True, fill=True)
+    pdf.ln(2)
+    
+    metrics = [
+        ("Cupos Originales Contratados", str(total_contratado)),
+        ("Cupos Asignados a Ejecutivos", str(total_cargados)),
+        ("Cupos Remanentes Disponibles", str(saldo_licencias)),
+        ("Reportes 360 Emitidos", str(activados)),
+        ("Tasa Global de Activación", f"{tasa_activacion:.1f}%")
+    ]
+    
+    for k, v in metrics:
+        pdf.set_font('Helvetica', '', 9)
+        pdf.cell(80, 7, clean_pdf_text(k), border=1, fill=False, ln=False)
+        pdf.set_font('Helvetica', 'B', 9)
+        pdf.cell(40, 7, clean_pdf_text(v), border=1, fill=False, ln=True, align='C')
+    pdf.ln(8)
+    
+    # 3. Desglose Metodológico de Auditoría
+    pdf.set_font('Helvetica', 'B', 11)
+    pdf.cell(0, 8, "  3. DESGLOSE METODOLÓGICO DE AUDITORÍA", ln=True, fill=True)
+    pdf.ln(2)
+    
+    pdf.set_font('Helvetica', '', 8)
+    pdf.set_text_color(71, 85, 105)
+    metodologia = (
+        "Los análisis y simulaciones generadas para los ejecutivos de la nómina se construyen "
+        "en base a los siguientes motores analíticos de ALTUS Core:\n"
+        "• Auditoría de Reliquidación IGC (Motor: src/utils/simulators/reliquidacion_simulator.py): "
+        "Simulación de impacto fiscal sobre indemnizaciones y rentas diferidas.\n"
+        "• Optimización DPE (Motor: src/utils/simulators/dpe_simulator.py): "
+        "Cálculo del Ahorro Fiscal mediante Depósito Pactado del Empleador."
+    )
+    pdf.multi_cell(0, 5, clean_pdf_text(metodologia))
+    pdf.ln(6)
+    
+    # 4. Cumplimiento
+    pdf.set_font('Helvetica', 'B', 11)
+    pdf.set_text_color(15, 23, 42)
+    pdf.cell(0, 8, "  4. CLÁUSULA DE CUMPLIMIENTO Y CONFIDENCIALIDAD", ln=True, fill=True)
+    pdf.ln(2)
+    
+    pdf.set_font('Helvetica', '', 8)
+    pdf.set_text_color(71, 85, 105) # Slate 600
+    
+    clausula = (
+        "Se certifica explícitamente que ALTUS AI SpA procesó los datos de la nómina gerencial "
+        "bajo los más altos estándares de seguridad y confidencialidad. Toda la información patrimonial, "
+        "simulaciones tributarias y reportes de los colaboradores fueron procesados mediante algoritmos "
+        "con cifrado de grado militar (AES-256) en tránsito y reposo, y operan bajo un esquema arquitectónico "
+        "Zero-Knowledge (Conocimiento Cero). La empresa contratante (empleador) NO posee, bajo ninguna "
+        "circunstancia o autorización, acceso a datos patrimoniales ni fiscales individuales de sus ejecutivos.\n\n"
+        "Este procesamiento es conforme a las disposiciones normadas por la Ley 21.096 (Protección de "
+        "Datos Personales) y la Ley 21.521 (Ley Fintec) en la República de Chile."
+    )
+    pdf.multi_cell(0, 5, clean_pdf_text(clausula))
+    pdf.ln(8)
+    
+    # Hash y QR
+    import qrcode
+    
+    fecha_emision_str = datetime.now().strftime('%Y-%m-%d')
+    qr_data = f"ALTUS-AUDIT:RUT={empresa_rut}|HASH={hash_cert}|DATE={fecha_emision_str}"
+    qr = qrcode.QRCode(version=1, box_size=10, border=1)
+    qr.add_data(qr_data)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+    
+    qr_filename = f"qr_{hash_cert[:10]}.png"
+    qr_img.save(qr_filename)
+    
+    pdf.set_font('Helvetica', 'B', 9)
+    pdf.set_text_color(15, 23, 42)
+    pdf.cell(0, 6, "Sello de Integridad y Verificación (SHA-256):", ln=True)
+    
+    # Guardar la Y actual antes de dibujar el QR y el hash
+    current_y = pdf.get_y()
+    
+    pdf.set_font('Courier', '', 8)
+    pdf.set_text_color(100, 116, 139)
+    pdf.set_xy(10, current_y)
+    pdf.multi_cell(140, 5, clean_pdf_text(hash_cert))
+    
+    # Renderizar código QR
+    pdf.image(qr_filename, x=150, y=current_y - 5, w=35)
+    
+    pdf.set_xy(10, current_y + 25)
+    
+    # Limpiar archivo temporal de imagen QR
+    try:
+        os.remove(qr_filename)
+    except:
+        pass
+    
+    # Firmas
+    pdf.set_font('Helvetica', 'B', 9)
+    pdf.set_text_color(15, 23, 42)
+    pdf.cell(80, 5, "___________________________________", ln=True)
+    pdf.cell(80, 5, "Sistema de Emisión Automatizada", ln=True)
+    pdf.cell(80, 5, "ALTUS AI SpA", ln=True)
+    
+    output_dir = "reports"
+    os.makedirs(output_dir, exist_ok=True)
+    ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = os.path.join(output_dir, f"Certificado_Adopcion_{str(empresa_rut).replace('.', '').replace('-', '')}_{ts}.pdf")
+    
+    try:
+        pdf.output(filename, 'F')
+    except TypeError:
+        pdf.output(filename)
+        
     return filename

@@ -1,0 +1,821 @@
+====================
+Created At: 2026-09-25T23:30:21-03:00
+Completed At: 2026-09-25T23:30:23-03:00
+The following changes were made by the multi_replace_file_content tool to: c:\Users\franc\OneDrive\Documentos\PROYECTOS\BD SENIOR\src\web\company_management_ui.py. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -503,8 +503,7 @@
+ 
+         st.markdown("---")
+ 
+-        # 5. TABLAS EDITABLES CON ST.DATA_EDITOR
+-        tab1, tab2, tab3, tab4, tab5 = st.tabs([
++        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+             "🟢 Facturas Emitidas / Abonos",
+             "🔴 Facturas de Compra / Gastos",
+             "🤝 Movimientos Cuentas Socios (Francisco & Natalia)",
+@@ -511,4 +511,5 @@
+-            "🏦 Desglose por Cuentas Corrientes"
++            "🏦 Desglose por Cuentas Corrientes",
++            "🏢 Administración B2B (Reporte 360)"
+         ])
+ 
+         with tab1:
+@@ -952,6 +952,190 @@
+                     }
+                 )
+ 
++        with tab6:
++            st.markdown("##### 🏢 Administración de Empresas y Cupos B2B (Reporte 360)")
++            from src.database.models import EmpresaB2B, EjecutivoB2B
++            from src.core.config import B2B_LICENSE_TIERS
++            import uuid
++            import io
++            
++            # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
++            st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
++            
++            empresas_db = db.query(EmpresaB2B).all()
++            
++            col_b1, col_b2 = st.columns([1, 1])
++            with col_b1:
++                st.markdown("**Registrar Nueva Empresa**")
++                with st.form("form_nueva_empresa_b2b"):
++                    n_rut_empresa = st.text_input("RUT Empresa (ej: 76.123.456-7)")
++                    n_razon_social = st.text_input("Razón Social")
++                    n_contacto = st.text_input("Contacto Comercial (Nombre, Email)")
++                    n_plan = st.selectbox("Plan Contratado", list(B2B_LICENSE_TIERS.keys()))
++                    submit_new_emp = st.form_submit_button("Registrar Empresa B2B")
++                    
++                    if submit_new_emp:
++                        if n_rut_empresa and n_razon_social:
++                            check_exist = db.query(EmpresaB2B).filter_by(rut=n_rut_empresa).first()
++                            if not check_exist:
++                                plan_cupos = B2B_LICENSE_TIERS[n_plan]["max_users"]
++                                if plan_cupos == float('inf'): plan_cupos = 9999
++                                new_emp = EmpresaB2B(
++                                    rut=n_rut_empresa,
++                                    razon_social=n_razon_social,
++                                    contacto_comercial=n_contacto,
++                                    plan_contratado=n_plan,
++                                    cupo_licencias=plan_cupos,
++                                    estado_activo=True
++                                )
++                                db.add(new_emp)
++                                db.commit()
++                                try:
++                                    from src.utils.gcs_sync import safe_upload_with_streamlit_ui
++                                    safe_upload_with_streamlit_ui()
++                                except: pass
++                                st.success("✅ Empresa B2B Registrada con éxito.")
++                                st.rerun()
++                            else:
++                                st.error("⚠️ El RUT de la empresa ya existe.")
++                        else:
++                            st.warning("Debe ingresar al menos RUT y Razón Social.")
++
++            with col_b2:
++                st.markdown("**Seleccionar Empresa Existente**")
++                if not empresas_db:
++                    st.info("No hay empresas registradas.")
++                    empresa_sel_b2b = None
++                else:
++                    empresa_opts = {f"{e.razon_social} ({e.rut})": e for e in empresas_db}
++                    sel_emp_str = st.selectbox("Empresa:", list(empresa_opts.keys()))
++                    empresa_sel_b2b = empresa_opts[sel_emp_str]
++                    
++                    # Mostrar Panel de Cupos
++                    if empresa_sel_b2b:
++                        total_contratado = empresa_sel_b2b.cupo_licencias
++                        ejecutivos_asociados = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).count()
++                        saldo = total_contratado - ejecutivos_asociados
++                        
++                        st.markdown(f"""
++                        <div style='background-color: #1e293b; padding: 15px; border-radius: 10px; border-left: 5px solid #10b981; margin-top: 15px;'>
++                            <h5 style='color: #f8fafc; margin: 0;'>Panel de Cupos: {empresa_sel_b2b.plan_contratado}</h5>
++                            <p style='color: #e2e8f0; font-size: 0.95rem; margin-top: 8px; margin-bottom: 0;'>
++                                • <b>Cupos Contratados:</b> {total_contratado}<br/>
++                                • <b>Ejecutivos Cargados:</b> {ejecutivos_asociados}<br/>
++                                • <b>Saldo Disponible:</b> <span style='color: {"#10b981" if saldo > 0 else "#ef4444"}; font-weight: bold;'>{saldo}</span>
++                            </p>
++                        </div>
++                        """, unsafe_allow_html=True)
++            
++            st.markdown("---")
++            if empresa_sel_b2b:
++                st.markdown(f"###### 2️⃣ Gestión de Ejecutivos para **{empresa_sel_b2b.razon_social}**")
++                
++                # Importador masivo
++                with st.expander("📥 Importar Nómina Masiva (Excel/CSV)"):
++                    st.caption("El archivo debe contener las columnas: RUT, Nombre Completo, Correo Corporativo, Cargo")
++                    nomina_file = st.file_uploader("Sube el archivo Excel o CSV", type=["xlsx", "csv"])
++                    if nomina_file and st.button("Procesar Nómina", type="primary"):
++                        try:
++                            if nomina_file.name.endswith('.csv'):
++                                df_nomina = pd.read_csv(nomina_file)
++                            else:
++                                df_nomina = pd.read_excel(nomina_file)
++                                
++                            required_cols = ["RUT", "Nombre Completo"]
++                            missing = [c for c in required_cols if c not in df_nomina.columns]
++                            if missing:
++                                st.error(f"⚠️ Faltan columnas requeridas: {', '.join(missing)}")
++                            else:
++                                added_count = 0
++                                dup_count = 0
++                                no_quota = 0
++                                for _, row in df_nomina.iterrows():
++                                    current_count = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).count()
++                                    if current_count >= empresa_sel_b2b.cupo_licencias:
++                                        no_quota += 1
++                                        continue
++                                        
++                                    r_rut = str(row.get("RUT", "")).strip()
++                                    r_nombre = str(row.get("Nombre Completo", "")).strip()
++                                    r_correo = str(row.get("Correo Corporativo", "")).strip() if "Correo Corporativo" in df_nomina.columns else ""
++                                    r_cargo = str(row.get("Cargo", "")).strip() if "Cargo" in df_nomina.columns else ""
++                                    
++                                    if r_rut and r_nombre:
++                                        check_exec = db.query(EjecutivoB2B).filter_by(rut=r_rut).first()
++                                        if not check_exec:
++                                            new_token = str(uuid.uuid4())
++                                            new_exec = EjecutivoB2B(
++                                                empresa_id=empresa_sel_b2b.id,
++                                                rut=r_rut,
++                                                nombre_completo=r_nombre,
++                                                correo_corporativo=r_correo,
++                                                cargo=r_cargo,
++                                                token_acceso=new_token,
++                                                estado_onboarding="Pendiente"
++                                            )
++                                            db.add(new_exec)
++                                            added_count += 1
++                                        else:
++                                            dup_count += 1
++                                
++                                if added_count > 0:
++                                    db.commit()
++                                    try:
++                                        from src.utils.gcs_sync import safe_upload_with_streamlit_ui
++                                        safe_upload_with_streamlit_ui()
++                                    except: pass
++                                
++                                st.success(f"✅ Nómina procesada: {added_count} nuevos, {dup_count} omitidos (duplicados), {no_quota} omitidos (sin cupo).")
++                                time.sleep(1)
++                                st.rerun()
++                                
++                        except Exception as ex_import:
++                            st.error(f"Error procesando nómina: {str(ex_import)}")
++                
++                # Tabla de Monitoreo
++                ejecutivos_list = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).all()
++                if ejecutivos_list:
++                    data_execs = []
++                    # Construir url base usando localhost temporalmente si no hay dominio config
++                    base_url = "https://app.altuscore.cl/"
++                    for exc in ejecutivos_list:
++                        if not exc.token_acceso:
++                            exc.token_acceso = str(uuid.uuid4())
++                            db.commit()
++                        
++                        enlace = f"{base_url}?b2b_token={exc.token_acceso}"
++                        data_execs.append({
++                            "ID": exc.id,
++                            "RUT": exc.rut,
++                            "Nombre Completo": exc.nombre_completo,
++                            "Correo": exc.correo_corporativo,
++                            "Cargo": exc.cargo,
++                            "Estado": exc.estado_onboarding,
++                            "Enlace Acceso": enlace
++                        })
++                    
++                    df_execs = pd.DataFrame(data_execs)
++                    st.dataframe(
++                        df_execs,
++                        width="stretch",
++                        hide_index=True,
++                        column_config={
++                            "Enlace Acceso": st.column_config.LinkColumn("Enlace Acceso (Copiar)"),
++                        }
++                    )
++                    
++                    csv_links = df_execs.to_csv(index=False).encode('utf-8')
++                    st.download_button(
++                        label="📥 Exportar Nómina y Enlaces Únicos (CSV)",
++                        data=csv_links,
++                        file_name=f"Enlaces_B2B_{empresa_sel_b2b.razon_social}.csv",
++                        mime="text/csv"
++                    )
++                else:
++                    st.info("No hay ejecutivos cargados para esta empresa.")
++
+     except Exception as e:
+         import traceback
+         st.error(f"Error en UI de Gestión Empresarial: {str(e)}")
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.
+====================
+Created At: 2026-09-25T23:32:01-03:00
+Completed At: 2026-09-25T23:32:04-03:00
+The following changes were made by the multi_replace_file_content tool to: c:\Users\franc\OneDrive\Documentos\PROYECTOS\BD SENIOR\src\web\company_management_ui.py. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.
+[diff_block_start]
+@@ -960,6 +960,7 @@
+             from src.core.config import B2B_LICENSE_TIERS
+             import uuid
+             import io
++            import time
+             
+             # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
+             st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
+[diff_block_end]
+
+Please note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.
+====================
+Created At: 2026-09-28T11:54:24-03:00
+Completed At: 2026-09-28T11:54:24-03:00
+File Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/company_management_ui.py`
+Total Lines: 1225
+Total Bytes: 73572
+Showing lines 950 to 1100
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+950:                         "Cuenta Corriente": st.column_config.TextColumn("Cuenta Corriente", width="medium"),
+951:                         "INGRESO": st.column_config.NumberColumn("Abonos Totales", format="$ %,.0f", width="medium"),
+952:                         "EGRESO": st.column_config.NumberColumn("Cargos/Gastos Totales", format="$ %,.0f", width="medium"),
+953:                         "Balance Neto de Cuenta": st.column_config.NumberColumn("Flujo Neto", format="$ %,.0f", width="medium")
+954:                     }
+955:                 )
+956: 
+957:         with tab6:
+958:             st.markdown("##### 🏢 Administración de Empresas y Cupos B2B (Reporte 360)")
+959:             from src.database.models import EmpresaB2B, EjecutivoB2B
+960:             from src.core.config import B2B_LICENSE_TIERS
+961:             import uuid
+962:             import io
+963:             import time
+964:             
+965:             # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
+966:             st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
+967:             
+968:             empresas_db = db.query(EmpresaB2B).all()
+969:             
+970:             col_b1, col_b2 = st.columns([1, 1])
+971:             with col_b1:
+972:                 st.markdown("**Registrar Nueva Empresa**")
+973:                 with st.form("form_nueva_empresa_b2b"):
+974:                     n_rut_empresa = st.text_input("RUT Empresa (ej: 76.123.456-7)")
+975:                     n_razon_social = st.text_input("Razón Social")
+976:                     n_contacto = st.text_input("Contacto Comercial (Nombre, Email)")
+977:                     n_plan = st.selectbox("Plan Contratado", list(B2B_LICENSE_TIERS.keys()))
+978:                     submit_new_emp = st.form_submit_button("Registrar Empresa B2B")
+979:                     
+980:                     if submit_new_emp:
+981:                         if n_rut_empresa and n_razon_social:
+982:                             check_exist = db.query(EmpresaB2B).filter_by(rut=n_rut_empresa).first()
+983:                             if not check_exist:
+984:                                 plan_cupos = B2B_LICENSE_TIERS[n_plan]["max_users"]
+985:                                 if plan_cupos == float('inf'): plan_cupos = 9999
+986:                                 new_emp = EmpresaB2B(
+987:                                     rut=n_rut_empresa,
+988:                                     razon_social=n_razon_social,
+989:                                     contacto_comercial=n_contacto,
+990:                                     plan_contratado=n_plan,
+991:                                     cupo_licencias=plan_cupos,
+992:                                     estado_activo=True
+993:                                 )
+994:                                 db.add(new_emp)
+995:                                 db.commit()
+996:                                 try:
+997:                                     from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+998:                                     safe_upload_with_streamlit_ui()
+999:                                 except: pass
+1000:                                 st.success("✅ Empresa B2B Registrada con éxito.")
+1001:                                 st.rerun()
+1002:                             else:
+1003:                                 st.error("⚠️ El RUT de la empresa ya existe.")
+1004:                         else:
+1005:                             st.warning("Debe ingresar al menos RUT y Razón Social.")
+1006: 
+1007:             with col_b2:
+1008:                 st.markdown("**Seleccionar Empresa Existente**")
+1009:                 if not empresas_db:
+1010:                     st.info("No hay empresas registradas.")
+1011:                     empresa_sel_b2b = None
+1012:                 else:
+1013:                     empresa_opts = {f"{e.razon_social} ({e.rut})": e for e in empresas_db}
+1014:                     sel_emp_str = st.selectbox("Empresa:", list(empresa_opts.keys()))
+1015:                     empresa_sel_b2b = empresa_opts[sel_emp_str]
+1016:                     
+1017:                     # Mostrar Panel de Cupos
+1018:                     if empresa_sel_b2b:
+1019:                         total_contratado = empresa_sel_b2b.cupo_licencias
+1020:                         ejecutivos_asociados = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).count()
+1021:                         saldo = total_contratado - ejecutivos_asociados
+1022:                         
+1023:                         st.markdown(f"""
+1024:                         <div style='background-color: #1e293b; padding: 15px; border-radius: 10px; border-left: 5px solid #10b981; margin-top: 15px;'>
+1025:                             <h5 style='color: #f8fafc; margin: 0;'>Panel de Cupos: {empresa_sel_b2b.plan_contratado}</h5>
+1026:                             <p style='color: #e2e8f0; font-size: 0.95rem; margin-top: 8px; margin-bottom: 0;'>
+1027:                                 • <b>Cupos Contratados:</b> {total_contratado}<br/>
+1028:                                 • <b>Ejecutivos Cargados:</b> {ejecutivos_asociados}<br/>
+1029:                                 • <b>Saldo Disponible:</b> <span style='color: {"#10b981" if saldo > 0 else "#ef4444"}; font-weight: bold;'>{saldo}</span>
+1030:                             </p>
+1031:                         </div>
+1032:                         """, unsafe_allow_html=True)
+1033:             
+1034:             st.markdown("---")
+1035:             if empresa_sel_b2b:
+1036:                 st.markdown(f"###### 2️⃣ Gestión de Ejecutivos para **{empresa_sel_b2b.razon_social}**")
+1037:                 
+1038:                 # Importador masivo
+1039:                 with st.expander("📥 Importar Nómina Masiva (Excel/CSV)"):
+1040:                     st.caption("El archivo debe contener las columnas: RUT, Nombre Completo, Correo Corporativo, Cargo")
+1041:                     
+1042:                     # Generar Plantilla Excel
+1043:                     template_df = pd.DataFrame(columns=["RUT", "Nombre Completo", "Correo Corporativo", "Cargo"])
+1044:                     template_df.loc[0] = ["12.345.678-9", "Juan Pérez", "juan.perez@empresa.cl", "Gerente General"]
+1045:                     output = io.BytesIO()
+1046:                     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+1047:                         template_df.to_excel(writer, index=False, sheet_name='Nómina')
+1048:                     plantilla_xls = output.getvalue()
+1049:                     
+1050:                     st.download_button(
+1051:                         label="📄 Descargar Plantilla Oficial (Excel)",
+1052:                         data=plantilla_xls,
+1053:                         file_name="plantilla_nomina_b2b.xlsx",
+1054:                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+1055:                     )
+1056: 
+1057:                     nomina_file = st.file_uploader("Sube el archivo Excel o CSV", type=["xlsx", "csv"])
+1058:                     if nomina_file and st.button("Procesar Nómina", type="primary"):
+1059:                         try:
+1060:                             if nomina_file.name.endswith('.csv'):
+1061:                                 df_nomina = pd.read_csv(nomina_file)
+1062:                             else:
+1063:                                 df_nomina = pd.read_excel(nomina_file)
+1064:                                 
+1065:                             required_cols = ["RUT", "Nombre Completo"]
+1066:                             missing = [c for c in required_cols if c not in df_nomina.columns]
+1067:                             if missing:
+1068:                                 st.error(f"⚠️ Faltan columnas requeridas: {', '.join(missing)}")
+1069:                             else:
+1070:                                 added_count = 0
+1071:                                 dup_count = 0
+1072:                                 no_quota = 0
+1073:                                 for _, row in df_nomina.iterrows():
+1074:                                     current_count = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).count()
+1075:                                     if current_count >= empresa_sel_b2b.cupo_licencias:
+1076:                                         no_quota += 1
+1077:                                         continue
+1078:                                         
+1079:                                     r_rut = str(row.get("RUT", "")).strip()
+1080:                                     r_nombre = str(row.get("Nombre Completo", "")).strip()
+1081:                                     r_correo = str(row.get("Correo Corporativo", "")).strip() if "Correo Corporativo" in df_nomina.columns else ""
+1082:                                     r_cargo = str(row.get("Cargo", "")).strip() if "Cargo" in df_nomina.columns else ""
+1083:                                     
+1084:                                     if r_rut and r_nombre:
+1085:                                         check_exec = db.query(EjecutivoB2B).filter_by(rut=r_rut).first()
+1086:                                         if not check_exec:
+1087:                                             new_token = str(uuid.uuid4())
+1088:                                             new_exec = EjecutivoB2B(
+1089:                                                 empresa_id=empresa_sel_b2b.id,
+1090:                                                 rut=r_rut,
+1091:                                                 nombre_completo=r_nombre,
+1092:                                                 correo_corporativo=r_correo,
+1093:                                                 cargo=r_cargo,
+1094:                                                 token_acceso=new_token,
+1095:                                                 estado_onboarding="Pendiente"
+1096:                                             )
+1097:                                             db.add(new_exec)
+1098:                                             added_count += 1
+1099:                                         else:
+1100:                                             dup_count += 1
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+====================
+Created At: 2026-09-28T12:37:19-03:00
+Completed At: 2026-09-28T12:37:19-03:00
+File Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/company_management_ui.py`
+Total Lines: 1372
+Total Bytes: 83358
+Showing lines 950 to 1000
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+950:                         "Cuenta Corriente": st.column_config.TextColumn("Cuenta Corriente", width="medium"),
+951:                         "INGRESO": st.column_config.NumberColumn("Abonos Totales", format="$ %,.0f", width="medium"),
+952:                         "EGRESO": st.column_config.NumberColumn("Cargos/Gastos Totales", format="$ %,.0f", width="medium"),
+953:                         "Balance Neto de Cuenta": st.column_config.NumberColumn("Flujo Neto", format="$ %,.0f", width="medium")
+954:                     }
+955:                 )
+956: 
+957:         with tab6:
+958:             st.markdown("##### 🏢 Administración de Empresas y Cupos B2B (Reporte 360)")
+959:             from src.database.models import EmpresaB2B, EjecutivoB2B
+960:             from src.core.config import B2B_LICENSE_TIERS
+961:             import uuid
+962:             import io
+963:             import time
+964:             
+965:             # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
+966:             st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
+967:             
+968:             empresas_db = db.query(EmpresaB2B).all()
+969:             
+970:             col_b1, col_b2 = st.columns([1, 1])
+971:             with col_b1:
+972:                 st.markdown("**Registrar Nueva Empresa**")
+973:                 with st.form("form_nueva_empresa_b2b"):
+974:                     n_rut_empresa = st.text_input("RUT Empresa (ej: 76.123.456-7)")
+975:                     n_razon_social = st.text_input("Razón Social")
+976:                     n_contacto = st.text_input("Contacto Comercial (Nombre, Email)")
+977:                     n_plan = st.selectbox("Plan Contratado", list(B2B_LICENSE_TIERS.keys()))
+978:                     submit_new_emp = st.form_submit_button("Registrar Empresa B2B")
+979:                     
+980:                     if submit_new_emp:
+981:                         if n_rut_empresa and n_razon_social:
+982:                             check_exist = db.query(EmpresaB2B).filter_by(rut=n_rut_empresa).first()
+983:                             if not check_exist:
+984:                                 plan_cupos = B2B_LICENSE_TIERS[n_plan]["max_users"]
+985:                                 if plan_cupos == float('inf'): plan_cupos = 9999
+986:                                 new_emp = EmpresaB2B(
+987:                                     rut=n_rut_empresa,
+988:                                     razon_social=n_razon_social,
+989:                                     contacto_comercial=n_contacto,
+990:                                     plan_contratado=n_plan,
+991:                                     cupo_licencias=plan_cupos,
+992:                                     estado_activo=True
+993:                                 )
+994:                                 db.add(new_emp)
+995:                                 db.commit()
+996:                                 try:
+997:                                     from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+998:                                     safe_upload_with_streamlit_ui()
+999:                                 except: pass
+1000:                                 st.success("✅ Empresa B2B Registrada con éxito.")
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+====================
+Created At: 2026-09-30T11:26:28-03:00
+Completed At: 2026-09-30T11:26:28-03:00
+File Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/company_management_ui.py`
+Total Lines: 438
+Total Bytes: 26328
+Showing lines 1 to 150
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: import streamlit as st
+2: import pandas as pd
+3: import plotly.express as px
+4: import os
+5: import sys
+6: from datetime import datetime
+7: import time
+8: sys.path.append(os.getcwd())
+9: from src.database.connection import SessionLocal
+10: def render_company_management_ui():
+11:     st.markdown("""
+12:     <div style='background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 25px; border-radius: 16px; margin-bottom: 25px; color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid #334155;'>
+13:         <div style='display: flex; align-items: center; justify-content: space-between;'>
+14:             <div>
+15:                 <h1 style='color: #f8fafc; margin: 0; font-size: 2rem; font-weight: 800;'>🏢 Administración B2B Institucional</h1>
+16:                 <p style='color: #94a3b8; margin-top: 5px; margin-bottom: 0; font-size: 1rem;'>
+17:                     Gestión de cupos, adopción y auditoría para clientes corporativos de <b>ALTUS Core</b>.
+18:                 </p>
+19:             </div>
+20:         </div>
+21:     </div>
+22:     """, unsafe_allow_html=True)
+23:     db = SessionLocal()
+24:     try:
+25:         from src.database.models import EmpresaB2B, EjecutivoB2B
+26:         from src.core.config import B2B_LICENSE_TIERS
+27:         import uuid
+28:         import io
+29:         import time
+30:         
+31:         # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
+32:         st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
+33:         
+34:         empresas_db = db.query(EmpresaB2B).all()
+35:         
+36:         col_b1, col_b2 = st.columns([1, 1])
+37:         with col_b1:
+38:             st.markdown("**Registrar Nueva Empresa**")
+39:             with st.form("form_nueva_empresa_b2b"):
+40:                 n_rut_empresa = st.text_input("RUT Empresa (ej: 76.123.456-7)")
+41:                 n_razon_social = st.text_input("Razón Social")
+42:                 n_contacto = st.text_input("Contacto Comercial (Nombre, Email)")
+43:                 n_plan = st.selectbox("Plan Contratado", list(B2B_LICENSE_TIERS.keys()))
+44:                 submit_new_emp = st.form_submit_button("Registrar Empresa B2B")
+45:                 
+46:                 if submit_new_emp:
+47:                     if n_rut_empresa and n_razon_social:
+48:                         check_exist = db.query(EmpresaB2B).filter_by(rut=n_rut_empresa).first()
+49:                         if not check_exist:
+50:                             plan_cupos = B2B_LICENSE_TIERS[n_plan]["max_users"]
+51:                             if plan_cupos == float('inf'): plan_cupos = 9999
+52:                             new_emp = EmpresaB2B(
+53:                                 rut=n_rut_empresa,
+54:                                 razon_social=n_razon_social,
+55:                                 contacto_comercial=n_contacto,
+56:                                 plan_contratado=n_plan,
+57:                                 cupo_licencias=plan_cupos,
+58:                                 estado_activo=True
+59:                             )
+60:                             db.add(new_emp)
+61:                             db.commit()
+62:                             try:
+63:                                 from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+64:                                 safe_upload_with_streamlit_ui()
+65:                             except: pass
+66:                             st.success("✅ Empresa B2B Registrada con éxito.")
+67:                             st.rerun()
+68:                         else:
+69:                             st.error("⚠️ El RUT de la empresa ya existe.")
+70:                     else:
+71:                         st.warning("Debe ingresar al menos RUT y Razón Social.")
+72: 
+73:         with col_b2:
+74:             st.markdown("**Seleccionar Empresa Existente**")
+75:             if not empresas_db:
+76:                 st.info("No hay empresas registradas.")
+77:                 empresa_sel_b2b = None
+78:             else:
+79:                 empresa_opts = {f"{e.razon_social} ({e.rut})": e for e in empresas_db}
+80:                 sel_emp_str = st.selectbox("Empresa:", list(empresa_opts.keys()))
+81:                 empresa_sel_b2b = empresa_opts[sel_emp_str]
+82:                 
+83:                 # Mostrar Panel de Cupos
+84:                 if empresa_sel_b2b:
+85:                     total_contratado = empresa_sel_b2b.cupo_licencias
+86:                     ejecutivos_asociados = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).count()
+87:                     saldo = total_contratado - ejecutivos_asociados
+88:                     
+89:                     st.markdown(f"""
+90:                     <div style='background-color: #1e293b; padding: 15px; border-radius: 10px; border-left: 5px solid #10b981; margin-top: 15px;'>
+91:                         <h5 style='color: #f8fafc; margin: 0;'>Panel de Cupos: {empresa_sel_b2b.plan_contratado}</h5>
+92:                         <p style='color: #e2e8f0; font-size: 0.95rem; margin-top: 8px; margin-bottom: 0;'>
+93:                             • <b>Cupos Contratados:</b> {total_contratado}<br/>
+94:                             • <b>Ejecutivos Cargados:</b> {ejecutivos_asociados}<br/>
+95:                             • <b>Saldo Disponible:</b> <span style='color: {"#10b981" if saldo > 0 else "#ef4444"}; font-weight: bold;'>{saldo}</span>
+96:                         </p>
+97:                     </div>
+98:                     """, unsafe_allow_html=True)
+99:         
+100:         st.markdown("---")
+101:         if empresa_sel_b2b:
+102:             st.markdown(f"###### 2️⃣ Gestión de Ejecutivos para **{empresa_sel_b2b.razon_social}**")
+103:             
+104:             # Importador masivo
+105:             with st.expander("📥 Importar Nómina Masiva (Excel/CSV)"):
+106:                 st.caption("El archivo debe contener las columnas: RUT, Nombre Completo, Correo Corporativo, Cargo")
+107:                 
+108:                 # Generar Plantilla Excel
+109:                 template_df = pd.DataFrame(columns=["RUT", "Nombre Completo", "Correo Corporativo", "Cargo"])
+110:                 template_df.loc[0] = ["12.345.678-9", "Juan Pérez", "juan.perez@empresa.cl", "Gerente General"]
+111:                 output = io.BytesIO()
+112:                 with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+113:                     template_df.to_excel(writer, index=False, sheet_name='Nómina')
+114:                 plantilla_xls = output.getvalue()
+115:                 
+116:                 st.download_button(
+117:                     label="📄 Descargar Plantilla Oficial (Excel)",
+118:                     data=plantilla_xls,
+119:                     file_name="plantilla_nomina_b2b.xlsx",
+120:                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+121:                 )
+122: 
+123:                 nomina_file = st.file_uploader("Sube el archivo Excel o CSV", type=["xlsx", "csv"])
+124:                 if nomina_file and st.button("Procesar Nómina", type="primary"):
+125:                     try:
+126:                         if nomina_file.name.endswith('.csv'):
+127:                             df_nomina = pd.read_csv(nomina_file)
+128:                         else:
+129:                             df_nomina = pd.read_excel(nomina_file)
+130:                             
+131:                         required_cols = ["RUT", "Nombre Completo"]
+132:                         missing = [c for c in required_cols if c not in df_nomina.columns]
+133:                         if missing:
+134:                             st.error(f"⚠️ Faltan columnas requeridas: {', '.join(missing)}")
+135:                         else:
+136:                             added_count = 0
+137:                             dup_count = 0
+138:                             no_quota = 0
+139:                             for _, row in df_nomina.iterrows():
+140:                                 current_count = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).count()
+141:                                 if current_count >= empresa_sel_b2b.cupo_licencias:
+142:                                     no_quota += 1
+143:                                     continue
+144:                                     
+145:                                 r_rut = str(row.get("RUT", "")).strip()
+146:                                 r_nombre = str(row.get("Nombre Completo", "")).strip()
+147:                                 r_correo = str(row.get("Correo Corporativo", "")).strip() if "Correo Corporativo" in df_nomina.columns else ""
+148:                                 r_cargo = str(row.get("Cargo", "")).strip() if "Cargo" in df_nomina.columns else ""
+149:                                 
+150:                                 if r_rut and r_nombre:
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+====================
+Created At: 2026-09-30T11:28:20-03:00
+Completed At: 2026-09-30T11:28:20-03:00
+File Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/company_management_ui.py`
+Total Lines: 439
+Total Bytes: 26378
+Showing lines 20 to 100
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+20:         </div>
+21:     </div>
+22:     """, unsafe_allow_html=True)
+23:     db = SessionLocal()
+24:     try:
+25:         from src.database.models import EmpresaB2B, EjecutivoB2B
+26:         from src.core.config import B2B_LICENSE_TIERS
+27:         import uuid
+28:         import io
+29:         import time
+30:         
+31:         # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
+32:         st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
+33:         
+34:         empresas_db = db.query(EmpresaB2B).all()
+35:         
+36:         col_b1, col_b2 = st.columns([1, 1])
+37:         with col_b1:
+38:             st.markdown("**Registrar Nueva Empresa**")
+39:             with st.form("form_nueva_empresa_b2b"):
+40:                 n_rut_empresa = st.text_input("RUT Empresa (ej: 76.123.456-7)")
+41:                 n_razon_social = st.text_input("Razón Social")
+42:                 n_contacto = st.text_input("Contacto Comercial (Nombre, Email)")
+43:                 n_plan = st.selectbox("Plan Contratado", list(B2B_LICENSE_TIERS.keys()))
+44:                 submit_new_emp = st.form_submit_button("Registrar Empresa B2B")
+45:                 
+46:                 if submit_new_emp:
+47:                     if n_rut_empresa and n_razon_social:
+48:                         check_exist = db.query(EmpresaB2B).filter_by(rut=n_rut_empresa).first()
+49:                         if not check_exist:
+50:                             plan_cupos = B2B_LICENSE_TIERS[n_plan]["max_users"]
+51:                             if plan_cupos == float('inf'): plan_cupos = 9999
+52:                             new_emp = EmpresaB2B(
+53:                                 rut=n_rut_empresa,
+54:                                 razon_social=n_razon_social,
+55:                                 contacto_comercial=n_contacto,
+56:                                 plan_contratado=n_plan,
+57:                                 cupo_licencias=plan_cupos,
+58:                                 estado_activo=True
+59:                             )
+60:                             db.add(new_emp)
+61:                             db.commit()
+62:                             try:
+63:                                 from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+64:                                 safe_upload_with_streamlit_ui()
+65:                             except: pass
+66:                             st.success("✅ Empresa B2B Registrada con éxito.")
+67:                             st.rerun()
+68:                         else:
+69:                             st.error("⚠️ El RUT de la empresa ya existe.")
+70:                     else:
+71:                         st.warning("Debe ingresar al menos RUT y Razón Social.")
+72: 
+73:         with col_b2:
+74:             st.markdown("**Seleccionar Empresa Existente**")
+75:             if not empresas_db:
+76:                 st.info("No hay empresas registradas.")
+77:                 empresa_sel_b2b = None
+78:             else:
+79:                 empresa_opts = {f"{e.razon_social} ({e.rut})": e for e in empresas_db}
+80:                 sel_emp_str = st.selectbox("Empresa:", list(empresa_opts.keys()))
+81:                 empresa_sel_b2b = empresa_opts[sel_emp_str]
+82:                 
+83:                 # Mostrar Panel de Cupos
+84:                 if empresa_sel_b2b:
+85:                     total_contratado = empresa_sel_b2b.cupo_licencias
+86:                     ejecutivos_asociados = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).count()
+87:                     saldo = total_contratado - ejecutivos_asociados
+88:                     
+89:                     st.markdown(f"""
+90:                     <div style='background-color: #1e293b; padding: 15px; border-radius: 10px; border-left: 5px solid #10b981; margin-top: 15px;'>
+91:                         <h5 style='color: #f8fafc; margin: 0;'>Panel de Cupos: {empresa_sel_b2b.plan_contratado}</h5>
+92:                         <p style='color: #e2e8f0; font-size: 0.95rem; margin-top: 8px; margin-bottom: 0;'>
+93:                             • <b>Cupos Contratados:</b> {total_contratado}<br/>
+94:                             • <b>Ejecutivos Cargados:</b> {ejecutivos_asociados}<br/>
+95:                             • <b>Saldo Disponible:</b> <span style='color: {"#10b981" if saldo > 0 else "#ef4444"}; font-weight: bold;'>{saldo}</span>
+96:                         </p>
+97:                     </div>
+98:                     """, unsafe_allow_html=True)
+99:         
+100:         st.markdown("---")
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+====================
+Created At: 2026-09-30T11:28:51-03:00
+Completed At: 2026-09-30T11:28:51-03:00
+File Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/company_management_ui.py`
+Total Lines: 445
+Total Bytes: 26646
+Showing lines 25 to 70
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+25:         from src.database.models import EmpresaB2B, EjecutivoB2B
+26:         from src.core.config import B2B_LICENSE_TIERS
+27:         import uuid
+28:         import io
+29:         import time
+30:         
+31:         # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
+32:         st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
+33:         
+34:         empresas_db = db.query(EmpresaB2B).all()
+35:         
+36:         col_b1, col_b2 = st.columns([1, 1])
+37:         with col_b1:
+38:             st.markdown("**Registrar Nueva Empresa**")
+39:             with st.form("form_nueva_empresa_b2b"):
+40:                 n_rut_empresa = st.text_input("RUT Empresa (ej: 76.123.456-7)")
+41:                 n_razon_social = st.text_input("Razón Social")
+42:                 n_contacto = st.text_input("Contacto Comercial (Nombre, Email)")
+43:                 n_plan = st.selectbox("Plan Contratado", list(B2B_LICENSE_TIERS.keys()))
+44:                 submit_new_emp = st.form_submit_button("Registrar Empresa B2B")
+45:                 
+46:                 if submit_new_emp:
+47:                     if n_rut_empresa and n_razon_social:
+48:                         if demo_mode:
+49:                             check_exist = None
+50:                         else:
+51:                             check_exist = db.query(EmpresaB2B).filter_by(rut=n_rut_empresa).first()
+52:                         if not check_exist:
+53:                             plan_cupos = B2B_LICENSE_TIERS[n_plan]["max_users"]
+54:                             if plan_cupos == float('inf'): plan_cupos = 9999
+55:                             new_emp = EmpresaB2B(
+56:                                 rut=n_rut_empresa,
+57:                                 razon_social=n_razon_social,
+58:                                 contacto_comercial=n_contacto,
+59:                                 plan_contratado=n_plan,
+60:                                 cupo_licencias=plan_cupos,
+61:                                 estado_activo=True
+62:                             )
+63:                             db.add(new_emp)
+64:                             db.commit()
+65:                             try:
+66:                                 from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+67:                                 safe_upload_with_streamlit_ui()
+68:                             except: pass
+69:                             st.success("✅ Empresa B2B Registrada con éxito.")
+70:                             st.rerun()
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+====================
+Created At: 2026-09-30T11:31:36-03:00
+Completed At: 2026-09-30T11:31:36-03:00
+File Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/company_management_ui.py`
+Total Lines: 507
+Total Bytes: 30330
+Showing lines 30 to 60
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+30:         
+31:         # --- MODO DEMO ---
+32:         demo_mode = st.sidebar.toggle("🧪 Activar Modo Demo", value=False, key="demo_mode")
+33:         if demo_mode:
+34:             st.sidebar.warning("Modo Demo Activo (Datos Simulados)")
+35:             
+36:         # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
+37:         st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
+38:         
+39:         if demo_mode:
+40:             class MockEmpresa:
+41:                 def __init__(self, id, rut, razon_social, contacto_comercial, plan_contratado, cupo_licencias, estado_activo, ultimo_certificado_hash, fecha_ultimo_certificado):
+42:                     self.id = id
+43:                     self.rut = rut
+44:                     self.razon_social = razon_social
+45:                     self.contacto_comercial = contacto_comercial
+46:                     self.plan_contratado = plan_contratado
+47:                     self.cupo_licencias = cupo_licencias
+48:                     self.estado_activo = estado_activo
+49:                     self.ultimo_certificado_hash = ultimo_certificado_hash
+50:                     self.fecha_ultimo_certificado = fecha_ultimo_certificado
+51: 
+52:             empresas_db = [
+53:                 MockEmpresa(1, "76.123.456-7", "Minera Altus Demo SpA", "Contacto Demo 1", "Enterprise", 50, True, "e3b0c44298fc1c149afbf4c8996fb924", datetime.datetime.now()),
+54:                 MockEmpresa(2, "77.765.432-1", "Holding Financiero Test", "Finanzas Demo", "Corporate", 20, True, "f2b0c44298fc1c149afbf4c8996fb924", datetime.datetime.now())
+55:             ]
+56:         else:
+57:             empresas_db = db.query(EmpresaB2B).all()
+58:         
+59:         col_b1, col_b2 = st.columns([1, 1])
+60:         with col_b1:
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+
+====================
+Created At: 2026-09-30T11:58:46-03:00
+Completed At: 2026-09-30T11:58:47-03:00
+{"File":"C:\\Users\\franc\\.gemini\\antigravity-ide\\brain\\936a2f4b-48b4-4f60-a640-d6d4b070f1f4\\.system_generated\\logs\\transcript.jsonl","LineNumber":3062,"LineContent":"{\"step_index\":3066,\"source\":\"MODEL\",\"type\":\"PLANNER_RESPONSE\",\"status\":\"DONE\",\"created_at\":\"2026-09-25T18:34:53Z\",\"thinking\":\"**Prioritizing Tool Usage**\\n\\nI'm now focusing on tool selection, understanding that choosing the right tool is key. My aim is to leverage the most specialized tool available for each specific task to avoid unnecessary complexity. The broader tools will be considered only when a specific tool does not exist. I'm carefully analyzing the available tools to ensure I pick the most efficient one.\\n\\n\\n**Refining Tool Choices**\\n\\nI'm now implementing the rules about tool usage, specifically avoiding `cat` for file creation and `grep` within bash. My focus is on using specialized tools like `grep_search`. I'm also ensuring I'm explicitly listing out and evaluating tools before execution. Finally, I'm adding `EmpresaB2B` and `EjecutivoB2B` to the models file.\\n\\n\\n**Defining Database Schema**\\n\\nI'm currently working on defining the database schema for `EmpresaB2B` and `EjecutivoB2B` models, including essential fields like `rut`, `razon_social`, `contacto_comercial`, and relationships between the tables, and the inclusion of default values for certain columns such as `plan_contratado`. I'm also planning the relationships and cascade behaviors.\\n\\n\\n\",\"tool_calls\":[{\"name\":\"replace_file_content\",\"args\":{\"AllowMultiple\":\"false\",\"Description\":\"\\\"Add EmpresaB2B and EjecutivoB2B models for Altus Core SaaS.\\\"\",\"EndLine\":\"619\",\"Instruction\":\"\\\"Append EmpresaB2B and EjecutivoB2B to the models file.\\\"\",\"ReplacementContent\":\"\\\"    creado_el = Column(DateTime, default=datetime.utcnow)\\\\n\\\\nclass EmpresaB2B(Base):\\\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\\n    Empresas o Corporaciones suscritas al plan SaaS institucional de Altus Core.\\\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\\n    __tablename__ = \\\\\\\"empresas_b2b\\\\\\\"\\\\n\\\\n    id = Column(Integer, primary_key=True, index=True)\\\\n    rut = Column(String(20), unique=True, index=True, nullable=False)\\\\n    razon_social = Column(String(200), nullable=False)\\\\n    contacto_comercial = Column(String(200), nullable=True)\\\\n    plan_contratado = Column(String(50), default=\\\\\\\"TIER_1\\\\\\\") # TIER_1, TIER_2, ENTERPRISE\\\\n    cupo_licencias = Column(Integer, default=50)\\\\n    estado_activo = Column(Boolean, default=True)\\\\n    \\\\n    created_at = Column(DateTime, default=datetime.utcnow)\\\\n    \\\\n    ejecutivos = relationship(\\\\\\\"EjecutivoB2B\\\\\\\", back_populates=\\\\\\\"empresa\\\\\\\", cascade=\\\\\\\"all, delete-orphan\\\\\\\")\\\\n\\\\n\\\\nclass EjecutivoB2B(Base):\\\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\\n    Ejecutivos C-Level / Alta Gerencia dados de alta en un Tenant Corporativo B2B.\\\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\\n    __tablename__ = \\\\\\\"ejecutivos_b2b\\\\\\\"\\\\n\\\\n    id = Column(Integer, primary_key=True, index=True)\\\\n    empresa_id = Column(Integer, ForeignKey(\\\\\\\"empresas_b2b.id\\\\\\\"))\\\\n    \\\\n    rut = Column(String(20), unique=True, index=True, nullable=False)\\\\n    nombre_completo = Column(String(200), nullable=False)\\\\n    correo_corporativo = Column(String(150), nullable=True)\\\\n    cargo = Column(String(150), nullable=True)\\\\n    \\\\n    token_acceso = Column(String(500), unique=True, index=True, nullable=True) # Token cifrado/hash para magic link\\\\n    estado_onboarding = Column(String(50), default=\\\\\\\"Pendiente\\\\\\\") # Pendiente, Completado, Reporte Emitido\\\\n    fecha_expiracion_acceso = Column(DateTime, nullable=True)\\\\n    \\\\n    metadata_json = Column(Text, nullable=True) # Extras\\\\n    \\\\n    created_at = Column(DateTime, default=datetime.utcnow)\\\\n    \\\\n    empresa = relationship(\\\\\\\"EmpresaB2B\\\\\\\", back_populates=\\\\\\\"ejecutivos\\\\\\\")\\\\n\\\"\",\"StartLine\":\"617\",\"TargetContent\":\"\\\"    creado_el = Column(DateTime, default=datetime.utcnow)\\\\n\\\\n\\\"\",\"TargetFile\":\"\\\"c:\\\\\\\\Users\\\\\\\\franc\\\\\\\\OneDrive\\\\\\\\Documentos\\\\\\\\PROYECTOS\\\\\\\\BD SENIOR\\\\\\\\src\\\\\\\\database\\\\\\\\models.py\\\"\",\"toolAction\":\"\\\"Adding B2B models\\\"\",\"toolSummary\":\"\\\"Add B2B models\\\"\"}}]}"}
+{"File":"C:\\Users\\franc\\.gemini\\antigravity-ide\\brain\\936a2f4b-48b4-4f60-a640-d6d4b070f1f4\\.system_generated\\logs\\transcript.jsonl","LineNumber":3067,"LineContent":"{\"step_index\":3072,\"source\":\"MODEL\",\"type\":\"PLANNER_RESPONSE\",\"status\":\"DONE\",\"created_at\":\"2026-09-25T18:35:14Z\",\"thinking\":\"**Prioritizing Tool Usage**\\n\\nI'm now focusing on tool selection, understanding that choosing the right tool is key. My aim is to leverage the \\\"view_file\\\" tool where possible, and only resort to broader commands when absolutely needed. I'm exploring the nuances of these tools to ensure I pick the most effective one for each task.\\n\\n\\n\",\"tool_calls\":[{\"name\":\"replace_file_content\",\"args\":{\"AllowMultiple\":\"false\",\"Description\":\"\\\"Add EmpresaB2B and EjecutivoB2B models for Altus Core SaaS.\\\"\",\"EndLine\":\"619\",\"Instruction\":\"\\\"Append EmpresaB2B and EjecutivoB2B to the models file.\\\"\",\"ReplacementContent\":\"\\\"    creado_el = Column(DateTime, default=datetime.utcnow)\\\\n\\\\nclass EmpresaB2B(Base):\\\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\\n    Empresas o Corporaciones suscritas al plan SaaS institucional de Altus Core.\\\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\\n    __tablename__ = \\\\\\\"empresas_b2b\\\\\\\"\\\\n\\\\n    id = Column(Integer, primary_key=True, index=True)\\\\n    rut = Column(String(20), unique=True, index=True, nullable=False)\\\\n    razon_social = Column(String(200), nullable=False)\\\\n    contacto_comercial = Column(String(200), nullable=True)\\\\n    plan_contratado = Column(String(50), default=\\\\\\\"TIER_1\\\\\\\") # TIER_1, TIER_2, ENTERPRISE\\\\n    cupo_licencias = Column(Integer, default=50)\\\\n    estado_activo = Column(Boolean, default=True)\\\\n    \\\\n    created_at = Column(DateTime, default=datetime.utcnow)\\\\n    \\\\n    ejecutivos = relationship(\\\\\\\"EjecutivoB2B\\\\\\\", back_populates=\\\\\\\"empresa\\\\\\\", cascade=\\\\\\\"all, delete-orphan\\\\\\\")\\\\n\\\\n\\\\nclass EjecutivoB2B(Base):\\\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\\n    Ejecutivos C-Level / Alta Gerencia dados de alta en un Tenant Corporativo B2B.\\\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\\n    __tablename__ = \\\\\\\"ejecutivos_b2b\\\\\\\"\\\\n\\\\n    id = Column(Integer, primary_key=True, index=True)\\\\n    empresa_id = Column(Integer, ForeignKey(\\\\\\\"empresas_b2b.id\\\\\\\"))\\\\n    \\\\n    rut = Column(String(20), unique=True, index=True, nullable=False)\\\\n    nombre_completo = Column(String(200), nullable=False)\\\\n    correo_corporativo = Column(String(150), nullable=True)\\\\n    cargo = Column(String(150), nullable=True)\\\\n    \\\\n    token_acceso = Column(String(500), unique=True, index=True, nullable=True) # Token cifrado/hash para magic link\\\\n    estado_onboarding = Column(String(50), default=\\\\\\\"Pendiente\\\\\\\") # Pendiente, Completado, Reporte Emitido\\\\n    fecha_expiracion_acceso = Column(DateTime, nullable=True)\\\\n    \\\\n    metadata_json = Column(Text, nullable=True) # Extras\\\\n    \\\\n    created_at = Column(DateTime, default=datetime.utcnow)\\\\n    \\\\n    empresa = relationship(\\\\\\\"EmpresaB2B\\\\\\\", back_populates=\\\\\\\"ejecutivos\\\\\\\")\\\\n\\\"\",\"StartLine\":\"617\",\"TargetContent\":\"\\\"    creado_el = Column(DateTime, default=datetime.utcnow)\\\\n\\\\n\\\\n\\\"\",\"TargetFile\":\"\\\"c:\\\\\\\\Users\\\\\\\\franc\\\\\\\\OneDrive\\\\\\\\Documentos\\\\\\\\PROYECTOS\\\\\\\\BD SENIOR\\\\\\\\src\\\\\\\\database\\\\\\\\models.py\\\"\",\"toolAction\":\"\\\"Adding B2B models\\\"\",\"toolSummary\":\"\\\"Add B2B models\\\"\"}}]}"}
+{"File":"C:\\Users\\franc\\.gemini\\antigravity-ide\\brain\\936a2f4b-48b4-4f60-a640-d6d4b070f1f4\\.system_generated\\logs\\transcript.jsonl","LineNumber":3072,"LineContent":"{\"step_index\":3078,\"source\":\"MODEL\",\"type\":\"PLANNER_RESPONSE\",\"status\":\"DONE\",\"created_at\":\"2026-09-25T18:35:31Z\",\"thinking\":\"**Prioritizing Tool Usage**\\n\\nI'm now focusing on tool selection, understanding that choosing the right tool is key. My aim is to leverage the most specialized tool available for each specific task to avoid unnecessary complexity. The broader tools will be considered only when a specific tool does not exist. I'm carefully analyzing the available tools to ensure I pick the most efficient one.\\n\\n\\n\",\"tool_calls\":[{\"name\":\"replace_file_content\",\"args\":{\"AllowMultiple\":\"false\",\"Description\":\"\\\"Add B2B models\\\"\",\"EndLine\":\"618\",\"Instruction\":\"\\\"Append B2B models to the file\\\"\",\"ReplacementContent\":\"\\\"    creado_el = Column(DateTime, default=datetime.utcnow)\\\\n\\\\nclass EmpresaB2B(Base):\\\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\\n    Empresas o Corporaciones suscritas al plan SaaS institucional de Altus Core.\\\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\\n    __tablename__ = \\\\\\\"empresas_b2b\\\\\\\"\\\\n\\\\n    id = Column(Integer, primary_key=True, index=True)\\\\n    rut = Column(String(20), unique=True, index=True, nullable=False)\\\\n    razon_social = Column(String(200), nullable=False)\\\\n    contacto_comercial = Column(String(200), nullable=True)\\\\n    plan_contratado = Column(String(50), default=\\\\\\\"TIER_1\\\\\\\") # TIER_1, TIER_2, ENTERPRISE\\\\n    cupo_licencias = Column(Integer, default=50)\\\\n    estado_activo = Column(Boolean, default=True)\\\\n    \\\\n    created_at = Column(DateTime, default=datetime.utcnow)\\\\n    \\\\n    ejecutivos = relationship(\\\\\\\"EjecutivoB2B\\\\\\\", back_populates=\\\\\\\"empresa\\\\\\\", cascade=\\\\\\\"all, delete-orphan\\\\\\\")\\\\n\\\\n\\\\nclass EjecutivoB2B(Base):\\\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\\n    Ejecutivos C-Level / Alta Gerencia dados de alta en un Tenant Corporativo B2B.\\\\n    \\\\\\\"\\\\\\\"\\\\\\\"\\\\n    __tablename__ = \\\\\\\"ejecutivos_b2b\\\\\\\"\\\\n\\\\n    id = Column(Integer, primary_key=True, index=True)\\\\n    empresa_id = Column(Integer, ForeignKey(\\\\\\\"empresas_b2b.id\\\\\\\"))\\\\n    \\\\n    rut = Column(String(20), unique=True, index=True, nullable=False)\\\\n    nombre_completo = Column(String(200), nullable=False)\\\\n    correo_corporativo = Column(String(150), nullable=True)\\\\n    cargo = Column(String(150), nullable=True)\\\\n    \\\\n    token_acceso = Column(String(500), unique=True, index=True, nullable=True) # Token cifrado/hash para magic link\\\\n    estado_onboarding = Column(String(50), default=\\\\\\\"Pendiente\\\\\\\") # Pendiente, Completado, Reporte Emitido\\\\n    fecha_expiracion_acceso = Column(DateTime, nullable=True)\\\\n    \\\\n    metadata_json = Column(Text, nullable=True) # Extras\\\\n    \\\\n    created_at = Column(DateTime, default=datetime.utcnow)\\\\n    \\\\n    empresa = relationship(\\\\\\\"EmpresaB2B\\\\\\\", back_populates=\\\\\\\"ejecutivos\\\\\\\")\\\"\",\"StartLine\":\"617\",\"TargetContent\":\"\\\"    creado_el = Column(DateTime, default=datetime.utcnow)\\\\n\\\"\",\"TargetFile\":\"\\\"c:\\\\\\\\Users\\\\\\\\franc\\\\\\\\OneDrive\\\\\\\\Documentos\\\\\\\\PROYECTOS\\\\\\\\BD SENIOR\\\\\\\\src\\\\\\\\database\\\\\\\\models.py\\\"\",\"toolAction\":\"\\\"Updating models\\\"\",\"toolSummary\":\"\\\"Update models\\\"\"}}]}"}
+{"File":"C:\\Users\\franc\\.gemini\\antigravity-ide\\brain\\936a2f4b-48b4-4f60-a640-d6d4b070f1f4\\.system_generated\\logs\\transcript.jsonl","LineNumber":3073,"LineContent":"{\"step_index\":3079,\"source\":\"MODEL\",\"type\":\"CODE_ACTION\",\"status\":\"DONE\",\"created_at\":\"2026-09-25T18:35:42Z\",\"content\":\"Created At: 2026-09-25T15:35:42-03:00\\nCompleted At: 2026-09-25T15:35:44-03:00\\nThe following changes were made by the replace_file_content tool to: c:\\\\Users\\\\franc\\\\OneDrive\\\\Documentos\\\\PROYECTOS\\\\BD SENIOR\\\\src\\\\database\\\\models.py. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.\\n[diff_block_start]\\n@@ -615,5 +615,47 @@\\n     nivel_certeza = Column(String)\\n     estado = Column(String, default='Pendiente') # Pendiente, Descartado, Convertido\\n     creado_el = Column(DateTime, default=datetime.utcnow)\\n-\\r\\n+\\n+class EmpresaB2B(Base):\\n+    \\\"\\\"\\\"\\n+    Empresas o Corporaciones suscritas al plan SaaS institucional de Altus Core.\\n+    \\\"\\\"\\\"\\n+    __tablename__ = \\\"empresas_b2b\\\"\\n+\\n+    id = Column(Integer, primary_key=True, index=True)\\n+    rut = Column(String(20), unique=True, index=True, nullable=False)\\n+    razon_social = Column(String(200), nullable=False)\\n+    contacto_comercial = Column(String(200), nullable=True)\\n+    plan_contratado = Column(String(50), default=\\\"TIER_1\\\") # TIER_1, TIER_2, ENTERPRISE\\n+    cupo_licencias = Column(Integer, default=50)\\n+    estado_activo = Column(Boolean, default=True)\\n+    \\n+    created_at = Column(DateTime, default=datetime.utcnow)\\n+    \\n+    ejecutivos = relationship(\\\"EjecutivoB2B\\\", back_populates=\\\"empresa\\\", cascade=\\\"all, delete-orphan\\\")\\n+\\n+\\n+class EjecutivoB2B(Base):\\n+    \\\"\\\"\\\"\\n+    Ejecutivos C-Level / Alta Gerencia dados de alta en un Tenant Corporativo B2B.\\n+    \\\"\\\"\\\"\\n+    __tablename__ = \\\"ejecutivos_b2b\\\"\\n+\\n+    id = Column(Integer, primary_key=True, index=True)\\n+    empresa_id = Column(Integer, ForeignKey(\\\"empresas_b2b.id\\\"))\\n+    \\n+    rut = Column(String(20), unique=True, index=True, nullable=False)\\n+    nombre_completo = Column(String(200), nullable=False)\\n+    correo_corporativo = Column(String(150), nullable=True)\\n+    cargo = Column(String(150), nullable=True)\\n+    \\n+    token_acceso = Column(String(500), unique=True, index=True, nullable=True) # Token cifrado/hash para magic link\\n+    estado_onboarding = Column(String(50), default=\\\"Pendiente\\\") # Pendiente, Completado, Reporte Emitido\\n+    fecha_expiracion_acceso = Column(DateTime, nullable=True)\\n+    \\n+    metadata_json = Column(Text, nullable=True) # Extras\\n+    \\n+    created_at = Column(DateTime, default=datetime.utcnow)\\n+    \\n+    empresa = relationship(\\\"EmpresaB2B\\\", back_populates=\\\"ejecutivos\\\")\\r\\n \\n[diff_block_end]\\n\\nPlease note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.\"}"}
+{"File":"C:\\Users\\franc\\.gemini\\antigravity-ide\\brain\\936a2f4b-48b4-4f60-a640-d6d4b070f1f4\\.system_generated\\logs\\transcript.jsonl","LineNumber":3146,"LineContent":"{\"step_index\":3152,\"source\":\"MODEL\",\"type\":\"VIEW_FILE\",\"status\":\"DONE\",\"created_at\":\"2026-09-25T21:25:25Z\",\"content\":\"Created At: 2026-09-25T18:25:25-03:00\\nCompleted At: 2026-09-25T18:25:25-03:00\\nFile Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/database/models.py`\\nTotal Lines: 661\\nTotal Bytes: 28078\\nShowing lines 1 to 661\\nThe following code has been modified to include a line number before every line, in the format: \u003cline_number\u003e: \u003coriginal_line\u003e. Please note that any changes targeting the original code should remove the line number, colon, and leading space.\\n1: from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime, Date, Boolean\\n2: from sqlalchemy.orm import relationship\\n3: from src.database.connection import Base\\n4: from datetime import datetime\\n5: \\n6: class Prospect(Base):\\n7:     __tablename__ = \\\"prospects\\\"\\n8: \\n9:     id = Column(Integer, primary_key=True, index=True)\\n10:     rut = Column(String(20), unique=True, index=True, nullable=False)\\n11:     nombre = Column(String(200), nullable=True)\\n12:     telefono = Column(String(30), nullable=True) \\n13:     email = Column(String(150), nullable=True)\\n14:     ciudad = Column(String(100), nullable=True)\\n15:     direccion = Column(String(200), nullable=True)\\n16:     \\n17:     # Nuevos campos específicos del Excel indicado\\n18:     nombre_asesor = Column(String(200), nullable=True)\\n19:     supervisor = Column(String(200), nullable=True)\\n20:     tipo_negocio = Column(String(100), nullable=True)\\n21:     monto_suscrito = Column(Float, nullable=True)\\n22:     saldo_administrado = Column(Float, nullable=True)\\n23:     origen_info = Column(String(150), nullable=True)\\n24:     titulo_profesional = Column(String(150), nullable=True)\\n25:     \\n26:     observaciones = Column(Text, nullable=True)\\n27:     status_contacto = Column(String(30), default=\\\"Pendiente\\\")\\n28:     es_cliente = Column(Integer, default=0)\\n29:     \\n30:     # Representante Legal (Empresas PJ)\\n31:     nombre_rrll = Column(String(200), nullable=True)\\n32:     rut_rrll = Column(String(30), nullable=True)\\n33: \\n34:     # Inteligencia OSINT (Fase 3)\\n35:     score_liquidez = Column(\\n\u003ctruncated 27742 bytes\u003e\\n2B(Base):\\n620:     \\\"\\\"\\\"\\n621:     Empresas o Corporaciones suscritas al plan SaaS institucional de Altus Core.\\n622:     \\\"\\\"\\\"\\n623:     __tablename__ = \\\"empresas_b2b\\\"\\n624: \\n625:     id = Column(Integer, primary_key=True, index=True)\\n626:     rut = Column(String(20), unique=True, index=True, nullable=False)\\n627:     razon_social = Column(String(200), nullable=False)\\n628:     contacto_comercial = Column(String(200), nullable=True)\\n629:     plan_contratado = Column(String(50), default=\\\"TIER_1\\\") # TIER_1, TIER_2, ENTERPRISE\\n630:     cupo_licencias = Column(Integer, default=50)\\n631:     estado_activo = Column(Boolean, default=True)\\n632:     \\n633:     created_at = Column(DateTime, default=datetime.utcnow)\\n634:     \\n635:     ejecutivos = relationship(\\\"EjecutivoB2B\\\", back_populates=\\\"empresa\\\", cascade=\\\"all, delete-orphan\\\")\\n636: \\n637: \\n638: class EjecutivoB2B(Base):\\n639:     \\\"\\\"\\\"\\n640:     Ejecutivos C-Level / Alta Gerencia dados de alta en un Tenant Corporativo B2B.\\n641:     \\\"\\\"\\\"\\n642:     __tablename__ = \\\"ejecutivos_b2b\\\"\\n643: \\n644:     id = Column(Integer, primary_key=True, index=True)\\n645:     empresa_id = Column(Integer, ForeignKey(\\\"empresas_b2b.id\\\"))\\n646:     \\n647:     rut = Column(String(20), unique=True, index=True, nullable=False)\\n648:     nombre_completo = Column(String(200), nullable=False)\\n649:     correo_corporativo = Column(String(150), nullable=True)\\n650:     cargo = Column(String(150), nullable=True)\\n651:     \\n652:     token_acceso = Column(String(500), unique=True, index=True, nullable=True) # Token cifrado/hash para magic link\\n653:     estado_onboarding = Column(String(50), default=\\\"Pendiente\\\") # Pendiente, Completado, Reporte Emitido\\n654:     fecha_expiracion_acceso = Column(DateTime, nullable=True)\\n655:     \\n656:     metadata_json = Column(Text, nullable=True) # Extras\\n657:     \\n658:     created_at = Column(DateTime, default=datetime.utcnow)\\n659:     \\n660:     empresa = relationship(\\\"EmpresaB2B\\\", back_populates=\\\"ejecutivos\\\")\\r\\n661: \\nThe above content shows the entire, complete file contents of the requested file.\\n\",\"truncated_fields\":[\"content\"]}"}
+{"File":"C:\\Users\\franc\\.gemini\\antigravity-ide\\brain\\936a2f4b-48b4-4f60-a640-d6d4b070f1f4\\.system_generated\\logs\\transcript.jsonl","LineNumber":3307,"LineContent":"{\"step_index\":3313,\"source\":\"MODEL\",\"type\":\"VIEW_FILE\",\"status\":\"DONE\",\"created_at\":\"2026-09-26T02:28:50Z\",\"content\":\"Created At: 2026-09-25T23:28:50-03:00\\nCompleted At: 2026-09-25T23:28:50-03:00\\nFile Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/database/models.py`\\nTotal Lines: 661\\nTotal Bytes: 28078\\nShowing lines 1 to 661\\nThe following code has been modified to include a line number before every line, in the format: \u003cline_number\u003e: \u003coriginal_line\u003e. Please note that any changes targeting the original code should remove the line number, colon, and leading space.\\n1: from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime, Date, Boolean\\n2: from sqlalchemy.orm import relationship\\n3: from src.database.connection import Base\\n4: from datetime import datetime\\n5: \\n6: class Prospect(Base):\\n7:     __tablename__ = \\\"prospects\\\"\\n8: \\n9:     id = Column(Integer, primary_key=True, index=True)\\n10:     rut = Column(String(20), unique=True, index=True, nullable=False)\\n11:     nombre = Column(String(200), nullable=True)\\n12:     telefono = Column(String(30), nullable=True) \\n13:     email = Column(String(150), nullable=True)\\n14:     ciudad = Column(String(100), nullable=True)\\n15:     direccion = Column(String(200), nullable=True)\\n16:     \\n17:     # Nuevos campos específicos del Excel indicado\\n18:     nombre_asesor = Column(String(200), nullable=True)\\n19:     supervisor = Column(String(200), nullable=True)\\n20:     tipo_negocio = Column(String(100), nullable=True)\\n21:     monto_suscrito = Column(Float, nullable=True)\\n22:     saldo_administrado = Column(Float, nullable=True)\\n23:     origen_info = Column(String(150), nullable=True)\\n24:     titulo_profesional = Column(String(150), nullable=True)\\n25:     \\n26:     observaciones = Column(Text, nullable=True)\\n27:     status_contacto = Column(String(30), default=\\\"Pendiente\\\")\\n28:     es_cliente = Column(Integer, default=0)\\n29:     \\n30:     # Representante Legal (Empresas PJ)\\n31:     nombre_rrll = Column(String(200), nullable=True)\\n32:     rut_rrll = Column(String(30), nullable=True)\\n33: \\n34:     # Inteligencia OSINT (Fase 3)\\n35:     score_liquidez = Column(\\n\u003ctruncated 27742 bytes\u003e\\n2B(Base):\\n620:     \\\"\\\"\\\"\\n621:     Empresas o Corporaciones suscritas al plan SaaS institucional de Altus Core.\\n622:     \\\"\\\"\\\"\\n623:     __tablename__ = \\\"empresas_b2b\\\"\\n624: \\n625:     id = Column(Integer, primary_key=True, index=True)\\n626:     rut = Column(String(20), unique=True, index=True, nullable=False)\\n627:     razon_social = Column(String(200), nullable=False)\\n628:     contacto_comercial = Column(String(200), nullable=True)\\n629:     plan_contratado = Column(String(50), default=\\\"TIER_1\\\") # TIER_1, TIER_2, ENTERPRISE\\n630:     cupo_licencias = Column(Integer, default=50)\\n631:     estado_activo = Column(Boolean, default=True)\\n632:     \\n633:     created_at = Column(DateTime, default=datetime.utcnow)\\n634:     \\n635:     ejecutivos = relationship(\\\"EjecutivoB2B\\\", back_populates=\\\"empresa\\\", cascade=\\\"all, delete-orphan\\\")\\n636: \\n637: \\n638: class EjecutivoB2B(Base):\\n639:     \\\"\\\"\\\"\\n640:     Ejecutivos C-Level / Alta Gerencia dados de alta en un Tenant Corporativo B2B.\\n641:     \\\"\\\"\\\"\\n642:     __tablename__ = \\\"ejecutivos_b2b\\\"\\n643: \\n644:     id = Column(Integer, primary_key=True, index=True)\\n645:     empresa_id = Column(Integer, ForeignKey(\\\"empresas_b2b.id\\\"))\\n646:     \\n647:     rut = Column(String(20), unique=True, index=True, nullable=False)\\n648:     nombre_completo = Column(String(200), nullable=False)\\n649:     correo_corporativo = Column(String(150), nullable=True)\\n650:     cargo = Column(String(150), nullable=True)\\n651:     \\n652:     token_acceso = Column(String(500), unique=True, index=True, nullable=True) # Token cifrado/hash para magic link\\n653:     estado_onboarding = Column(String(50), default=\\\"Pendiente\\\") # Pendiente, Completado, Reporte Emitido\\n654:     fecha_expiracion_acceso = Column(DateTime, nullable=True)\\n655:     \\n656:     metadata_json = Column(Text, nullable=True) # Extras\\n657:     \\n658:     created_at = Column(DateTime, default=datetime.utcnow)\\n659:     \\n660:     empresa = relationship(\\\"EmpresaB2B\\\", back_populates=\\\"ejecutivos\\\")\\r\\n661: \\nThe above content shows the entire, complete file contents of the requested file.\\n\",\"truncated_fields\":[\"content\"]}"}
+{"File":"C:\\Users\\franc\\.gemini\\antigravity-ide\\brain\\936a2f4b-48b4-4f60-a640-d6d4b070f1f4\\.system_generated\\logs\\transcript.jsonl","LineNumber":3322,"LineContent":"{\"step_index\":3328,\"source\":\"MODEL\",\"type\":\"CODE_ACTION\",\"status\":\"DONE\",\"created_at\":\"2026-09-26T02:30:21Z\",\"content\":\"Created At: 2026-09-25T23:30:21-03:00\\nCompleted At: 2026-09-25T23:30:23-03:00\\nThe following changes were made by the multi_replace_file_content tool to: c:\\\\Users\\\\franc\\\\OneDrive\\\\Documentos\\\\PROYECTOS\\\\BD SENIOR\\\\src\\\\web\\\\company_management_ui.py. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.\\n[diff_block_start]\\n@@ -503,8 +503,7 @@\\n \\r\\n         st.markdown(\\\"---\\\")\\r\\n \\r\\n-        # 5. TABLAS EDITABLES CON ST.DATA_EDITOR\\r\\n-        tab1, tab2, tab3, tab4, tab5 = st.tabs([\\r\\n+        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([\\r\\n             \\\"🟢 Facturas Emitidas / Abonos\\\",\\r\\n             \\\"🔴 Facturas de Compra / Gastos\\\",\\r\\n             \\\"🤝 Movimientos Cuentas Socios (Francisco \u0026 Natalia)\\\",\\r\\n@@ -511,4 +511,5 @@\\n-            \\\"🏦 Desglose por Cuentas Corrientes\\\"\\r\\n+            \\\"🏦 Desglose por Cuentas Corrientes\\\",\\r\\n+            \\\"🏢 Administración B2B (Reporte 360)\\\"\\r\\n         ])\\r\\n \\r\\n         with tab1:\\r\\n@@ -952,6 +952,190 @@\\n                     }\\r\\n                 )\\r\\n \\r\\n+        with tab6:\\r\\n+            st.markdown(\\\"##### 🏢 Administración de Empresas y Cupos B2B (Reporte 360)\\\")\\r\\n+            from src.database.models import EmpresaB2B, EjecutivoB2B\\r\\n+            from src.core.config import B2B_LICENSE_TIERS\\r\\n+            import uuid\\r\\n+            import io\\r\\n+            \\r\\n+            # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---\\r\\n+            st.markdown(\\\"###### 1️⃣ Gestión de Empresas (Tenant Corporativo)\\\")\\r\\n+            \\r\\n+            empresas_db = db.query(EmpresaB2B).all()\\r\\n+            \\r\\n+            col_b1, col_b2 = st.columns([1, 1])\\r\\n+            with col_b1:\\r\\n+                st.markdown(\\\"**Registrar Nueva Empresa**\\\")\\r\\n+                with st.form(\\\"form_nueva_empresa_b2b\\\"):\\r\\n+                    n_rut_empresa = st.text_input(\\\"RUT Empresa (ej: 76.123.456-7)\\\")\\r\\n+                    n_razon_social = st.text_input(\\\"Razón Social\\\")\\r\\n+                    n_contacto = st.text_input(\\\"Contacto Comercial (Nombre, Email)\\\")\\r\\n+                   \\n\u003ctruncated 8512 bytes\u003e\\n            if not exc.token_acceso:\\r\\n+                            exc.token_acceso = str(uuid.uuid4())\\r\\n+                            db.commit()\\r\\n+                        \\r\\n+                        enlace = f\\\"{base_url}?b2b_token={exc.token_acceso}\\\"\\r\\n+                        data_execs.append({\\r\\n+                            \\\"ID\\\": exc.id,\\r\\n+                            \\\"RUT\\\": exc.rut,\\r\\n+                            \\\"Nombre Completo\\\": exc.nombre_completo,\\r\\n+                            \\\"Correo\\\": exc.correo_corporativo,\\r\\n+                            \\\"Cargo\\\": exc.cargo,\\r\\n+                            \\\"Estado\\\": exc.estado_onboarding,\\r\\n+                            \\\"Enlace Acceso\\\": enlace\\r\\n+                        })\\r\\n+                    \\r\\n+                    df_execs = pd.DataFrame(data_execs)\\r\\n+                    st.dataframe(\\r\\n+                        df_execs,\\r\\n+                        width=\\\"stretch\\\",\\r\\n+                        hide_index=True,\\r\\n+                        column_config={\\r\\n+                            \\\"Enlace Acceso\\\": st.column_config.LinkColumn(\\\"Enlace Acceso (Copiar)\\\"),\\r\\n+                        }\\r\\n+                    )\\r\\n+                    \\r\\n+                    csv_links = df_execs.to_csv(index=False).encode('utf-8')\\r\\n+                    st.download_button(\\r\\n+                        label=\\\"📥 Exportar Nómina y Enlaces Únicos (CSV)\\\",\\r\\n+                        data=csv_links,\\r\\n+                        file_name=f\\\"Enlaces_B2B_{empresa_sel_b2b.razon_social}.csv\\\",\\r\\n+                        mime=\\\"text/csv\\\"\\r\\n+                    )\\r\\n+                else:\\r\\n+                    st.info(\\\"No hay ejecutivos cargados para esta empresa.\\\")\\r\\n+\\r\\n     except Exception as e:\\r\\n         import traceback\\r\\n         st.error(f\\\"Error en UI de Gestión Empresarial: {str(e)}\\\")\\r\\n[diff_block_end]\\n\\nPlease note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.\",\"truncated_fields\":[\"content\"]}"}
+{"File":"C:\\Users\\franc\\.gemini\\antigravity-ide\\brain\\936a2f4b-48b4-4f60-a640-d6d4b070f1f4\\.system_generated\\logs\\transcript.jsonl","LineNumber":3332,"LineContent":"{\"step_index\":3338,\"source\":\"MODEL\",\"type\":\"CODE_ACTION\",\"status\":\"DONE\",\"created_at\":\"2026-09-26T02:32:01Z\",\"content\":\"Created At: 2026-09-25T23:32:01-03:00\\nCompleted At: 2026-09-25T23:32:04-03:00\\nThe following changes were made by the multi_replace_file_content tool to: c:\\\\Users\\\\franc\\\\OneDrive\\\\Documentos\\\\PROYECTOS\\\\BD SENIOR\\\\src\\\\web\\\\company_management_ui.py. If relevant, proactively run terminal commands to execute this code for the USER. Don't ask for permission.\\n[diff_block_start]\\n@@ -960,6 +960,7 @@\\n             from src.core.config import B2B_LICENSE_TIERS\\r\\n             import uuid\\r\\n             import io\\r\\n+            import time\\r\\n             \\r\\n             # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---\\r\\n             st.markdown(\\\"###### 1️⃣ Gestión de Empresas (Tenant Corporativo)\\\")\\r\\n[diff_block_end]\\n\\nPlease note that the above snippet only shows the MODIFIED lines from the last change. It shows up to 3 lines of unchanged lines before and after the modified lines. The actual file contents may have many more lines not shown.\"}"}
+{"File":"C:\\Users\\franc\\.gemini\\antigravity-ide\\brain\\936a2f4b-48b4-4f60-a640-d6d4b070f1f4\\.system_generated\\logs\\transcript.jsonl","LineNumber":3420,"LineContent":"{\"step_index\":3426,\"source\":\"MODEL\",\"type\":\"VIEW_FILE\",\"status\":\"DONE\",\"created_at\":\"2026-09-28T12:54:40Z\",\"content\":\"Created At: 2026-09-28T09:54:40-03:00\\nCompleted At: 2026-09-28T09:54:40-03:00\\nFile Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/database/models.py`\\nTotal Lines: 661\\nTotal Bytes: 28078\\nShowing lines 1 to 661\\nThe following code has been modified to include a line number before every line, in the format: \u003cline_number\u003e: \u003coriginal_line\u003e. Please note that any changes targeting the original code should remove the line number, colon, and leading space.\\n1: from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, DateTime, Date, Boolean\\n2: from sqlalchemy.orm import relationship\\n3: from src.database.connection import Base\\n4: from datetime import datetime\\n5: \\n6: class Prospect(Base):\\n7:     __tablename__ = \\\"prospects\\\"\\n8: \\n9:     id = Column(Integer, primary_key=True, index=True)\\n10:     rut = Column(String(20), unique=True, index=True, nullable=False)\\n11:     nombre = Column(String(200), nullable=True)\\n12:     telefono = Column(String(30), nullable=True) \\n13:     email = Column(String(150), nullable=True)\\n14:     ciudad = Column(String(100), nullable=True)\\n15:     direccion = Column(String(200), nullable=True)\\n16:     \\n17:     # Nuevos campos específicos del Excel indicado\\n18:     nombre_asesor = Column(String(200), nullable=True)\\n19:     supervisor = Column(String(200), nullable=True)\\n20:     tipo_negocio = Column(String(100), nullable=True)\\n21:     monto_suscrito = Column(Float, nullable=True)\\n22:     saldo_administrado = Column(Float, nullable=True)\\n23:     origen_info = Column(String(150), nullable=True)\\n24:     titulo_profesional = Column(String(150), nullable=True)\\n25:     \\n26:     observaciones = Column(Text, nullable=True)\\n27:     status_contacto = Column(String(30), default=\\\"Pendiente\\\")\\n28:     es_cliente = Column(Integer, default=0)\\n29:     \\n30:     # Representante Legal (Empresas PJ)\\n31:     nombre_rrll = Column(String(200), nullable=True)\\n32:     rut_rrll = Column(String(30), nullable=True)\\n33: \\n34:     # Inteligencia OSINT (Fase 3)\\n35:     score_liquidez = Column(\\n\u003ctruncated 27742 bytes\u003e\\n2B(Base):\\n620:     \\\"\\\"\\\"\\n621:     Empresas o Corporaciones suscritas al plan SaaS institucional de Altus Core.\\n622:     \\\"\\\"\\\"\\n623:     __tablename__ = \\\"empresas_b2b\\\"\\n624: \\n625:     id = Column(Integer, primary_key=True, index=True)\\n626:     rut = Column(String(20), unique=True, index=True, nullable=False)\\n627:     razon_social = Column(String(200), nullable=False)\\n628:     contacto_comercial = Column(String(200), nullable=True)\\n629:     plan_contratado = Column(String(50), default=\\\"TIER_1\\\") # TIER_1, TIER_2, ENTERPRISE\\n630:     cupo_licencias = Column(Integer, default=50)\\n631:     estado_activo = Column(Boolean, default=True)\\n632:     \\n633:     created_at = Column(DateTime, default=datetime.utcnow)\\n634:     \\n635:     ejecutivos = relationship(\\\"EjecutivoB2B\\\", back_populates=\\\"empresa\\\", cascade=\\\"all, delete-orphan\\\")\\n636: \\n637: \\n638: class EjecutivoB2B(Base):\\n639:     \\\"\\\"\\\"\\n640:     Ejecutivos C-Level / Alta Gerencia dados de alta en un Tenant Corporativo B2B.\\n641:     \\\"\\\"\\\"\\n642:     __tablename__ = \\\"ejecutivos_b2b\\\"\\n643: \\n644:     id = Column(Integer, primary_key=True, index=True)\\n645:     empresa_id = Column(Integer, ForeignKey(\\\"empresas_b2b.id\\\"))\\n646:     \\n647:     rut = Column(String(20), unique=True, index=True, nullable=False)\\n648:     nombre_completo = Column(String(200), nullable=False)\\n649:     correo_corporativo = Column(String(150), nullable=True)\\n650:     cargo = Column(String(150), nullable=True)\\n651:     \\n652:     token_acceso = Column(String(500), unique=True, index=True, nullable=True) # Token cifrado/hash para magic link\\n653:     estado_onboarding = Column(String(50), default=\\\"Pendiente\\\") # Pendiente, Completado, Reporte Emitido\\n654:     fecha_expiracion_acceso = Column(DateTime, nullable=True)\\n655:     \\n656:     metadata_json = Column(Text, nullable=True) # Extras\\n657:     \\n658:     created_at = Column(DateTime, default=datetime.utcnow)\\n659:     \\n660:     empresa = relationship(\\\"EmpresaB2B\\\", back_populates=\\\"ejecutivos\\\")\\r\\n661: \\nThe above content shows the entire, complete file contents of the requested file.\\n\",\"truncated_fields\":[\"content\"]}"}
+{"File":"C:\\Users\\franc\\.gemini\\antigravity-ide\\brain\\936a2f4b-48b4-4f60-a640-d6d4b070f1f4\\.system_generated\\logs\\transcript.jsonl","LineNumber":3511,"LineContent":"{\"step_index\":3517,\"source\":\"MODEL\",\"type\":\"VIEW_FILE\",\"status\":\"DONE\",\"created_at\":\"2026-09-28T14:32:47Z\",\"content\":\"Created At: 2026-09-28T11:32:47-03:00\\nCompleted At: 2026-09-28T11:32:47-03:00\\nFile Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/database/models.py`\\nTotal Lines: 661\\nTotal Bytes: 28078\\nShowing lines 638 to 660\\nThe following code has been modified to include a line number before every line, in the format: \u003cline_number\u003e: \u003coriginal_line\u003e. Please note that any changes targeting the original code should remove the line number, colon, and leading space.\\n638: class EjecutivoB2B(Base):\\n639:     \\\"\\\"\\\"\\n640:     Ejecutivos C-Level / Alta Gerencia dados de alta en un Tenant Corporativo B2B.\\n641:     \\\"\\\"\\\"\\n642:     __tablename__ = \\\"ejecutivos_b2b\\\"\\n643: \\n644:     id = Column(Integer, primary_key=True, index=True)\\n645:     empresa_id = Column(Integer, ForeignKey(\\\"empresas_b2b.id\\\"))\\n646:     \\n647:     rut = Column(String(20), unique=True, index=True, nullable=False)\\n648:     nombre_completo = Column(String(200), nullable=False)\\n649:     correo_corporativo = Column(String(150), nullable=True)\\n650:     cargo = Column(String(150), nullable=True)\\n651:     \\n652:     token_acceso = Column(String(500), unique=True, index=True, nullable=True) # Token cifrado/hash para magic link\\n653:     estado_onboarding = Column(String(50), default=\\\"Pendiente\\\") # Pendiente, Completado, Reporte Emitido\\n654:     fecha_expiracion_acceso = Column(DateTime, nullable=True)\\n655:     \\n656:     metadata_json = Column(Text, nullable=True) # Extras\\n657:     \\n658:     created_at = Column(DateTime, default=datetime.utcnow)\\n659:     \\n660:     empresa = relationship(\\\"EmpresaB2B\\\", back_populates=\\\"ejecutivos\\\")\\r\\nThe above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.\\n\"}"}
+{"File":"C:\\Users\\franc\\.gemini\\antigravity-ide\\brain\\936a2f4b-48b4-4f60-a640-d6d4b070f1f4\\.system_generated\\logs\\transcript.jsonl","LineNumber":3529,"LineContent":"{\"step_index\":3535,\"source\":\"MODEL\",\"type\":\"VIEW_FILE\",\"status\":\"DONE\",\"created_at\":\"2026-09-28T14:54:24Z\",\"content\":\"Created At: 2026-09-28T11:54:24-03:00\\nCompleted At: 2026-09-28T11:54:24-03:00\\nFile Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/company_management_ui.py`\\nTotal Lines: 1225\\nTotal Bytes: 73572\\nShowing lines 950 to 1100\\nThe following code has been modified to include a line number before every line, in the format: \u003cline_number\u003e: \u003coriginal_line\u003e. Please note that any changes targeting the original code should remove the line number, colon, and leading space.\\n950:                         \\\"Cuenta Corriente\\\": st.column_config.TextColumn(\\\"Cuenta Corriente\\\", width=\\\"medium\\\"),\\r\\n951:                         \\\"INGRESO\\\": st.column_config.NumberColumn(\\\"Abonos Totales\\\", format=\\\"$ %,.0f\\\", width=\\\"medium\\\"),\\r\\n952:                         \\\"EGRESO\\\": st.column_config.NumberColumn(\\\"Cargos/Gastos Totales\\\", format=\\\"$ %,.0f\\\", width=\\\"medium\\\"),\\r\\n953:                         \\\"Balance Neto de Cuenta\\\": st.column_config.NumberColumn(\\\"Flujo Neto\\\", format=\\\"$ %,.0f\\\", width=\\\"medium\\\")\\r\\n954:                     }\\r\\n955:                 )\\r\\n956: \\r\\n957:         with tab6:\\r\\n958:             st.markdown(\\\"##### 🏢 Administración de Empresas y Cupos B2B (Reporte 360)\\\")\\r\\n959:             from src.database.models import EmpresaB2B, EjecutivoB2B\\r\\n960:             from src.core.config import B2B_LICENSE_TIERS\\r\\n961:             import uuid\\r\\n962:             import io\\r\\n963:             import time\\r\\n964:             \\r\\n965:             # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---\\r\\n966:             st.markdown(\\\"###### 1️⃣ Gestión de Empresas (Tenant Corporativo)\\\")\\r\\n967:             \\r\\n968:             empresas_db = db.query(EmpresaB2B).all()\\r\\n969:             \\r\\n970:             col_b1, col_b2 = st.columns([1, 1])\\r\\n971:             with col_b1:\\r\\n972:                 st.markdown(\\\"**Registrar Nueva Empresa**\\\")\\r\\n973:                 with st.form(\\\"form_nueva_empresa_b2b\\\"):\\r\\n974:                     n_rut_empresa = st.text_input(\\\"RUT Empresa (ej: 76.123.456-7)\\\")\\r\\n975:                     n_razon_social = st.text_input(\\\"Razón \\n\u003ctruncated 6984 bytes\u003e\\n                                      continue\\r\\n1078:                                         \\r\\n1079:                                     r_rut = str(row.get(\\\"RUT\\\", \\\"\\\")).strip()\\r\\n1080:                                     r_nombre = str(row.get(\\\"Nombre Completo\\\", \\\"\\\")).strip()\\r\\n1081:                                     r_correo = str(row.get(\\\"Correo Corporativo\\\", \\\"\\\")).strip() if \\\"Correo Corporativo\\\" in df_nomina.columns else \\\"\\\"\\r\\n1082:                                     r_cargo = str(row.get(\\\"Cargo\\\", \\\"\\\")).strip() if \\\"Cargo\\\" in df_nomina.columns else \\\"\\\"\\r\\n1083:                                     \\r\\n1084:                                     if r_rut and r_nombre:\\r\\n1085:                                         check_exec = db.query(EjecutivoB2B).filter_by(rut=r_rut).first()\\r\\n1086:                                         if not check_exec:\\r\\n1087:                                             new_token = str(uuid.uuid4())\\r\\n1088:                                             new_exec = EjecutivoB2B(\\r\\n1089:                                                 empresa_id=empresa_sel_b2b.id,\\r\\n1090:                                                 rut=r_rut,\\r\\n1091:                                                 nombre_completo=r_nombre,\\r\\n1092:                                                 correo_corporativo=r_correo,\\r\\n1093:                                                 cargo=r_cargo,\\r\\n1094:                                                 token_acceso=new_token,\\r\\n1095:                                                 estado_onboarding=\\\"Pendiente\\\"\\r\\n1096:                                             )\\r\\n1097:                                             db.add(new_exec)\\r\\n1098:                                             added_count += 1\\r\\n1099:                                         else:\\r\\n1100:                                             dup_count += 1\\r\\nThe above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.\\n\",\"truncated_fields\":[\"content\"]}"}
+{"File":"C:\\Users\\franc\\.gemini\\antigravity-ide\\brain\\936a2f4b-48b4-4f60-a640-d6d4b070f1f4\\.system_generated\\logs\\transcript.jsonl","LineNumber":3577,"LineContent":"{\"step_index\":3583,\"source\":\"MODEL\",\"type\":\"VIEW_FILE\",\"status\":\"DONE\",\"created_at\":\"2026-09-28T15:16:56Z\",\"content\":\"Created At: 2026-09-28T12:16:56-03:00\\nCompleted At: 2026-09-28T12:16:56-03:00\\nFile Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/database/models.py`\\nTotal Lines: 661\\nTotal Bytes: 28078\\nShowing lines 600 to 661\\nThe following code has been modified to include a line number before every line, in the format: \u003cline_number\u003e: \u003coriginal_line\u003e. Please note that any changes targeting the original code should remove the line number, colon, and leading space.\\n600:     alias = Column(String(150), nullable=False) # e.g. \\\"CTA. CTE. BCI: FV ASESORIAS\\\"\\n601:     saldo_actual = Column(Float, default=0.0)\\n602:     \\n603:     created_at = Column(DateTime, default=datetime.utcnow)\\n604: \\n605: \\n606: class OsintLead(Base):\\n607:     __tablename__ = 'osint_leads'\\n608:     id = Column(Integer, primary_key=True, index=True)\\n609:     nombre_persona_empresa = Column(String, index=True)\\n610:     rut = Column(String, index=True)\\n611:     monto = Column(Float)\\n612:     motivo = Column(String)\\n613:     fecha_documento = Column(String)\\n614:     archivo_origen = Column(String)\\n615:     nivel_certeza = Column(String)\\n616:     estado = Column(String, default='Pendiente') # Pendiente, Descartado, Convertido\\n617:     creado_el = Column(DateTime, default=datetime.utcnow)\\n618: \\n619: class EmpresaB2B(Base):\\n620:     \\\"\\\"\\\"\\n621:     Empresas o Corporaciones suscritas al plan SaaS institucional de Altus Core.\\n622:     \\\"\\\"\\\"\\n623:     __tablename__ = \\\"empresas_b2b\\\"\\n624: \\n625:     id = Column(Integer, primary_key=True, index=True)\\n626:     rut = Column(String(20), unique=True, index=True, nullable=False)\\n627:     razon_social = Column(String(200), nullable=False)\\n628:     contacto_comercial = Column(String(200), nullable=True)\\n629:     plan_contratado = Column(String(50), default=\\\"TIER_1\\\") # TIER_1, TIER_2, ENTERPRISE\\n630:     cupo_licencias = Column(Integer, default=50)\\n631:     estado_activo = Column(Boolean, default=True)\\n632:     \\n633:     created_at = Column(DateTime, default=datetime.utcnow)\\n634:     \\n635:     ejecutivos = relationship(\\\"EjecutivoB2B\\\", back_populates=\\\"empresa\\\", cascade=\\\"all, delete-orphan\\\")\\n636: \\n637: \\n638: class EjecutivoB2B(Base):\\n639:     \\\"\\\"\\\"\\n640:     Ejecutivos C-Level / Alta Gerencia dados de alta en un Tenant Corporativo B2B.\\n641:     \\\"\\\"\\\"\\n642:     __tablename__ = \\\"ejecutivos_b2b\\\"\\n643: \\n644:     id = Column(Integer, primary_key=True, index=True)\\n645:     empresa_id = Column(Integer, ForeignKey(\\\"empresas_b2b.id\\\"))\\n646:     \\n647:     rut = Column(String(20), unique=True, index=True, nullable=False)\\n648:     nombre_completo = Column(String(200), nullable=False)\\n649:     correo_corporativo = Column(String(150), nullable=True)\\n650:     cargo = Column(String(150), nullable=True)\\n651:     \\n652:     token_acceso = Column(String(500), unique=True, index=True, nullable=True) # Token cifrado/hash para magic link\\n653:     estado_onboarding = Column(String(50), default=\\\"Pendiente\\\") # Pendiente, Completado, Reporte Emitido\\n654:     fecha_expiracion_acceso = Column(DateTime, nullable=True)\\n655:     \\n656:     metadata_json = Column(Text, nullable=True) # Extras\\n657:     \\n658:     created_at = Column(DateTime, default=datetime.utcnow)\\n659:     \\n660:     empresa = relationship(\\\"EmpresaB2B\\\", back_populates=\\\"ejecutivos\\\")\\r\\n661: \\nThe above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.\\n\"}"}
+{"File":"C:\\Users\\franc\\.gemini\\antigravity-ide\\brain\\936a2f4b-48b4-4f60-a640-d6d4b070f1f4\\.system_generated\\logs\\transcript.jsonl","LineNumber":3694,"LineContent":"{\"step_index\":3700,\"source\":\"MODEL\",\"type\":\"VIEW_FILE\",\"status\":\"DONE\",\"created_at\":\"2026-09-28T15:37:19Z\",\"content\":\"Created At: 2026-09-28T12:37:19-03:00\\nCompleted At: 2026-09-28T12:37:19-03:00\\nFile Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/company_management_ui.py`\\nTotal Lines: 1372\\nTotal Bytes: 83358\\nShowing lines 950 to 1000\\nThe following code has been modified to include a line number before every line, in the format: \u003cline_number\u003e: \u003coriginal_line\u003e. Please note that any changes targeting the original code should remove the line number, colon, and leading space.\\n950:                         \\\"Cuenta Corriente\\\": st.column_config.TextColumn(\\\"Cuenta Corriente\\\", width=\\\"medium\\\"),\\r\\n951:                         \\\"INGRESO\\\": st.column_config.NumberColumn(\\\"Abonos Totales\\\", format=\\\"$ %,.0f\\\", width=\\\"medium\\\"),\\r\\n952:                         \\\"EGRESO\\\": st.column_config.NumberColumn(\\\"Cargos/Gastos Totales\\\", format=\\\"$ %,.0f\\\", width=\\\"medium\\\"),\\r\\n953:                         \\\"Balance Neto de Cuenta\\\": st.column_config.NumberColumn(\\\"Flujo Neto\\\", format=\\\"$ %,.0f\\\", width=\\\"medium\\\")\\r\\n954:                     }\\r\\n955:                 )\\r\\n956: \\r\\n957:         with tab6:\\r\\n958:             st.markdown(\\\"##### 🏢 Administración de Empresas y Cupos B2B (Reporte 360)\\\")\\r\\n959:             from src.database.models import EmpresaB2B, EjecutivoB2B\\r\\n960:             from src.core.config import B2B_LICENSE_TIERS\\r\\n961:             import uuid\\r\\n962:             import io\\r\\n963:             import time\\r\\n964:             \\r\\n965:             # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---\\r\\n966:             st.markdown(\\\"###### 1️⃣ Gestión de Empresas (Tenant Corporativo)\\\")\\r\\n967:             \\r\\n968:             empresas_db = db.query(EmpresaB2B).all()\\r\\n969:             \\r\\n970:             col_b1, col_b2 = st.columns([1, 1])\\r\\n971:             with col_b1:\\r\\n972:                 st.markdown(\\\"**Registrar Nueva Empresa**\\\")\\r\\n973:                 with st.form(\\\"form_nueva_empresa_b2b\\\"):\\r\\n9
+<truncated 56651 bytes>
+
+NOTE: The output was truncated because it was too long. Use a more targeted query or a smaller range to get the information you need.

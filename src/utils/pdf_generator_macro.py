@@ -1,8 +1,30 @@
-import os
+﻿import os
 import io
 import base64
 from datetime import datetime
-from xhtml2pdf import pisa
+
+try:
+    from xhtml2pdf import pisa
+    XHTML2PDF_AVAILABLE = True
+except (ImportError, OSError):
+    XHTML2PDF_AVAILABLE = False
+
+def _generate_fallback_pdf(title, data, output_path):
+    from fpdf import FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font('Arial', 'B', 16)
+    pdf.cell(200, 10, txt=f'Simulacion: {title}', ln=True, align='C')
+    pdf.set_font('Arial', '', 12)
+    pdf.cell(200, 10, txt='Modo de compatibilidad (falta libreria Cairo).', ln=True)
+    for k, v in data.items():
+        if isinstance(v, (str, int, float)) and len(str(v)) < 100:
+            pdf.cell(200, 10, txt=str(k) + ': ' + str(v), ln=True)
+    try:
+        pdf.output(output_path)
+    except:
+        pass
+
 import markdown
 
 def _parse_md_tables_to_html(md_text):
@@ -59,7 +81,7 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
     with open(altus_svg_path, "rb") as alt_f:
         altus_b64 = f"data:image/svg+xml;base64,{base64.b64encode(alt_f.read()).decode('utf-8')}"
 
-    # Reemplazar marcadores manuales de salto de página y convertir tablas
+    # Reemplazar marcadores manuales de salto de pÃ¡gina y convertir tablas
     markdown_processed = _parse_md_tables_to_html(contenido_markdown)
     markdown_processed = markdown_processed.replace("[SALTO]", "<pdf:nextpage />")
     markdown_processed = markdown_processed.replace("---", "<pdf:nextpage />")
@@ -190,7 +212,7 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
                         <tr style="border: none; background-color: transparent;">
                             <td style="text-align: right; vertical-align: middle; border: none; padding-right: 10px;">
                                 <span style="font-size: 11pt; color: #0A2342; font-weight: bold;">Digital Family Office Analytics</span><br>
-                                <span style="font-size: 8pt; color: #6b7280;">Fecha de Emisión: {datetime.now().strftime("%d-%m-%Y")}</span>
+                                <span style="font-size: 8pt; color: #6b7280;">Fecha de EmisiÃ³n: {datetime.now().strftime("%d-%m-%Y")}</span>
                             </td>
                             <td style="text-align: right; width: 75px; vertical-align: middle; border: none; padding: 0;">
                                 <img src="{altus_b64}" width="70">
@@ -202,12 +224,12 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
         </table>
         
         <div style="text-align: right; font-size: 8pt; color: #6b7280; margin-bottom: 15px;">
-            Reporte generado y certificado por <strong>Altus AI</strong> para uso exclusivo de FV Asesorías e Inversiones
+            Reporte generado y certificado por <strong>Altus AI</strong> para uso exclusivo de FV AsesorÃ­as e Inversiones
         </div>
 
         <table style="width:100%; margin-bottom:15px; background-color:#f8fafc; padding:10px; border-left: 3px solid #cbd5e1;">
             <tr>
-                <td width="50%" style="padding: 5px;"><strong>Atención a:</strong> {cliente_nombre}</td>
+                <td width="50%" style="padding: 5px;"><strong>AtenciÃ³n a:</strong> {cliente_nombre}</td>
                 <td width="50%" style="padding: 5px;"><strong>Fecha:</strong> {fecha_actual}</td>
             </tr>
             <tr>
@@ -219,21 +241,21 @@ def generate_macro_pdf(cliente_nombre: str, contenido_markdown: str, output_path
         {contenido_html}
 
         <div class="disclaimer">
-            <strong>Aviso Legal:</strong> Las visiones y proyecciones macroeconómicas presentadas en este documento han sido procesadas mediante inteligencia artificial (Altus AI) cruzando múltiples visiones institucionales. Este documento no constituye una recomendación de inversión vinculante, sino una herramienta de información estratégica. Los mercados son volátiles y las rentabilidades pasadas no garantizan retornos futuros. FV Asesorías e Inversiones limita su responsabilidad al análisis cuantitativo.
+            <strong>Aviso Legal:</strong> Las visiones y proyecciones macroeconÃ³micas presentadas en este documento han sido procesadas mediante inteligencia artificial (Altus AI) cruzando mÃºltiples visiones institucionales. Este documento no constituye una recomendaciÃ³n de inversiÃ³n vinculante, sino una herramienta de informaciÃ³n estratÃ©gica. Los mercados son volÃ¡tiles y las rentabilidades pasadas no garantizan retornos futuros. FV AsesorÃ­as e Inversiones limita su responsabilidad al anÃ¡lisis cuantitativo.
         </div>
         
         <div class="corp-desc" style="margin-top: 20px; page-break-inside: avoid;">
-            <strong>Sobre FV Asesorías e Inversiones</strong><br>
-            FV Asesorías e Inversiones somos un Multi-Family Office Digital impulsado por nuestro software cuantitativo privado de Inteligencia Artificial (ALTUS AI). Combinamos la agilidad tecnológica de una WealthTech con la exclusividad de una oficina patrimonial privada, auditando en 360° la situación tributaria, inmobiliaria, composición familiar, seguros e inversiones para proteger su legado a través de las generaciones.
+            <strong>Sobre FV AsesorÃ­as e Inversiones</strong><br>
+            FV AsesorÃ­as e Inversiones somos un Multi-Family Office Digital impulsado por nuestro software cuantitativo privado de Inteligencia Artificial (ALTUS AI). Combinamos la agilidad tecnolÃ³gica de una WealthTech con la exclusividad de una oficina patrimonial privada, auditando en 360Â° la situaciÃ³n tributaria, inmobiliaria, composiciÃ³n familiar, seguros e inversiones para proteger su legado a travÃ©s de las generaciones.
         </div>
 
         <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-left: 3px solid #0A2342; padding: 6px 10px; margin-top: 8px; font-size: 7.5pt; color: #334155; line-height: 1.3; font-family: Helvetica, Arial, sans-serif; page-break-inside: avoid;">
-            <strong>🔒 Ciberseguridad & Resguardo Patrimonial:</strong> Toda la información analizada por Altus AI se encuentra protegida bajo cifrado nativo <strong>AES-256 bits</strong> y transmisión <strong>TLS 1.3</strong> de grado bancario. Garantizamos estricta confidencialidad bajo Secreto Patrimonial y cumplimiento riguroso de la Ley N° 19.628 de Protección de Datos Personales en Chile.
+            <strong>ðŸ”’ Ciberseguridad & Resguardo Patrimonial:</strong> Toda la informaciÃ³n analizada por Altus AI se encuentra protegida bajo cifrado nativo <strong>AES-256 bits</strong> y transmisiÃ³n <strong>TLS 1.3</strong> de grado bancario. Garantizamos estricta confidencialidad bajo Secreto Patrimonial y cumplimiento riguroso de la Ley NÂ° 19.628 de ProtecciÃ³n de Datos Personales en Chile.
         </div>
 
         <div id="footer_content">
             <div style="text-align: right; font-size: 9px; color: #94a3b8; border-top: 1px solid #e2e8f0; padding-top: 5px;">
-                Generado por Altus AI - FV Asesorías e Inversiones - Página <pdf:pagenumber>
+                Generado por Altus AI - FV AsesorÃ­as e Inversiones - PÃ¡gina <pdf:pagenumber>
             </div>
         </div>
 

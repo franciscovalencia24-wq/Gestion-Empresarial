@@ -1,0 +1,311 @@
+Created At: 2026-09-28T11:54:24-03:00
+Completed At: 2026-09-28T11:54:24-03:00
+File Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/company_management_ui.py`
+Total Lines: 1225
+Total Bytes: 73572
+Showing lines 950 to 1100
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+950:                         "Cuenta Corriente": st.column_config.TextColumn("Cuenta Corriente", width="medium"),
+
+951:                         "INGRESO": st.column_config.NumberColumn("Abonos Totales", format="$ %,.0f", width="medium"),
+
+952:                         "EGRESO": st.column_config.NumberColumn("Cargos/Gastos Totales", format="$ %,.0f", width="medium"),
+
+953:                         "Balance Neto de Cuenta": st.column_config.NumberColumn("Flujo Neto", format="$ %,.0f", width="medium")
+
+954:                     }
+
+955:                 )
+
+956: 
+
+957:         with tab6:
+
+958:             st.markdown("##### 🏢 Administración de Empresas y Cupos B2B (Reporte 360)")
+
+959:             from src.database.models import EmpresaB2B, EjecutivoB2B
+
+960:             from src.core.config import B2B_LICENSE_TIERS
+
+961:             import uuid
+
+962:             import io
+
+963:             import time
+
+964:             
+
+965:             # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
+
+966:             st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
+
+967:             
+
+968:             empresas_db = db.query(EmpresaB2B).all()
+
+969:             
+
+970:             col_b1, col_b2 = st.columns([1, 1])
+
+971:             with col_b1:
+
+972:                 st.markdown("**Registrar Nueva Empresa**")
+
+973:                 with st.form("form_nueva_empresa_b2b"):
+
+974:                     n_rut_empresa = st.text_input("RUT Empresa (ej: 76.123.456-7)")
+
+975:                     n_razon_social = st.text_input("Razón Social")
+
+976:                     n_contacto = st.text_input("Contacto Comercial (Nombre, Email)")
+
+977:                     n_plan = st.selectbox("Plan Contratado", list(B2B_LICENSE_TIERS.keys()))
+
+978:                     submit_new_emp = st.form_submit_button("Registrar Empresa B2B")
+
+979:                     
+
+980:                     if submit_new_emp:
+
+981:                         if n_rut_empresa and n_razon_social:
+
+982:                             check_exist = db.query(EmpresaB2B).filter_by(rut=n_rut_empresa).first()
+
+983:                             if not check_exist:
+
+984:                                 plan_cupos = B2B_LICENSE_TIERS[n_plan]["max_users"]
+
+985:                                 if plan_cupos == float('inf'): plan_cupos = 9999
+
+986:                                 new_emp = EmpresaB2B(
+
+987:                                     rut=n_rut_empresa,
+
+988:                                     razon_social=n_razon_social,
+
+989:                                     contacto_comercial=n_contacto,
+
+990:                                     plan_contratado=n_plan,
+
+991:                                     cupo_licencias=plan_cupos,
+
+992:                                     estado_activo=True
+
+993:                                 )
+
+994:                                 db.add(new_emp)
+
+995:                                 db.commit()
+
+996:                                 try:
+
+997:                                     from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+
+998:                                     safe_upload_with_streamlit_ui()
+
+999:                                 except: pass
+
+1000:                                 st.success("✅ Empresa B2B Registrada con éxito.")
+
+1001:                                 st.rerun()
+
+1002:                             else:
+
+1003:                                 st.error("⚠️ El RUT de la empresa ya existe.")
+
+1004:                         else:
+
+1005:                             st.warning("Debe ingresar al menos RUT y Razón Social.")
+
+1006: 
+
+1007:             with col_b2:
+
+1008:                 st.markdown("**Seleccionar Empresa Existente**")
+
+1009:                 if not empresas_db:
+
+1010:                     st.info("No hay empresas registradas.")
+
+1011:                     empresa_sel_b2b = None
+
+1012:                 else:
+
+1013:                     empresa_opts = {f"{e.razon_social} ({e.rut})": e for e in empresas_db}
+
+1014:                     sel_emp_str = st.selectbox("Empresa:", list(empresa_opts.keys()))
+
+1015:                     empresa_sel_b2b = empresa_opts[sel_emp_str]
+
+1016:                     
+
+1017:                     # Mostrar Panel de Cupos
+
+1018:                     if empresa_sel_b2b:
+
+1019:                         total_contratado = empresa_sel_b2b.cupo_licencias
+
+1020:                         ejecutivos_asociados = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).count()
+
+1021:                         saldo = total_contratado - ejecutivos_asociados
+
+1022:                         
+
+1023:                         st.markdown(f"""
+
+1024:                         <div style='background-color: #1e293b; padding: 15px; border-radius: 10px; border-left: 5px solid #10b981; margin-top: 15px;'>
+
+1025:                             <h5 style='color: #f8fafc; margin: 0;'>Panel de Cupos: {empresa_sel_b2b.plan_contratado}</h5>
+
+1026:                             <p style='color: #e2e8f0; font-size: 0.95rem; margin-top: 8px; margin-bottom: 0;'>
+
+1027:                                 • <b>Cupos Contratados:</b> {total_contratado}<br/>
+
+1028:                                 • <b>Ejecutivos Cargados:</b> {ejecutivos_asociados}<br/>
+
+1029:                                 • <b>Saldo Disponible:</b> <span style='color: {"#10b981" if saldo > 0 else "#ef4444"}; font-weight: bold;'>{saldo}</span>
+
+1030:                             </p>
+
+1031:                         </div>
+
+1032:                         """, unsafe_allow_html=True)
+
+1033:             
+
+1034:             st.markdown("---")
+
+1035:             if empresa_sel_b2b:
+
+1036:                 st.markdown(f"###### 2️⃣ Gestión de Ejecutivos para **{empresa_sel_b2b.razon_social}**")
+
+1037:                 
+
+1038:                 # Importador masivo
+
+1039:                 with st.expander("📥 Importar Nómina Masiva (Excel/CSV)"):
+
+1040:                     st.caption("El archivo debe contener las columnas: RUT, Nombre Completo, Correo Corporativo, Cargo")
+
+1041:                     
+
+1042:                     # Generar Plantilla Excel
+
+1043:                     template_df = pd.DataFrame(columns=["RUT", "Nombre Completo", "Correo Corporativo", "Cargo"])
+
+1044:                     template_df.loc[0] = ["12.345.678-9", "Juan Pérez", "juan.perez@empresa.cl", "Gerente General"]
+
+1045:                     output = io.BytesIO()
+
+1046:                     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+
+1047:                         template_df.to_excel(writer, index=False, sheet_name='Nómina')
+
+1048:                     plantilla_xls = output.getvalue()
+
+1049:                     
+
+1050:                     st.download_button(
+
+1051:                         label="📄 Descargar Plantilla Oficial (Excel)",
+
+1052:                         data=plantilla_xls,
+
+1053:                         file_name="plantilla_nomina_b2b.xlsx",
+
+1054:                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+1055:                     )
+
+1056: 
+
+1057:                     nomina_file = st.file_uploader("Sube el archivo Excel o CSV", type=["xlsx", "csv"])
+
+1058:                     if nomina_file and st.button("Procesar Nómina", type="primary"):
+
+1059:                         try:
+
+1060:                             if nomina_file.name.endswith('.csv'):
+
+1061:                                 df_nomina = pd.read_csv(nomina_file)
+
+1062:                             else:
+
+1063:                                 df_nomina = pd.read_excel(nomina_file)
+
+1064:                                 
+
+1065:                             required_cols = ["RUT", "Nombre Completo"]
+
+1066:                             missing = [c for c in required_cols if c not in df_nomina.columns]
+
+1067:                             if missing:
+
+1068:                                 st.error(f"⚠️ Faltan columnas requeridas: {', '.join(missing)}")
+
+1069:                             else:
+
+1070:                                 added_count = 0
+
+1071:                                 dup_count = 0
+
+1072:                                 no_quota = 0
+
+1073:                                 for _, row in df_nomina.iterrows():
+
+1074:                                     current_count = db.query(EjecutivoB2B).filter_by(empresa_id=empresa_sel_b2b.id).count()
+
+1075:                                     if current_count >= empresa_sel_b2b.cupo_licencias:
+
+1076:                                         no_quota += 1
+
+1077:                                         continue
+
+1078:                                         
+
+1079:                                     r_rut = str(row.get("RUT", "")).strip()
+
+1080:                                     r_nombre = str(row.get("Nombre Completo", "")).strip()
+
+1081:                                     r_correo = str(row.get("Correo Corporativo", "")).strip() if "Correo Corporativo" in df_nomina.columns else ""
+
+1082:                                     r_cargo = str(row.get("Cargo", "")).strip() if "Cargo" in df_nomina.columns else ""
+
+1083:                                     
+
+1084:                                     if r_rut and r_nombre:
+
+1085:                                         check_exec = db.query(EjecutivoB2B).filter_by(rut=r_rut).first()
+
+1086:                                         if not check_exec:
+
+1087:                                             new_token = str(uuid.uuid4())
+
+1088:                                             new_exec = EjecutivoB2B(
+
+1089:                                                 empresa_id=empresa_sel_b2b.id,
+
+1090:                                                 rut=r_rut,
+
+1091:                                                 nombre_completo=r_nombre,
+
+1092:                                                 correo_corporativo=r_correo,
+
+1093:                                                 cargo=r_cargo,
+
+1094:                                                 token_acceso=new_token,
+
+1095:                                                 estado_onboarding="Pendiente"
+
+1096:                                             )
+
+1097:                                             db.add(new_exec)
+
+1098:                                             added_count += 1
+
+1099:                                         else:
+
+1100:                                             dup_count += 1
+
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+

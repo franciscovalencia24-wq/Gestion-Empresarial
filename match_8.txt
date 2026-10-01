@@ -1,0 +1,71 @@
+Created At: 2026-09-30T11:31:36-03:00
+Completed At: 2026-09-30T11:31:36-03:00
+File Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/company_management_ui.py`
+Total Lines: 507
+Total Bytes: 30330
+Showing lines 30 to 60
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+30:         
+
+31:         # --- MODO DEMO ---
+
+32:         demo_mode = st.sidebar.toggle("🧪 Activar Modo Demo", value=False, key="demo_mode")
+
+33:         if demo_mode:
+
+34:             st.sidebar.warning("Modo Demo Activo (Datos Simulados)")
+
+35:             
+
+36:         # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
+
+37:         st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
+
+38:         
+
+39:         if demo_mode:
+
+40:             class MockEmpresa:
+
+41:                 def __init__(self, id, rut, razon_social, contacto_comercial, plan_contratado, cupo_licencias, estado_activo, ultimo_certificado_hash, fecha_ultimo_certificado):
+
+42:                     self.id = id
+
+43:                     self.rut = rut
+
+44:                     self.razon_social = razon_social
+
+45:                     self.contacto_comercial = contacto_comercial
+
+46:                     self.plan_contratado = plan_contratado
+
+47:                     self.cupo_licencias = cupo_licencias
+
+48:                     self.estado_activo = estado_activo
+
+49:                     self.ultimo_certificado_hash = ultimo_certificado_hash
+
+50:                     self.fecha_ultimo_certificado = fecha_ultimo_certificado
+
+51: 
+
+52:             empresas_db = [
+
+53:                 MockEmpresa(1, "76.123.456-7", "Minera Altus Demo SpA", "Contacto Demo 1", "Enterprise", 50, True, "e3b0c44298fc1c149afbf4c8996fb924", datetime.datetime.now()),
+
+54:                 MockEmpresa(2, "77.765.432-1", "Holding Financiero Test", "Finanzas Demo", "Corporate", 20, True, "f2b0c44298fc1c149afbf4c8996fb924", datetime.datetime.now())
+
+55:             ]
+
+56:         else:
+
+57:             empresas_db = db.query(EmpresaB2B).all()
+
+58:         
+
+59:         col_b1, col_b2 = st.columns([1, 1])
+
+60:         with col_b1:
+
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+

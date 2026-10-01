@@ -3,6 +3,10 @@ import os
 import datetime
 import sys
 import importlib
+import tempfile
+import re
+import fitz
+from PIL import Image
 import src.osint.market_data_engine
 importlib.reload(src.osint.market_data_engine)
 from src.osint.market_data_engine import MarketDataEngine
@@ -38,6 +42,7 @@ def render_infographic_generator_ui():
             "🇨🇱 Automático Nacional (Noticias Chile)",
             "🎙️ / 📄 Resumen Semanal de Mercado (Audio o Texto de WhatsApp / Principal)",
             "🔗 URL Personalizada (DF, La Tercera, Bloomberg)",
+            "📄 PDF Local (Subir Archivo)",
             "🔍 Buscar Tema Libre",
             "⛏️ Especial: Cumbre SONAMI 2026",
             "📊 Reporte Cuantitativo (Producción Cobre)"
@@ -47,6 +52,10 @@ def render_infographic_generator_ui():
         custom_input = None
         uploaded_audio = None
         whatsapp_text_input = None
+        uploaded_pdf = None
+        pdf_pages_input = ""
+        pdf_instructions = ""
+        pdf_images = None
 
         if modo == "🇨🇱 Automático Nacional (Noticias Chile)":
             mode_arg = "auto_chile"
@@ -84,6 +93,12 @@ def render_infographic_generator_ui():
         elif modo == "🔍 Buscar Tema Libre":
             mode_arg = "topic"
             custom_input = st.text_input("Ingresa el tema a buscar (ej. 'Decisión de Tasas de la FED hoy'):", key="txt_topic_post")
+        elif modo == "📄 PDF Local (Subir Archivo)":
+            mode_arg = "pdf_local"
+            st.info("Sube un documento PDF (ej. Diario Financiero, Reportes) para extraer texto y generar una infografía de análisis enfocada en el contenido.")
+            uploaded_pdf = st.file_uploader("📁 Selecciona o arrastra tu archivo PDF:", type=["pdf"], key="uploader_pdf_local")
+            pdf_pages_input = st.text_input("Páginas a extraer (opcional, ej. '3', '3-4' o '3, 4'):", placeholder="Deja en blanco para extraer todo el documento.", key="txt_pdf_pages")
+            pdf_instructions = st.text_area("Instrucciones adicionales para la IA (Opcional):", placeholder="Ej: Enfócate en la noticia sobre el Royalty Minero y su impacto en fondos...", key="txt_pdf_instructions")
         elif modo == "⛏️ Especial: Cumbre SONAMI 2026":
             mode_arg = "sonami"
             st.info("Este modo buscará las últimas noticias, proyecciones e insights relacionados con la Cumbre SONAMI 2026 y la industria minera chilena para generar un reporte y post enfocado en inversiones patrimoniales.")
@@ -91,7 +106,7 @@ def render_infographic_generator_ui():
             mode_arg = "cochilco"
             st.info("Generará un análisis duro sobre la producción de cobre por faena, extrayendo estadísticas recientes y relacionándolas con el escenario macro global.")
 
-        if st.button("🚀 Generar Infografía y Post", type="primary", use_container_width=True, key="btn_gen_posts"):
+        if st.button("🚀 Generar Infografía y Post", type="primary", width="stretch", key="btn_gen_posts"):
             if (mode_arg == "url" or mode_arg == "topic") and not custom_input:
                 st.error("Por favor, ingresa un valor en la caja de texto para continuar.")
             else:
@@ -114,11 +129,75 @@ def render_infographic_generator_ui():
                     else:
                         st.error("Por favor, carga un archivo de audio O pega el texto del reporte de WhatsApp antes de presionar Generar.")
 
+                elif mode_arg == "pdf_local":
+                    if uploaded_pdf is None:
+                        st.error("Por favor, sube un archivo PDF.")
+                        custom_input = None
+                    else:
+                        with st.spinner("📄 Procesando páginas del PDF..."):
+                            try:
+                                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                                    tmp.write(uploaded_pdf.getvalue())
+                                    tmp_path = tmp.name
+                                
+                                extracted_text = ""
+                                pdf_images = []
+                                with fitz.open(tmp_path) as pdf:
+                                    total_pages = len(pdf)
+                                    pages_to_extract = list(range(total_pages))
+                                    
+                                    if pdf_pages_input:
+                                        requested = []
+                                        for part in pdf_pages_input.replace(" ", "").split(","):
+                                            if "-" in part:
+                                                parts = part.split("-")
+                                                if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                                                    start, end = int(parts[0]), int(parts[1])
+                                                    requested.extend(range(start-1, end))
+                                            elif part.isdigit():
+                                                requested.append(int(part)-1)
+                                        if requested:
+                                            pages_to_extract = [p for p in requested if 0 <= p < total_pages]
+                                            
+                                    for i in pages_to_extract:
+                                        page = pdf[i]
+                                        # Intentar extraer texto
+                                        text = page.get_text("text").strip()
+                                        if text:
+                                            extracted_text += f"\n--- PÁGINA {i+1} ---\n{text}\n"
+                                            
+                                        # Renderizar imagen para la IA
+                                        pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0)) # 144 DPI aprox
+                                        img = Image.frombytes("RGB", [pix.width, pix.height], pix.samples)
+                                        pdf_images.append(img)
+                                
+                                os.unlink(tmp_path)
+                                
+                                if not pdf_images:
+                                    st.error("No se pudieron extraer las páginas del documento.")
+                                    custom_input = None
+                                else:
+                                    final_text = ""
+                                    if extracted_text.strip() and len(extracted_text.strip()) > 50:
+                                        final_text += f"TEXTO EXTRAÍDO (Referencial):\n{extracted_text}\n"
+                                    else:
+                                        final_text += "El documento parece ser escaneado o imágenes puras. Usa las imágenes adjuntas para extraer el contenido.\n"
+                                        
+                                    if pdf_instructions.strip():
+                                        final_text = f"INSTRUCCIÓN DEL USUARIO:\n{pdf_instructions.strip()}\n\n{final_text}"
+                                        
+                                    custom_input = final_text
+                                    st.session_state.audio_extracted_text = f"**[Páginas capturadas: {len(pdf_images)}]**\n\n{custom_input}"
+                                    
+                            except Exception as ex_pdf:
+                                st.error(f"🚨 Error procesando el PDF: {ex_pdf}")
+                                custom_input = None
+
                 if mode_arg != "weekly" or custom_input:
                     with st.spinner("🤖 El motor de Inteligencia y Diseño está creando la infografía 4K y el post de LinkedIn..."):
                         try:
                             engine = MarketDataEngine()
-                            post_content, img_file = engine.run_daily_routine(mode=mode_arg, custom_input=custom_input)
+                            post_content, img_file = engine.run_daily_routine(mode=mode_arg, custom_input=custom_input, images=pdf_images)
                             
                             st.session_state.info_post_content = post_content
                             st.session_state.info_img_file = img_file
@@ -148,7 +227,7 @@ def render_infographic_generator_ui():
                 st.markdown("#### Infografía Diseñada (Plantilla Resumen Semanal / 4K)")
                 img_path = os.path.join("linkedin_posts", st.session_state.info_img_file)
                 if os.path.exists(img_path):
-                    st.image(img_path, use_container_width=True)
+                    st.image(img_path, width="stretch")
                     with open(img_path, "rb") as file:
                         btn = st.download_button(
                             label="📥 Descargar Imagen 4K (.png)",
@@ -186,7 +265,7 @@ def render_infographic_generator_ui():
                 key="txt_comment_post_text"
             )
             
-        if st.button("⚡ Generar 4 Comentarios de Alto Impacto", type="primary", use_container_width=True, key="btn_gen_comments"):
+        if st.button("⚡ Generar 4 Comentarios de Alto Impacto", type="primary", width="stretch", key="btn_gen_comments"):
             if not source_input or not source_input.strip():
                 st.error("Por favor, ingresa una URL o texto de post válido.")
             else:

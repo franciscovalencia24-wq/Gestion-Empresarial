@@ -12,7 +12,7 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 # Configuración de Página Streamlit
 st.set_page_config(
-    page_title="Gestión Empresarial - FV Asesorías",
+    page_title="Gestión Empresarial - Altus Core",
     page_icon="🏢",
     layout="wide",
     initial_sidebar_state="expanded"

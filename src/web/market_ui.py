@@ -23,7 +23,7 @@ def render_market_ui():
         st.subheader("⚙️ Control del Agente")
         st.info("El Agente buscará automáticamente en la web, leerá noticias de la competencia y extraerá tendencias.")
         
-        if st.button("🚀 Ejecutar Investigación Manual", type="primary", use_container_width=True):
+        if st.button("🚀 Ejecutar Investigación Manual", type="primary", width="stretch"):
             with st.spinner("🕵️‍♂️ El agente está buscando en la web..."):
                 agent = MarketResearcherAgent()
                 try:

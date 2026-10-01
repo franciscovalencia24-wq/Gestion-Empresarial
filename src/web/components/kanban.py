@@ -1,7 +1,38 @@
 import streamlit as st
 import pandas as pd
+import time
 from src.database.connection import engine
 from sqlalchemy import text
+
+@st.dialog("Ficha Detallada del Lead")
+def open_lead_dialog(row_dict):
+    st.markdown(f"### {row_dict.get('nombre', 'Sin Nombre')}")
+    st.write(f"**RUT:** {row_dict.get('rut', '')}")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write(f"**Teléfono:** {row_dict.get('telefono', 'No registrado')}")
+        st.write(f"**Email:** {row_dict.get('email', 'No registrado')}")
+    with col2:
+        st.write(f"**Ciudad:** {row_dict.get('ciudad', 'No registrada')}")
+        st.write(f"**Score de Liquidez:** {row_dict.get('score_liquidez', 0)}")
+
+    estado_actual = row_dict.get('status_contacto', 'Pendiente')
+    opciones_estado = ["Pendiente", "Contactado", "En Reunión", "Propuesta Enviada", "Cierre / Cliente", "Pendiente (Cross-Sell)", "Venta Cruzada Cerrada", "Descartado (Teléfono Equivocado)", "Descartado"]
+    
+    idx = opciones_estado.index(estado_actual) if estado_actual in opciones_estado else 0
+    nuevo_estado = st.selectbox("Cambiar Estado del Lead", opciones_estado, index=idx)
+    
+    if st.button("Guardar Cambios", width="stretch", type="primary"):
+        try:
+            with engine.connect() as con:
+                con.execute(text("UPDATE prospects SET status_contacto = :s WHERE id = :id"), {"s": nuevo_estado, "id": row_dict['id']})
+                con.commit()
+            st.success("Estado actualizado con éxito.")
+            time.sleep(1)
+            st.rerun()
+        except Exception as e:
+            st.error(f"Error al actualizar: {e}")
 
 def render_kanban():
     st.markdown("""
@@ -67,12 +98,54 @@ def render_kanban():
     st.title("📊 Embudo CRM Patrimonial")
     st.write("Gestión visual de oportunidades y pipeline de clientes de alto patrimonio.")
 
-    # Cargar prospectos
-    with engine.connect() as con:
-        df = pd.read_sql("SELECT * FROM prospects ORDER BY score_liquidez DESC LIMIT 100", con=con)
+    search_query = st.text_input("🔍 Buscar lead por Teléfono, Nombre o RUT", placeholder="Ej. +56912345678 o Juan Pérez")
+    if search_query:
+        with engine.connect() as con:
+            search_df = pd.read_sql(f"SELECT * FROM prospects WHERE telefono LIKE '%%{search_query}%%' OR nombre LIKE '%%{search_query}%%' OR rut LIKE '%%{search_query}%%' LIMIT 10", con=con)
+        if not search_df.empty:
+            st.markdown("#### Resultados de búsqueda")
+            for _, row in search_df.iterrows():
+                col_s1, col_s2, col_s3 = st.columns([3, 2, 1])
+                col_s1.write(f"**{row['nombre']}** ({row['rut']})")
+                col_s2.write(f"📱 {row['telefono']} | 🏷️ {row.get('status_contacto', 'Pendiente')}")
+                if col_s3.button("Abrir Ficha", key=f"search_btn_{row['id']}"):
+                    open_lead_dialog(row.to_dict())
+            st.markdown("---")
+        else:
+            st.warning("No se encontraron leads con ese criterio.")
 
-    # Definir Estados
-    states = ["Pendiente", "Contactado", "En Reunión", "Propuesta Enviada", "Cierre / Cliente"]
+    # --- MODO DE EMBUDO ---
+    modo_kanban = st.radio("🎯 Selecciona el Embudo a visualizar:", 
+                        ["Prospección de Nuevos Clientes", "Fidelización de Clientes Actuales ⭐"], horizontal=True)
+    is_fidelizacion = "Fidelización" in modo_kanban
+    cliente_filter = 1 if is_fidelizacion else 0
+
+    # Cargar prospectos (Ocultando registros del Diario Oficial y filtrando por tipo de cliente)
+    estados_activos = ["Contactado", "En Reunión", "Propuesta Enviada", "Cierre / Cliente", "Venta Cruzada Cerrada"]
+    estados_str = "', '".join(estados_activos)
+    query = f"""
+        SELECT * FROM prospects 
+        WHERE rut NOT LIKE 'DO%' 
+        AND es_cliente = {cliente_filter} 
+        AND status_contacto IN ('{estados_str}')
+        UNION ALL
+        SELECT * FROM (
+            SELECT * FROM prospects 
+            WHERE (rut NOT LIKE 'DO%' OR rut IS NULL)
+            AND es_cliente = {cliente_filter} 
+            AND (status_contacto NOT IN ('{estados_str}') OR status_contacto IS NULL)
+            ORDER BY score_liquidez DESC 
+            LIMIT 100
+        )
+    """
+    with engine.connect() as con:
+        df = pd.read_sql(query, con=con)
+
+    # Definir Estados según el embudo
+    if is_fidelizacion:
+        states = ["Pendiente (Cross-Sell)", "Contactado", "En Reunión", "Propuesta Enviada", "Venta Cruzada Cerrada"]
+    else:
+        states = ["Pendiente", "Contactado", "En Reunión", "Propuesta Enviada", "Cierre / Cliente"]
     
     # Simular distribución si no hay datos de estado reales
     if 'status_contacto' not in df.columns:
@@ -83,8 +156,16 @@ def render_kanban():
     for i, state in enumerate(states):
         with cols[i]:
             st.markdown(f"### {state}")
-            state_prospects = df[df['status_contacto'] == state] if state != "Cierre / Cliente" else df[df['es_cliente'] == 1]
             
+            if not is_fidelizacion and state == "Cierre / Cliente":
+                # En prospección, los que ya son clientes van al final
+                state_prospects = df[(df['status_contacto'] == state) | (df['es_cliente'] == 1)]
+            elif is_fidelizacion and state == "Pendiente (Cross-Sell)":
+                # En fidelización, los clientes cuyo estado quedó en "Cierre" de una campaña anterior, vuelven a empezar como Pendientes
+                state_prospects = df[(df['status_contacto'] == state) | (df['status_contacto'] == 'Pendiente') | (df['status_contacto'] == 'Cierre / Cliente') | (df['status_contacto'].isna())]
+            else:
+                state_prospects = df[df['status_contacto'] == state]
+                
             st.caption(f"{len(state_prospects)} leads")
             
             for _, row in state_prospects.head(10).iterrows():
@@ -101,8 +182,7 @@ def render_kanban():
                         </div>
                     """, unsafe_allow_html=True)
                     if st.button(f"Ver {row['id']}", help="Abre la ficha detallada de este prospecto o cliente.", key=f"btn_{row['id']}"):
-                        st.session_state.selected_lead = row['id']
-                        st.info(f"Detalle del Lead: {row['nombre']}")
+                        open_lead_dialog(row.to_dict())
 
 def main():
     render_kanban()

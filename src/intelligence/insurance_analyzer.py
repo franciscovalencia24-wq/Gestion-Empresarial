@@ -118,3 +118,134 @@ class InsurancePolicyAnalyst:
             return response.content
         except Exception as e:
             return f"Error en IA: {str(e)}"
+
+def auditar_polizas_cliente(prospect_id: int, db_session) -> dict:
+    from src.database.models import Prospect
+    from src.osint.indicadores import get_uf_today
+    import json
+    
+    prospect = db_session.query(Prospect).filter_by(id=prospect_id).first()
+    if not prospect:
+        return {}
+
+    uf_val = get_uf_today()
+    
+    capital_vida_uf = 0.0
+    polizas_analizadas = []
+    
+    # Análisis de Cartera
+    total_polizas = 0
+    total_cautivas = 0
+    micro_polizas_bancarias = []
+    
+    for pol in prospect.insurances:
+        if pol.estado != "VIGENTE":
+            continue
+            
+        total_polizas += 1
+        tipo = (pol.tipo_seguro or "").lower()
+        contratante = (pol.contratante or "").lower()
+        
+        is_captive = "banco" in contratante or "cencosud" in contratante or "falabella" in contratante or "ripley" in contratante or "cmr" in contratante or "banchile" in contratante or "scotiabank" in contratante or "itau" in contratante or "bci" in contratante or "santander" in contratante or "estado" in contratante
+        if is_captive:
+            total_cautivas += 1
+            if "desgravamen" in tipo or "fraude" in tipo or "robo" in tipo or "robo" in (pol.coberturas or "").lower():
+                micro_polizas_bancarias.append(f"{pol.compania} ({pol.tipo_seguro})")
+                
+        if "vida" in tipo or "desgravamen" in tipo:
+            capital_vida_uf += pol.capital_asegurado
+            
+        destino_beneficio = "Acreedor Financiero" if ("desgravamen" in tipo or is_captive and "vida" not in tipo) else "Familia / Herederos"
+        if "vida individual" in tipo.lower() and not is_captive:
+            destino_beneficio = "Familia / Herederos"
+        elif "vida" in tipo.lower() and is_captive:
+            # Often banks sell life insurance, but it usually goes to them or is a rigid product
+            destino_beneficio = "Acreedor / Familia (Mixto)"
+            
+        polizas_analizadas.append({
+            "compania": pol.compania,
+            "contratante": pol.contratante,
+            "tipo": pol.tipo_seguro,
+            "capital_uf": pol.capital_asegurado,
+            "prima_mensual": pol.prima_mensual,
+            "es_apv": pol.es_apv_poliza,
+            "estado": pol.estado,
+            "destino_beneficio": destino_beneficio
+        })
+            
+    capital_vida_clp = capital_vida_uf * uf_val
+    
+    # Pasivos (Deuda Hipotecaria Total)
+    deuda_total_clp = sum(d.monto_actual for d in prospect.debts)
+    for prop in prospect.properties:
+        deuda_total_clp += prop.deuda_hipotecaria
+        
+    deuda_total_uf = deuda_total_clp / uf_val if uf_val > 0 else 0
+    
+    # Cobertura Real Familiar (Ignoramos Desgravamen para liquidez familiar)
+    liquidez_familiar_uf = 0.0
+    for p in polizas_analizadas:
+        if "desgravamen" not in p["tipo"].lower() and "Familia" in p["destino_beneficio"]:
+            liquidez_familiar_uf += p["capital_uf"]
+            
+    liquidez_familiar_clp = liquidez_familiar_uf * uf_val
+    
+    porcentaje_cautivas = (total_cautivas / total_polizas * 100) if total_polizas > 0 else 0
+    
+    # Brecha Sucesoria
+    brecha_sucesoria_clp = 0.0
+    if prospect.profile and prospect.profile.flujo_sucesorio:
+        try:
+            flujo_data = json.loads(prospect.profile.flujo_sucesorio)
+            flujo_neto = flujo_data.get("flujo_caja_mensual_neto", 0)
+            if flujo_neto < 0:
+                brecha_sucesoria_clp = abs(flujo_neto * 12) / 0.04
+        except Exception:
+            pass
+            
+    if brecha_sucesoria_clp == 0 and prospect.gastos_recurrentes > 0:
+         brecha_sucesoria_clp = prospect.gastos_recurrentes / 0.04  # Asumiendo anual
+         
+    brecha_sucesoria_uf = brecha_sucesoria_clp / uf_val if uf_val > 0 else 0
+    
+    deficit_sucesorio_clp = brecha_sucesoria_clp - liquidez_familiar_clp
+    deficit_sucesorio_uf = deficit_sucesorio_clp / uf_val if uf_val > 0 else 0
+    
+    tiene_deficit = deficit_sucesorio_clp > 0
+    
+    # Dictamen Estructurado
+    diag_proteccion = f"El {porcentaje_cautivas:.0f}% de las pólizas vigentes son cautivas de acreedores financieros. "
+    if liquidez_familiar_uf == 0:
+        diag_proteccion += "Cobertura líquida para herederos: $0 CLP (100% cautiva de acreedores financieros). Riesgo de Liquidez Sucesoria crítico."
+    else:
+        diag_proteccion += f"Cobertura líquida real para la familia: {liquidez_familiar_uf:,.0f} UF."
+        
+    diag_duplicidad = "No se detecta dispersión significativa."
+    if len(micro_polizas_bancarias) > 1:
+        diag_duplicidad = f"Se detecta acumulación ineficiente de {len(micro_polizas_bancarias)} micro-pólizas bancarias/retail (ej. {', '.join(micro_polizas_bancarias[:2])})."
+        
+    if tiene_deficit or liquidez_familiar_uf == 0:
+        dictamen_comercial = f"Proponer la desintermediación de seguros bancarios mediante pólizas individuales endosables de menor prima. Recomendar la contratación de un Seguro de Vida con Ahorro Preferente en PRINCIPAL (Art. 17 N°8 / 42 bis) que cubra la Brecha Patrimonial Sucesoria al 4% (sugerido: {brecha_sucesoria_uf:,.0f} UF)."
+    else:
+        dictamen_comercial = "Revisar eficiencia tributaria y costos de primas de las pólizas actuales. Consolidar en Seguro APV PRINCIPAL para maximizar rebaja de IGC."
+
+    return {
+        "polizas": polizas_analizadas,
+        "capital_vida_total_uf": capital_vida_uf,
+        "capital_vida_total_clp": capital_vida_clp,
+        "deuda_total_uf": deuda_total_uf,
+        "deuda_total_clp": deuda_total_clp,
+        "liquidez_familiar_uf": liquidez_familiar_uf,
+        "liquidez_familiar_clp": liquidez_familiar_clp,
+        "brecha_sucesoria_uf": brecha_sucesoria_uf,
+        "brecha_sucesoria_clp": brecha_sucesoria_clp,
+        "deficit_sucesorio_uf": deficit_sucesorio_uf if tiene_deficit else 0,
+        "deficit_sucesorio_clp": deficit_sucesorio_clp if tiene_deficit else 0,
+        "tiene_deficit": tiene_deficit,
+        "porcentaje_cautivas": porcentaje_cautivas,
+        "diag_proteccion": diag_proteccion,
+        "diag_duplicidad": diag_duplicidad,
+        "dictamen": dictamen_comercial,
+        "recomendacion": dictamen_comercial
+    }
+

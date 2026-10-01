@@ -1,0 +1,33 @@
+2026/08/10-14:10:43.121 7570 Reusing MANIFEST C:\Users\franc\OneDrive\Documentos\PROYECTOS\BD SENIOR\data\whatsapp_session_test\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/08/10-14:10:43.122 7570 Recovering log #99
+2026/08/10-14:10:43.146 7570 Reusing old log C:\Users\franc\OneDrive\Documentos\PROYECTOS\BD SENIOR\data\whatsapp_session_test\Default\IndexedDB\https_web.whatsapp.com_0.indexeddb.leveldb/000099.log 
+2026/08/10-14:10:45.658 8cc4 Level-0 table #107: started
+2026/08/10-14:10:45.682 8cc4 Level-0 table #107: 1134736 bytes OK
+2026/08/10-14:10:45.684 8cc4 Delete type=0 #99
+2026/08/10-14:10:46.118 7570 Compacting 1@1 + 3@2 files
+2026/08/10-14:10:46.174 7570 Generated table #108@1: 57696 keys, 2212008 bytes
+2026/08/10-14:10:46.217 7570 Generated table #109@1: 38112 keys, 2197986 bytes
+2026/08/10-14:10:46.256 7570 Generated table #110@1: 28149 keys, 2201092 bytes
+2026/08/10-14:10:46.258 7570 Generated table #111@1: 283 keys, 19374 bytes
+2026/08/10-14:10:46.258 7570 Compacted 1@1 + 3@2 files => 6630460 bytes
+2026/08/10-14:10:46.259 7570 compacted to: files[ 0 0 5 0 0 0 0 ]
+2026/08/10-14:10:52.841 7f2c Level-0 table #113: started
+2026/08/10-14:10:52.866 7f2c Level-0 table #113: 1205168 bytes OK
+2026/08/10-14:10:52.868 7f2c Delete type=2 #101
+2026/08/10-14:10:52.868 7f2c Delete type=2 #102
+2026/08/10-14:10:52.869 7f2c Delete type=2 #103
+2026/08/10-14:10:52.869 7f2c Delete type=0 #106
+2026/08/10-14:10:52.869 7f2c Delete type=2 #107
+2026/08/10-14:10:52.874 7f2c Compacting 1@1 + 5@2 files
+2026/08/10-14:10:52.921 7f2c Generated table #114@1: 66028 keys, 2219752 bytes
+2026/08/10-14:10:52.954 7f2c Generated table #115@1: 40599 keys, 2203890 bytes
+2026/08/10-14:10:52.985 7f2c Generated table #116@1: 23241 keys, 2194744 bytes
+2026/08/10-14:10:52.994 7f2c Generated table #117@1: 8557 keys, 478521 bytes
+2026/08/10-14:10:52.994 7f2c Compacted 1@1 + 5@2 files => 7096907 bytes
+2026/08/10-14:10:52.994 7f2c compacted to: files[ 0 0 4 0 0 0 0 ]
+2026/08/10-14:10:52.995 7f2c Delete type=2 #104
+2026/08/10-14:10:52.995 7f2c Delete type=2 #108
+2026/08/10-14:10:52.995 7f2c Delete type=2 #109
+2026/08/10-14:10:52.995 7f2c Delete type=2 #110
+2026/08/10-14:10:52.995 7f2c Delete type=2 #111
+2026/08/10-14:10:52.995 7f2c Delete type=2 #113

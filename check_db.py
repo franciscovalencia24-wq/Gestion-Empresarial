@@ -1,5 +1,5 @@
-﻿import sqlite3
-conn = sqlite3.connect('prospectos.db')
-cur = conn.cursor()
-cur.execute("SELECT name FROM sqlite_master WHERE type='table';")
-print([r[0] for r in cur.fetchall()])
+from src.database.connection import engine
+import pandas as pd
+
+df = pd.read_sql("SELECT id, rut, nombre, telefono, status_contacto FROM prospects WHERE telefono LIKE '%68453659%'", con=engine)
+print(df)

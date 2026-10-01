@@ -61,7 +61,7 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
 
                 if pd.notna(total_raw) and isinstance(total_raw, (int, float)) and total_raw > 0:
                     concepto_str = str(concepto_raw).strip() if pd.notna(concepto_raw) else ""
-                    if not concepto_str or concepto_str.upper() in ["FOLIO", "CONCEPTO", "TOTAL", "TOTALES"] or idx >= 58:
+                    if not concepto_str or concepto_str.upper() in ["FOLIO", "CONCEPTO", "TOTAL", "TOTALES"]:
                         continue
 
                     fecha_dt = None
@@ -102,7 +102,7 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
 
                 if pd.notna(total_raw) and isinstance(total_raw, (int, float)) and total_raw > 0:
                     prov_str = str(proveedor_raw).strip() if pd.notna(proveedor_raw) else ""
-                    if not prov_str or prov_str.upper() in ["PROVEEDOR", "TOTAL", "TOTALES"] or idx >= 58:
+                    if not prov_str or prov_str.upper() in ["PROVEEDOR", "TOTAL", "TOTALES"]:
                         continue
 
                     fecha_dt = None
@@ -152,7 +152,7 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
 
                     if pd.notna(total_raw) and isinstance(total_raw, (int, float)) and total_raw > 0:
                         conc_str = str(concepto_raw).strip() if pd.notna(concepto_raw) else ""
-                        if not conc_str or conc_str.upper() in ["CONCEPTO", "TOTAL", "TOTALES"] or idx >= 58:
+                        if not conc_str or conc_str.upper() in ["CONCEPTO", "TOTAL", "TOTALES"]:
                             continue
 
                         fecha_dt = None

@@ -84,3 +84,11 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# Importar modelos aquí para registrarlos y crear las tablas automáticamente
+try:
+    import src.database.models
+    Base.metadata.create_all(bind=engine)
+except Exception as e:
+    import logging
+    logging.getLogger("db_init").error(f"Error al inicializar esquemas: {e}")

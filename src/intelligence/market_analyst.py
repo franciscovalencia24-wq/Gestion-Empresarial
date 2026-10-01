@@ -113,7 +113,7 @@ def render_market_intelligence():
                     lambda v: f"$ {_scale_billones(v):.2f} Bill.".replace(".", ",", 1)
                 )
                 top_agfs_display.columns = ["Administradora", "AUM"]
-                st.dataframe(top_agfs_display, hide_index=True, use_container_width=True)
+                st.dataframe(top_agfs_display, hide_index=True, width="stretch")
             else:
                 st.info("Sin datos de AGF disponibles.")
 
@@ -137,7 +137,7 @@ def render_market_intelligence():
                     xaxis_tickangle=-45,
                     margin=dict(l=0, r=0, t=40, b=60)
                 )
-                st.plotly_chart(fig_growth, use_container_width=True)
+                st.plotly_chart(fig_growth, width="stretch")
 
         st.markdown("---")
 
@@ -161,7 +161,7 @@ def render_market_intelligence():
                 showlegend=False,
                 margin=dict(l=0, r=0, t=40, b=0),
             )
-            st.plotly_chart(fig_perf, use_container_width=True)
+            st.plotly_chart(fig_perf, width="stretch")
         else:
             st.info("Sin datos de performance disponibles.")
 
@@ -179,7 +179,7 @@ def render_competitor_matrix():
     st.write("Registro histórico y profundo de debilidades y estrategias de la competencia.")
     c1, c2 = st.columns([3, 1])
     with c1:
-        if st.button("🕵️‍♂️ Ejecutar Deep OSINT Competitivo (Todos)", type="primary", use_container_width=True):
+        if st.button("🕵️‍♂️ Ejecutar Deep OSINT Competitivo (Todos)", type="primary", width="stretch"):
             with st.spinner("Analizando competencia (Deep OSINT v2)... Esto tomará varios minutos."):
                 from src.intelligence.market_researcher import MarketResearcherAgent
                 agent = MarketResearcherAgent()
@@ -188,7 +188,7 @@ def render_competitor_matrix():
     with c2:
         with st.popover("➕ Añadir Competidor"):
             nuevo_comp = st.text_input("Nombre (ej. Fintual):")
-            if st.button("Agregar solo nombre", use_container_width=True):
+            if st.button("Agregar solo nombre", width="stretch"):
                 if nuevo_comp:
                     db = SessionLocal()
                     if not db.query(models.CompetitorProfile).filter_by(nombre=nuevo_comp).first():
@@ -202,7 +202,7 @@ def render_competitor_matrix():
             
             st.divider()
             nueva_url = st.text_input("Ingestar desde URL (ej. https://...):")
-            if st.button("🕵️‍♂️ Analizar con IA", use_container_width=True):
+            if st.button("🕵️‍♂️ Analizar con IA", width="stretch"):
                 if nueva_url:
                     with st.spinner("Leyendo web y estructurando con IA..."):
                         from src.intelligence.market_researcher import MarketResearcherAgent

@@ -44,3 +44,17 @@
     * Atribución de retorno de portafolios (Retorno Bruto ➔ Comisiones ➔ Impuestos IGC ➔ Tipo de Cambio USD/CLP ➔ Retorno Neto Real).
 * **Vectores Históricos & Bandas de Bollinger**:
     * Vectores de precios históricos con bandas de confianza (2 desviaciones estándar) en el módulo cuantitativo de valuación de activos.
+
+---
+
+## 🕵️‍♂️ 5. Módulo OSINT: Revisión Inteligente de Descartados
+* **Segunda Revisión de Archivos Descartados (Notarías)**:
+    * Desarrollar un nuevo script en Python con heurísticas avanzadas/NLP para analizar los miles de archivos marcados como "SKIPPED".
+    * El objetivo es realizar una "segunda pasada" profunda a todos los descartados de la carpeta *MALENTIN KARIME* y *ALIRO* (una vez que este último termine) para asegurar 0% de falsos negativos en la búsqueda de liquidez patrimonial.
+
+---
+
+## 🔬 6. Enriquecimiento de Datos OSINT (Leads de SOCICH)
+* **Pipeline de Enriquecimiento (RUT, Teléfono, Correo)**:
+    * Desarrollar un pipeline automatizado en Python para cruzar los 1.537 nombres extraídos de la Sociedad de Cirujanos de Chile (`socios_socich.csv`) con fuentes de datos abiertas (Rutificadores, Superintendencia de Salud, SII).
+    * El objetivo es obtener los datos de contacto directos (teléfono móvil personal, correo electrónico corporativo/personal y RUT) de cada uno de los especialistas médicos para incluirlos como prospectos calificados en el CRM Altus AI.

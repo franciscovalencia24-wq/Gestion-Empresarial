@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import os
 import sys
+import time
 from datetime import datetime
 
 sys.path.append(os.getcwd())
@@ -54,7 +55,7 @@ def render_company_management_ui():
     st.sidebar.markdown("**Opciones de Seguridad en Nube (Bóveda)**")
     
     if st.sidebar.button("💾 Forzar Guardado Seguro en la Nube"):
-        from src.utils.gcs_sync import upload_db_to_gcs
+        from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
         with st.spinner("Subiendo respaldo de seguridad a Google Cloud..."):
             try:
                 if upload_db_to_gcs():
@@ -86,9 +87,10 @@ def render_company_management_ui():
             import io
             for f in sii_files:
                 try:
-                    # El SII suele usar codificación iso-8859-1 / latin-1 y separador ;
+                    # El SII suele usar codificación iso-8859-1 / latin-1 y separador ; o ,
                     content = f.getvalue().decode('latin-1', errors='replace')
-                    df = pd.read_csv(io.StringIO(content), sep=';', index_col=False)
+                    sep = ';' if ';' in content.split('\n')[0] else ','
+                    df = pd.read_csv(io.StringIO(content), sep=sep, index_col=False)
                     
                     res = process_sii_dataframe(df, empresa_sel, f.name)
                     if res["status"] == "success":
@@ -99,7 +101,7 @@ def render_company_management_ui():
                     st.error(f"Error leyendo {f.name}: {str(e)}")
             
             # Respaldar inmediatamente en la nube
-            from src.utils.gcs_sync import upload_db_to_gcs
+            from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
             try:
                 if upload_db_to_gcs():
                     st.success("✅ Respaldo en la Bóveda exitoso.")
@@ -306,7 +308,7 @@ def render_company_management_ui():
                     db.add(new_db_mov)
                     db.commit()
                     try:
-                        from src.utils.gcs_sync import upload_db_to_gcs
+                        from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
                         upload_db_to_gcs()
                     except Exception:
                         pass
@@ -424,7 +426,7 @@ def render_company_management_ui():
                         bci_acc_db.created_at = datetime.utcnow()
                         db.commit()
                         try:
-                            from src.utils.gcs_sync import upload_db_to_gcs
+                            from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
                             upload_db_to_gcs()
                         except Exception:
                             pass
@@ -639,7 +641,7 @@ def render_company_management_ui():
 
                 db.commit()
                 try:
-                    from src.utils.gcs_sync import upload_db_to_gcs
+                    from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
                     upload_db_to_gcs()
                 except Exception:
                     pass
@@ -658,7 +660,7 @@ def render_company_management_ui():
                             db.delete(mov_to_del)
                             db.commit()
                             try:
-                                from src.utils.gcs_sync import upload_db_to_gcs
+                                from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
                                 upload_db_to_gcs()
                             except Exception:
                                 pass
@@ -809,7 +811,7 @@ def render_company_management_ui():
 
                 db.commit()
                 try:
-                    from src.utils.gcs_sync import upload_db_to_gcs
+                    from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
                     upload_db_to_gcs()
                 except Exception:
                     pass

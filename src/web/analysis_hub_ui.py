@@ -125,7 +125,7 @@ def render_analysis_hub():
 
 
 
-    if st.button("Ejecutar Análisis IA", type="primary", use_container_width=True):
+    if st.button("Ejecutar Análisis IA", type="primary", width="stretch"):
         st.session_state["run_analysis_hub"] = True
         cache_key_int = f"int_{ticker}_{periodo}"
         if cache_key_int in st.session_state:
@@ -189,7 +189,7 @@ def render_analysis_hub():
                     colB.metric("RSI (14)", f"{float(summary['rsi_14']):.2f}")
                     colC.metric("Tendencia Largo Plazo", summary['tendencia_largo_plazo'])
                     
-                    st.plotly_chart(render_technical_chart(df, ticker), use_container_width=True)
+                    st.plotly_chart(render_technical_chart(df, ticker), width="stretch")
             
             if do_fund:
                 cache_key_fund = f"fund_{ticker}"

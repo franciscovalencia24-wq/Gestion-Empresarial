@@ -186,12 +186,12 @@ def render_cartolas_ui():
                                     def nav_to_valuation():
                                         st.session_state.sub_nav_auditoria = "Valuación de Portafolios"
                                         
-                                    st.button("➡️ Ir a Valuación de Portafolios", on_click=nav_to_valuation, type="primary", use_container_width=True)
+                                    st.button("➡️ Ir a Valuación de Portafolios", on_click=nav_to_valuation, type="primary", width="stretch")
                                     
                             except Exception as e:
                                 st.error(f"No se pudo leer el Excel: {e}")
                                 
-                    if pdf_files and st.button("Extraer Portafolio de PDFs a BD", type="primary", use_container_width=True):
+                    if pdf_files and st.button("Extraer Portafolio de PDFs a BD", type="primary", width="stretch"):
                         with st.status("⏳ Extrayendo activos de inversión...", expanded=True) as status:
                             try:
                                 from src.database.models import ClientPortfolio
@@ -269,7 +269,7 @@ def render_cartolas_ui():
                 uploaded_files = st.file_uploader("Sube uno o más PDFs de Cartolas Bancarias", type=["pdf"], accept_multiple_files=True)
                 extract_detail = st.checkbox("Extracción Profunda (Transacciones Individuales)", value=False)
             
-                if uploaded_files and len(uploaded_files) > 0 and st.button("Procesar Cartola(s) con IA", help="Ejecuta la extracción de datos usando Google Gemini Multimodal sobre los PDFs subidos.", use_container_width=True):
+                if uploaded_files and len(uploaded_files) > 0 and st.button("Procesar Cartola(s) con IA", help="Ejecuta la extracción de datos usando Google Gemini Multimodal sobre los PDFs subidos.", width="stretch"):
                     with st.status("⏳ Analizando documentos con IA...", expanded=True) as status:
                         try:
                             reader = CartolaReader()
@@ -324,7 +324,7 @@ def render_cartolas_ui():
                 st.markdown("---")
                 st.subheader("🚨 Motor SFO (Synthetic Family Office)")
                 shock_event = st.text_input("Ingresa un Shock de Mercado (Ej: 'SQM cayó un 15%')", placeholder="El Banco Central bajó las tasas 100 bps...")
-                if st.button("Ejecutar Test de Estrés (SFO)", use_container_width=True):
+                if st.button("Ejecutar Test de Estrés (SFO)", width="stretch"):
                     if not shock_event:
                         st.warning("Debes ingresar un evento de shock.")
                     else:
@@ -453,7 +453,7 @@ def render_cartolas_ui():
                             "Tipo": p.tipo_activo,
                             "Monto (CLP)": p.monto_clp
                         } for p in portafolios])
-                        st.dataframe(df_port, use_container_width=True, hide_index=True)
+                        st.dataframe(df_port, width="stretch", hide_index=True)
                     else:
                         st.info("No hay inversiones registradas. Sube una Cartola de Inversiones en el panel izquierdo.")
                 
@@ -478,7 +478,7 @@ def render_cartolas_ui():
                         audio_val = st.file_uploader("Sube tu archivo de audio desde el celular", type=["mp3", "wav", "m4a", "ogg", "mp4"])
                         
                     if audio_val:
-                        if st.button("Procesar Audio con Gemini", use_container_width=True):
+                        if st.button("Procesar Audio con Gemini", width="stretch"):
                             with st.spinner("Analizando voz y extrayendo insights..."):
                                 from src.intelligence.audio_processor import process_client_audio
                                 try:
@@ -508,7 +508,7 @@ def render_cartolas_ui():
                     video_val = st.file_uploader("Subir grabación de video", type=["mp4", "mov", "avi"])
                     
                     if video_val:
-                        if st.button("🧠 Generar Minuta de Reunión (Video IA)", use_container_width=True):
+                        if st.button("🧠 Generar Minuta de Reunión (Video IA)", width="stretch"):
                             with st.spinner("Subiendo video al procesador de Google (puede tomar varios minutos)..."):
                                 from src.intelligence.meeting_analyzer import MeetingAnalyst
                                 import tempfile
@@ -592,7 +592,7 @@ def render_cartolas_ui():
                     col_exec1, col_exec2 = st.columns(2)
                     
                     with col_exec1:
-                        if st.button("📄 Exportar a PDF", use_container_width=True):
+                        if st.button("📄 Exportar a PDF", width="stretch"):
                             from src.intelligence.execution_agent import ExecutionAgent
                             with st.spinner("Generando documento institucional..."):
                                 exec_agent = ExecutionAgent()
@@ -600,12 +600,12 @@ def render_cartolas_ui():
                                 try:
                                     exec_agent.generate_pdf_report(st.session_state[f"estrategia_{prospect.id}"], tmp_pdf_path)
                                     with open(tmp_pdf_path, "rb") as f_pdf:
-                                        st.download_button("⬇️ Descargar PDF Oficial", f_pdf, file_name=f"FV_Estrategia_{prospect.rut}.pdf", mime="application/pdf", use_container_width=True, type="primary")
+                                        st.download_button("⬇️ Descargar PDF Oficial", f_pdf, file_name=f"FV_Estrategia_{prospect.rut}.pdf", mime="application/pdf", width="stretch", type="primary")
                                 except Exception as e:
                                     st.error(f"Error al generar PDF: {str(e)}")
 
                     with col_exec2:
-                        if st.button("✉️ Redactar Email al Cliente", use_container_width=True):
+                        if st.button("✉️ Redactar Email al Cliente", width="stretch"):
                             from src.intelligence.execution_agent import ExecutionAgent
                             with st.spinner("Redactando correo..."):
                                 exec_agent = ExecutionAgent()
@@ -670,7 +670,7 @@ def render_cartolas_ui():
             elif q_method == "Grabar Audio":
                 q_file = [st.audio_input("Grabar consulta de voz")]
             
-            if st.button("Analizar Consulta e Investigar Mercado", type="primary", use_container_width=True):
+            if st.button("Analizar Consulta e Investigar Mercado", type="primary", width="stretch"):
                 if not q_text and (not q_file or q_file[0] is None):
                     st.warning("Debes ingresar texto o subir un archivo.")
                 else:
@@ -745,7 +745,7 @@ def render_cartolas_ui():
                         file_name=f"Reporte_AltusAI_{prospect.rut}.pdf",
                         mime="application/pdf",
                         type="primary",
-                        use_container_width=True
+                        width="stretch"
                     )
                 except Exception as e:
                     st.error(f"No se pudo preparar el PDF: {e}")

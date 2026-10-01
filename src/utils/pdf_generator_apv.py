@@ -2,7 +2,29 @@ import os
 import base64
 import tempfile
 from datetime import datetime
-from xhtml2pdf import pisa
+
+try:
+    from xhtml2pdf import pisa
+    XHTML2PDF_AVAILABLE = True
+except (ImportError, OSError):
+    XHTML2PDF_AVAILABLE = False
+
+def _generate_fallback_pdf(title, data, output_path):
+    from fpdf import FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font('Arial', 'B', 16)
+    pdf.cell(200, 10, txt=f'Simulacion: {title}', ln=True, align='C')
+    pdf.set_font('Arial', '', 12)
+    pdf.cell(200, 10, txt='Modo de compatibilidad (falta libreria Cairo).', ln=True)
+    for k, v in data.items():
+        if isinstance(v, (str, int, float)) and len(str(v)) < 100:
+            pdf.cell(200, 10, txt=str(k) + ': ' + str(v), ln=True)
+    try:
+        pdf.output(output_path)
+    except:
+        pass
+
 import pandas as pd
 import matplotlib.pyplot as plt
 import io
@@ -10,7 +32,7 @@ from PIL import Image, ImageDraw
 
 def generar_pdf_apv(rut: str, nombre: str, sueldo: float, aporte: float, aporte_dc_anual: float, anos: int, 
                     rentabilidad: float, ahorro_anual: float, bono_estado: float, df_proy: pd.DataFrame) -> str:
-    """Convierte los resultados de la simulación APV en un PDF corporativo con CSS elegante usando xhtml2pdf"""
+    """Convierte los resultados de la simulaciÃ³n APV en un PDF corporativo con CSS elegante usando xhtml2pdf"""
     
     # Logos vectoriales (Regla de oro: usar SVG de assets/)
     from src.utils.pdf_generator import _get_logo_base64
@@ -47,7 +69,7 @@ def generar_pdf_apv(rut: str, nombre: str, sueldo: float, aporte: float, aporte_
     plt.stackplot(x, y1, y2, y3, y4, labels=['Ahorro Obligatorio', 'APV Reg. A', 'APV Reg. B', 'Dep. Convenido'], 
                   colors=['#2b6cb0', '#D4AF37', '#718096', '#38b2ac'], alpha=0.85)
     plt.legend(loc='upper left', frameon=False, fontsize=9)
-    plt.xlabel('Años Restantes para Jubilación', fontsize=10)
+    plt.xlabel('AÃ±os Restantes para JubilaciÃ³n', fontsize=10)
     plt.ylabel('Patrimonio Acumulado (CLP)', fontsize=10)
     plt.grid(axis='y', linestyle='--', alpha=0.4)
     plt.margins(x=0)
@@ -65,7 +87,7 @@ def generar_pdf_apv(rut: str, nombre: str, sueldo: float, aporte: float, aporte_
     img_buffer.seek(0)
     chart_b64 = "data:image/png;base64," + base64.b64encode(img_buffer.read()).decode('utf-8')
             
-    recomendacion = "Régimen B (Rebaja de Impuestos)" if ahorro_anual > bono_estado else "Régimen A (Bono del Estado)"
+    recomendacion = "RÃ©gimen B (Rebaja de Impuestos)" if ahorro_anual > bono_estado else "RÃ©gimen A (Bono del Estado)"
     
     html_template = f"""
     <!DOCTYPE html>
@@ -171,11 +193,11 @@ def generar_pdf_apv(rut: str, nombre: str, sueldo: float, aporte: float, aporte_
         </table>
         
         <div style="text-align: right; font-size: 8pt; color: #6b7280; margin-bottom: 15px;">
-            Análisis procesado cuantitativamente por <strong>Altus AI</strong> para uso exclusivo de FV Asesorías e Inversiones
+            AnÃ¡lisis procesado cuantitativamente por <strong>Altus AI</strong> para uso exclusivo de FV AsesorÃ­as e Inversiones
         </div>
         
         <h1>Reporte Cuantitativo: Estrategia Ahorros Previsionales</h1>
-        <p style="color:#718096; font-size: 10pt; margin-top: -10px;">Fecha de Análisis: {datetime.now().strftime('%d/%m/%Y')}</p>
+        <p style="color:#718096; font-size: 10pt; margin-top: -10px;">Fecha de AnÃ¡lisis: {datetime.now().strftime('%d/%m/%Y')}</p>
         
         <table style="width:100%; margin-bottom:15px; background-color:#f8fafc; padding:10px; border-left: 3px solid #cbd5e1;">
             <tr>
@@ -187,8 +209,8 @@ def generar_pdf_apv(rut: str, nombre: str, sueldo: float, aporte: float, aporte_
                 <td width="50%" style="padding: 5px;"><strong>Aporte APV Proyectado:</strong> $ {aporte:,.0f} CLP/mes</td>
             </tr>
             <tr>
-                <td width="50%" style="padding: 5px;"><strong>Aporte DC Anual:</strong> $ {aporte_dc_anual:,.0f} CLP/año</td>
-                <td width="50%" style="padding: 5px;"><strong>Horizonte de Inversión:</strong> {anos} años</td>
+                <td width="50%" style="padding: 5px;"><strong>Aporte DC Anual:</strong> $ {aporte_dc_anual:,.0f} CLP/aÃ±o</td>
+                <td width="50%" style="padding: 5px;"><strong>Horizonte de InversiÃ³n:</strong> {anos} aÃ±os</td>
             </tr>
             <tr>
                 <td width="50%" style="padding: 5px;"><strong>Rentabilidad Nominal Esperada:</strong> {rentabilidad * 100:.1f}% anual</td>
@@ -197,42 +219,46 @@ def generar_pdf_apv(rut: str, nombre: str, sueldo: float, aporte: float, aporte_
         </table>
         
         <h2>Impacto Tributario Inmediato</h2>
-        <p>Análisis del beneficio fiscal que genera el aporte voluntario a la pensión.</p>
+        <p>AnÃ¡lisis del beneficio fiscal que genera el aporte voluntario a la pensiÃ³n.</p>
         
         <table style="width:100%;">
             <tr>
                 <td style="width: 48%; padding-right: 10px;">
                     <div class="metric-box">
-                        <div class="metric-title">Beneficio Régimen B (Rebaja de Impuestos)</div>
-                        <div class="metric-value">$ {ahorro_anual:,.0f} CLP / año</div>
+                        <div class="metric-title">Beneficio RÃ©gimen B (Rebaja de Impuestos)</div>
+                        <div class="metric-value">$ {ahorro_anual:,.0f} CLP / aÃ±o</div>
                     </div>
                 </td>
                 <td style="width: 4%;">&nbsp;</td>
                 <td style="width: 48%;">
                     <div class="metric-box" style="background-color: #1A202C;">
-                        <div class="metric-title">Beneficio Régimen A (Bono del Estado)</div>
-                        <div class="metric-value">$ {bono_estado:,.0f} CLP / año</div>
+                        <div class="metric-title">Beneficio RÃ©gimen A (Bono del Estado)</div>
+                        <div class="metric-value">$ {bono_estado:,.0f} CLP / aÃ±o</div>
                     </div>
                 </td>
             </tr>
         </table>
         
         <div style="background-color:#e6fffa; padding: 10px; border-left: 4px solid #38b2ac; margin-top: 10px; margin-bottom:20px;">
-            <strong style="color:#234e52;">Recomendación del Modelo:</strong> Basado estrictamente en la matemática de su tramo impositivo actual, se sugiere optar por <strong>{recomendacion}</strong> para maximizar el beneficio fiscal.
+            <strong style="color:#234e52;">RecomendaciÃ³n del Modelo:</strong> Basado estrictamente en la matemÃ¡tica de su tramo impositivo actual, se sugiere optar por <strong>{recomendacion}</strong> para maximizar el beneficio fiscal.
+        </div>
+
+        <div style="background-color:#fef3c7; padding: 10px; border-left: 4px solid #d97706; margin-bottom:20px; font-size: 9.5pt;">
+            <strong style="color:#92400e;">Beneficio Sucesorio (ClÃ¡usula Legal):</strong> El saldo acumulado en APV no constituye renta ni estÃ¡ afecto a impuesto a la herencia cuando es percibido por el cÃ³nyuge sobreviviente (hasta el lÃ­mite legal aplicable). AdemÃ¡s, ofrece la ventaja de un traspaso directo y Ã¡gil a los beneficiarios designados, sin requerir posesiÃ³n efectiva para los montos exentos.
         </div>
         
         <pdf:nextpage />
         
-        <h2>Proyección Patrimonial a Largo Plazo</h2>
-        <p>Evolución estimada del saldo en la cuenta de ahorro para el retiro (Muestra quinquenal).</p>
+        <h2>ProyecciÃ³n Patrimonial a Largo Plazo</h2>
+        <p>EvoluciÃ³n estimada del saldo en la cuenta de ahorro para el retiro (Muestra quinquenal).</p>
         
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Período</th>
+                    <th>PerÃ­odo</th>
                     <th>Saldo Obligatorio</th>
                     <th>Total APV (A+B)</th>
-                    <th>Depósito Convenido</th>
+                    <th>DepÃ³sito Convenido</th>
                     <th>Patrimonio Total Acumulado</th>
                 </tr>
             </thead>
@@ -247,16 +273,16 @@ def generar_pdf_apv(rut: str, nombre: str, sueldo: float, aporte: float, aporte_
         
         <div style="margin-top: 30px; margin-bottom: 30px;" class="footer">
             <strong>Aviso Legal y Descargo de Responsabilidad:</strong><br>
-            Este reporte ha sido generado mediante los modelos cuantitativos de Altus AI. Esta es una simulación basada en parámetros fijos, tasas proyectadas constantes y topes imponibles vigentes. No constituye una promesa de rentabilidad futura ni garantiza resultados idénticos, ya que los mercados financieros y la legislación tributaria están sujetos a cambios. FV Asesorías e Inversiones proporciona este documento únicamente con fines informativos y de planificación estratégica.
+            Este reporte ha sido generado mediante los modelos cuantitativos de Altus AI. Esta es una simulaciÃ³n basada en parÃ¡metros fijos, tasas proyectadas constantes y topes imponibles vigentes. No constituye una promesa de rentabilidad futura ni garantiza resultados idÃ©nticos, ya que los mercados financieros y la legislaciÃ³n tributaria estÃ¡n sujetos a cambios. FV AsesorÃ­as e Inversiones proporciona este documento Ãºnicamente con fines informativos y de planificaciÃ³n estratÃ©gica.
         </div>
         
         <div class="corp-desc">
-            <strong>Sobre FV Asesorías e Inversiones</strong><br>
-            FV Asesorías e Inversiones somos un Multi-Family Office Digital impulsado por nuestro software cuantitativo privado de Inteligencia Artificial (ALTUS AI). Combinamos la agilidad tecnológica de una WealthTech con la exclusividad de una oficina patrimonial privada, auditando en 360° la situación tributaria, inmobiliaria, composición familiar, seguros e inversiones para proteger su legado a través de las generaciones.
+            <strong>Sobre FV AsesorÃ­as e Inversiones</strong><br>
+            FV AsesorÃ­as e Inversiones somos un Multi-Family Office Digital impulsado por nuestro software cuantitativo privado de Inteligencia Artificial (ALTUS AI). Combinamos la agilidad tecnolÃ³gica de una WealthTech con la exclusividad de una oficina patrimonial privada, auditando en 360Â° la situaciÃ³n tributaria, inmobiliaria, composiciÃ³n familiar, seguros e inversiones para proteger su legado a travÃ©s de las generaciones.
         </div>
 
         <div style="background-color: #f8fafc; border: 1px solid #cbd5e1; border-left: 3px solid #0A2342; padding: 6px 10px; margin-top: 8px; font-size: 7.5pt; color: #334155; line-height: 1.3; font-family: Helvetica, Arial, sans-serif;">
-            <strong>🔒 Ciberseguridad & Resguardo Patrimonial:</strong> Toda la información analizada por Altus AI se encuentra protegida bajo cifrado nativo <strong>AES-256 bits</strong> y transmisión <strong>TLS 1.3</strong> de grado bancario. Garantizamos estricta confidencialidad bajo Secreto Patrimonial y cumplimiento riguroso de la Ley N° 19.628 de Protección de Datos Personales en Chile.
+            <strong>ðŸ”’ Ciberseguridad & Resguardo Patrimonial:</strong> Toda la informaciÃ³n analizada por Altus AI se encuentra protegida bajo cifrado nativo <strong>AES-256 bits</strong> y transmisiÃ³n <strong>TLS 1.3</strong> de grado bancario. Garantizamos estricta confidencialidad bajo Secreto Patrimonial y cumplimiento riguroso de la Ley NÂ° 19.628 de ProtecciÃ³n de Datos Personales en Chile.
         </div>
         
     </body>

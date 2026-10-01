@@ -119,6 +119,41 @@ def generar_excel_kyc_corporativo(client_name="Cliente", missing_herederos=True,
                 "Para auditar estructuras inembargables y maximizar beneficios tributarios (Art. 57 LIR, Art. 42 bis LIR).",
                 "Detalle aseguradora e institución. Ej: Principal APV Régimen B $20M, MetLife Seguro de Vida 5.000 UF."
             ))
+            
+        # Añadir requerimientos tributarios base (siempre necesarios para auditoría completa)
+        kyc_items.append((
+            "Retenciones de Impuesto (2ª Categoría)",
+            "Análisis de carga tributaria y base de reliquidación de impuestos.",
+            "Indique monto anual o adjunte Certificado F1887 (Sueldos)."
+        ))
+        kyc_items.append((
+            "Intereses Dividendo Hipotecario (Art. 55 bis)",
+            "Optimización de rebajas fiscales por crédito hipotecario vigente.",
+            "Indique monto de intereses pagados en el año o adjunte Certificado del Banco."
+        ))
+        kyc_items.append((
+            "Gastos en Educación de Hijos (Art. 55 ter)",
+            "Uso de franquicias tributarias familiares.",
+            "Indique monto anual pagado o adjunte certificado escolar."
+        ))
+        
+        kyc_items.append((
+            "Gastos Recurrentes (Mensuales, Trimestrales o Anuales)",
+            "Para proyectar el flujo de caja, necesidades de liquidez y capacidad real de ahorro/inversión.",
+            "Ej: Costo de vida familiar ~$3M/mes, Seguros $200k/mes, Contribuciones $500k/trimestre."
+        ))
+        
+        # Añadir siempre el Inventario Adicional al KYC General
+        kyc_items.append((
+            "Inventario Adicional (Vehículos, Obras de Arte, Colecciones)",
+            "Para incluirlos en el patrimonio neto total del grupo familiar y evaluar impacto sucesorio.",
+            "Ej: Jeep Grand Cherokee 2022 ($35.000.000). Colección de relojes Rolex ($50M). Cuadros (1.500 UF)."
+        ))
+        kyc_items.append((
+            "Otros Bienes Tangibles o Intangibles Relevantes (Cuentas por cobrar, Marcas, etc.)",
+            "Cualquier otro activo no financiero o préstamo a terceros de valor significativo.",
+            "Ej: Derechos de agua, Marcas Comerciales, Préstamo a terceros por $10M."
+        ))
         
         if not kyc_items:
             kyc_items = [
@@ -213,17 +248,7 @@ def generar_excel_kyc_corporativo(client_name="Cliente", missing_herederos=True,
             "• Certificado de Matrícula o Escolaridad emitido por el establecimiento educacional + comprobante de pago de colegiatura."
         ),
         (
-            "4. Datos de Cónyuge e Hijos (RUT / Fechas Nac.)",
-            "Cédula de Identidad o Registro Civil",
-            "• Cédula de Identidad del familiar.\n• Descargar gratis Certificado de Nacimiento / Matrimonio en registrocivil.cl."
-        ),
-        (
-            "5. ROL y Avalúo Comercial de Propiedades",
-            "Portal SII.cl o Recibo de Contribuciones",
-            "• En sii.cl: Menú 'Bienes Raíces' > 'Mis Propiedades' (aparece el número de ROL y comuna).\n• O revisar el aviso de pago de Contribuciones."
-        ),
-        (
-            "6. APV Actual y Pólizas de Seguro",
+            "4. APV Actual y Pólizas de Seguro",
             "Aseguradora, AGF o AFP Actual",
             "• Cartola anual o resumen de saldo descargable desde el sitio cliente de la institución (ej: Principal, MetLife, BICE, LarrainVial, etc.)."
         )
@@ -344,6 +369,41 @@ def generar_excel_apv_reliquidacion(client_name="José González Daza"):
             "6. APV Actual Vigente (Institución, Régimen y Saldo Aprox.)",
             "Para auditar comisiones de administración, optimizar rescates defensivos y consolidar la estrategia patrimonial.",
             "Ej: Ver en cartola cliente de tu institución. Ej: Tengo APV en Principal | Régimen B | Saldo acumulado ~$8.500.000."
+        )
+    ]
+    return generar_excel_kyc_corporativo(client_name=client_name, custom_items=custom_items)
+
+
+def generar_excel_inventario_adicional(client_name="Cliente"):
+    """
+    Genera un Excel específicamente estructurado para capturar el Inventario Adicional del cliente.
+    (Bienes que no aparecen en la Carpeta Tributaria ni en las cartolas de inversiones, como vehículos, obras de arte, etc.)
+    """
+    custom_items = [
+        (
+            "1. Vehículos Motorizados (Autos, Motos, Embarcaciones)",
+            "Para incluirlos en el patrimonio neto total del grupo familiar.",
+            "Ej: Jeep Grand Cherokee 2022, Patente AB-CD-12. Valor Comercial Aprox: $35.000.000."
+        ),
+        (
+            "2. Obras de Arte, Joyas o Colecciones de Alto Valor",
+            "Estos bienes tangibles forman parte de la masa hereditaria y pueden tener beneficios en la estructura sucesoria.",
+            "Ej: Cuadro de Roberto Matta, adquirido en 2010. Valor Aprox: 1.500 UF. / Colección de relojes Rolex (Valor Aprox: $50.000.000)."
+        ),
+        (
+            "3. Participaciones en Sociedades No Listadas en Bolsa (Private Equity)",
+            "Para realizar una correcta valorización (VPP) y planificar la estructura societaria y pactos de accionistas.",
+            "Ej: 20% de participación en Inmobiliaria XYZ SpA. Valor estimado de la participación: $150.000.000."
+        ),
+        (
+            "4. Préstamos Otorgados a Terceros (Cuentas por Cobrar)",
+            "Derechos a cobrar que son considerados como activos dentro del patrimonio.",
+            "Ej: Préstamo personal a Juan Pérez por $10.000.000, con vencimiento en Dic 2026."
+        ),
+        (
+            "5. Otros Bienes Tangibles o Intangibles Relevantes",
+            "Cualquier otro activo no financiero de valor significativo.",
+            "Ej: Derechos de agua (10 lt/s en Río Maipo), Marcas Comerciales registradas, Derechos de Autor."
         )
     ]
     return generar_excel_kyc_corporativo(client_name=client_name, custom_items=custom_items)

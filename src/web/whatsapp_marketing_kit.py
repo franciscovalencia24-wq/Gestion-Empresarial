@@ -27,7 +27,7 @@ def render_whatsapp_kit_ui():
         col_av1, col_av2 = st.columns([1, 1])
         with col_av1:
             if os.path.exists(avatar_path):
-                st.image(avatar_path, caption="Foto de Perfil Oficial FV (1080x1080px - Círculo Centrado)", use_container_width=True)
+                st.image(avatar_path, caption="Foto de Perfil Oficial FV (1080x1080px - Círculo Centrado)", width="stretch")
             else:
                 st.warning("Foto de perfil no encontrada. Haz clic abajo para generarla.")
         
@@ -47,7 +47,7 @@ def render_whatsapp_kit_ui():
                         file_name="FV_Perfil_Oficial_WhatsApp.png",
                         mime="image/png",
                         type="primary",
-                        use_container_width=True
+                        width="stretch"
                     )
 
     # -------------------------------------------------------------
@@ -101,7 +101,7 @@ def render_whatsapp_kit_ui():
             p_b3 = st.text_input("Punto 3:", "Punto relevante 3 con llamado a la acción")
             p_cta = st.text_input("Llamado a la Acción (CTA):", "Escríbeme por WhatsApp para más detalles.")
 
-        if st.button("🚀 Generar Estado de WhatsApp (9:16 Vertical HD)", type="primary", use_container_width=True, key="btn_gen_wa_state"):
+        if st.button("🚀 Generar Estado de WhatsApp (9:16 Vertical HD)", type="primary", width="stretch", key="btn_gen_wa_state"):
             with st.spinner("🖼️ Renderizando diapositiva vertical 1080x1920px con Playwright..."):
                 try:
                     from scripts.generate_whatsapp_state_slide import generate_whatsapp_state
@@ -125,7 +125,7 @@ def render_whatsapp_kit_ui():
             st.markdown("##### 📸 Vista Previa del Estado de WhatsApp (1080x1920px):")
             col_preview, col_down = st.columns([1, 1])
             with col_preview:
-                st.image(st.session_state["wa_state_img_path"], use_container_width=True)
+                st.image(st.session_state["wa_state_img_path"], width="stretch")
             with col_down:
                 st.info("💡 **Tip para WhatsApp:** Guarda la imagen en la galería de tu teléfono y compártela directamente en *Mi Estado*.")
                 with open(st.session_state["wa_state_img_path"], "rb") as f_img:
@@ -135,7 +135,7 @@ def render_whatsapp_kit_ui():
                         file_name="Estado_WhatsApp_FV.png",
                         mime="image/png",
                         type="primary",
-                        use_container_width=True
+                        width="stretch"
                     )
 
     # -------------------------------------------------------------
@@ -161,7 +161,7 @@ def render_whatsapp_kit_ui():
             with target_col:
                 st.markdown(f"##### {card['title']}")
                 if os.path.exists(card_path):
-                    st.image(card_path, use_container_width=True)
+                    st.image(card_path, width="stretch")
                     with open(card_path, "rb") as f_card:
                         st.download_button(
                             label=f"⬇️ Descargar Tarjeta Catálogo",
@@ -169,7 +169,7 @@ def render_whatsapp_kit_ui():
                             file_name=card["name"],
                             mime="image/png",
                             key=f"btn_dl_card_{i}",
-                            use_container_width=True
+                            width="stretch"
                         )
                 else:
                     st.warning("Imagen no generada.")

@@ -72,3 +72,5 @@ def send_onboarding_email(cliente_nombre, excel_filepath, attachments=None):
         return True
     except Exception as e:
         raise Exception(f"Fallo en servidor SMTP: {e}")
+
+

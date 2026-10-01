@@ -1,0 +1,98 @@
+Created At: 2026-09-30T11:28:51-03:00
+Completed At: 2026-09-30T11:28:51-03:00
+File Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/company_management_ui.py`
+Total Lines: 445
+Total Bytes: 26646
+Showing lines 25 to 70
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+25:         from src.database.models import EmpresaB2B, EjecutivoB2B
+
+26:         from src.core.config import B2B_LICENSE_TIERS
+
+27:         import uuid
+
+28:         import io
+
+29:         import time
+
+30:         
+
+31:         # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
+
+32:         st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
+
+33:         
+
+34:         empresas_db = db.query(EmpresaB2B).all()
+
+35:         
+
+36:         col_b1, col_b2 = st.columns([1, 1])
+
+37:         with col_b1:
+
+38:             st.markdown("**Registrar Nueva Empresa**")
+
+39:             with st.form("form_nueva_empresa_b2b"):
+
+40:                 n_rut_empresa = st.text_input("RUT Empresa (ej: 76.123.456-7)")
+
+41:                 n_razon_social = st.text_input("Razón Social")
+
+42:                 n_contacto = st.text_input("Contacto Comercial (Nombre, Email)")
+
+43:                 n_plan = st.selectbox("Plan Contratado", list(B2B_LICENSE_TIERS.keys()))
+
+44:                 submit_new_emp = st.form_submit_button("Registrar Empresa B2B")
+
+45:                 
+
+46:                 if submit_new_emp:
+
+47:                     if n_rut_empresa and n_razon_social:
+
+48:                         if demo_mode:
+49:                             check_exist = None
+50:                         else:
+51:                             check_exist = db.query(EmpresaB2B).filter_by(rut=n_rut_empresa).first()
+
+52:                         if not check_exist:
+
+53:                             plan_cupos = B2B_LICENSE_TIERS[n_plan]["max_users"]
+
+54:                             if plan_cupos == float('inf'): plan_cupos = 9999
+
+55:                             new_emp = EmpresaB2B(
+
+56:                                 rut=n_rut_empresa,
+
+57:                                 razon_social=n_razon_social,
+
+58:                                 contacto_comercial=n_contacto,
+
+59:                                 plan_contratado=n_plan,
+
+60:                                 cupo_licencias=plan_cupos,
+
+61:                                 estado_activo=True
+
+62:                             )
+
+63:                             db.add(new_emp)
+
+64:                             db.commit()
+
+65:                             try:
+
+66:                                 from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+
+67:                                 safe_upload_with_streamlit_ui()
+
+68:                             except: pass
+
+69:                             st.success("✅ Empresa B2B Registrada con éxito.")
+
+70:                             st.rerun()
+
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+

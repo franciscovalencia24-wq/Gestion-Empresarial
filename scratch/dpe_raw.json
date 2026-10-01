@@ -1,0 +1,3088 @@
+{
+  "filas_extraidas": [
+    {
+      "periodo": "09-2026",
+      "rut_pagador": null,
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 0
+    },
+    {
+      "periodo": "08-2026",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 345331
+    },
+    {
+      "periodo": "07-2026",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 345331
+    },
+    {
+      "periodo": "06-2026",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 345331
+    },
+    {
+      "periodo": "05-2026",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 314024
+    },
+    {
+      "periodo": "04-2026",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 314024
+    },
+    {
+      "periodo": "03-2026",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 314024
+    },
+    {
+      "periodo": "02-2026",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 314024
+    },
+    {
+      "periodo": "01-2026",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 314024
+    },
+    {
+      "periodo": "12-2025",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 343924
+    },
+    {
+      "periodo": "11-2025",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 313624
+    },
+    {
+      "periodo": "10-2025",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 313624
+    },
+    {
+      "periodo": "09-2025",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 343924
+    },
+    {
+      "periodo": "08-2025",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 313624
+    },
+    {
+      "periodo": "07-2025",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 310519
+    },
+    {
+      "periodo": "06-2025",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 310519
+    },
+    {
+      "periodo": "05-2025",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 309792
+    },
+    {
+      "periodo": "04-2025",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 309792
+    },
+    {
+      "periodo": "03-2025",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 309792
+    },
+    {
+      "periodo": "02-2025",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 309792
+    },
+    {
+      "periodo": "01-2025",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 309792
+    },
+    {
+      "periodo": "12-2024",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 309792
+    },
+    {
+      "periodo": "11-2024",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 309792
+    },
+    {
+      "periodo": "10-2024",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 309792
+    },
+    {
+      "periodo": "09-2024",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 309792
+    },
+    {
+      "periodo": "08-2024",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 309792
+    },
+    {
+      "periodo": "07-2024",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 262792
+    },
+    {
+      "periodo": "06-2024",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 288208
+    },
+    {
+      "periodo": "05-2024",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 288208
+    },
+    {
+      "periodo": "04-2024",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 288208
+    },
+    {
+      "periodo": "03-2024",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 288208
+    },
+    {
+      "periodo": "02-2024",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 288208
+    },
+    {
+      "periodo": "01-2024",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 288208
+    },
+    {
+      "periodo": "12-2023",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 288208
+    },
+    {
+      "periodo": "11-2023",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 288208
+    },
+    {
+      "periodo": "10-2023",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 288208
+    },
+    {
+      "periodo": "09-2023",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 288208
+    },
+    {
+      "periodo": "08-2023",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 287417
+    },
+    {
+      "periodo": "07-2023",
+      "rut_pagador": "76.796.649-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 89417
+    },
+    {
+      "periodo": "06-2023",
+      "rut_pagador": null,
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 0
+    },
+    {
+      "periodo": "05-2023",
+      "rut_pagador": null,
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 0
+    },
+    {
+      "periodo": "04-2023",
+      "rut_pagador": null,
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 0
+    },
+    {
+      "periodo": "03-2023",
+      "rut_pagador": null,
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 0
+    },
+    {
+      "periodo": "02-2023",
+      "rut_pagador": null,
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 0
+    },
+    {
+      "periodo": "01-2023",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 287946
+    },
+    {
+      "periodo": "12-2022",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 286506
+    },
+    {
+      "periodo": "11-2022",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 284064
+    },
+    {
+      "periodo": "10-2022",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 282339
+    },
+    {
+      "periodo": "09-2022",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 279547
+    },
+    {
+      "periodo": "08-2022",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 276106
+    },
+    {
+      "periodo": "07-2022",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 272685
+    },
+    {
+      "periodo": "06-2022",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 269989
+    },
+    {
+      "periodo": "05-2022",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 266665
+    },
+    {
+      "periodo": "04-2022",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 262560
+    },
+    {
+      "periodo": "03-2022",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 258898
+    },
+    {
+      "periodo": "02-2022",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 257360
+    },
+    {
+      "periodo": "01-2022",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 254695
+    },
+    {
+      "periodo": "12-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 252893
+    },
+    {
+      "periodo": "11-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 125512
+    },
+    {
+      "periodo": "11-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 125512
+    },
+    {
+      "periodo": "10-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 123953
+    },
+    {
+      "periodo": "10-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 123952
+    },
+    {
+      "periodo": "09-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 122761
+    },
+    {
+      "periodo": "09-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 122760
+    },
+    {
+      "periodo": "08-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 122135
+    },
+    {
+      "periodo": "08-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 122135
+    },
+    {
+      "periodo": "07-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 242822
+    },
+    {
+      "periodo": "06-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 242432
+    },
+    {
+      "periodo": "05-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 241644
+    },
+    {
+      "periodo": "04-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 240672
+    },
+    {
+      "periodo": "03-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 239861
+    },
+    {
+      "periodo": "02-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 238985
+    },
+    {
+      "periodo": "01-2021",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 237941
+    },
+    {
+      "periodo": "12-2020",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 233144
+    },
+    {
+      "periodo": "11-2020",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 232822
+    },
+    {
+      "periodo": "10-2020",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 231286
+    },
+    {
+      "periodo": "09-2020",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 230237
+    },
+    {
+      "periodo": "08-2020",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 230009
+    },
+    {
+      "periodo": "07-2020",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 229913
+    },
+    {
+      "periodo": "06-2020",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 230145
+    },
+    {
+      "periodo": "05-2020",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 230307
+    },
+    {
+      "periodo": "04-2020",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 230100
+    },
+    {
+      "periodo": "03-2020",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 229352
+    },
+    {
+      "periodo": "02-2020",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 114140
+    },
+    {
+      "periodo": "02-2020",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 114139
+    },
+    {
+      "periodo": "01-2020",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 227273
+    },
+    {
+      "periodo": "12-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 224215
+    },
+    {
+      "periodo": "11-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 111761
+    },
+    {
+      "periodo": "11-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 111760
+    },
+    {
+      "periodo": "10-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 111139
+    },
+    {
+      "periodo": "10-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 111139
+    },
+    {
+      "periodo": "09-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 222144
+    },
+    {
+      "periodo": "08-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 221705
+    },
+    {
+      "periodo": "07-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 221391
+    },
+    {
+      "periodo": "06-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 220994
+    },
+    {
+      "periodo": "05-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 109940
+    },
+    {
+      "periodo": "05-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 109939
+    },
+    {
+      "periodo": "04-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 219084
+    },
+    {
+      "periodo": "03-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 109161
+    },
+    {
+      "periodo": "03-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 109160
+    },
+    {
+      "periodo": "02-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 109126
+    },
+    {
+      "periodo": "02-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 109125
+    },
+    {
+      "periodo": "01-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 109221
+    },
+    {
+      "periodo": "01-2019",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 109221
+    },
+    {
+      "periodo": "12-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 129504
+    },
+    {
+      "periodo": "12-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 86336
+    },
+    {
+      "periodo": "11-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 215582
+    },
+    {
+      "periodo": "10-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 107397
+    },
+    {
+      "periodo": "10-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 107396
+    },
+    {
+      "periodo": "09-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 107105
+    },
+    {
+      "periodo": "09-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 107104
+    },
+    {
+      "periodo": "08-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 213662
+    },
+    {
+      "periodo": "07-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 212995
+    },
+    {
+      "periodo": "06-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 212653
+    },
+    {
+      "periodo": "05-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 106012
+    },
+    {
+      "periodo": "05-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 106011
+    },
+    {
+      "periodo": "04-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 211446
+    },
+    {
+      "periodo": "03-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 31673
+    },
+    {
+      "periodo": "03-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 179478
+    },
+    {
+      "periodo": "02-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 105407
+    },
+    {
+      "periodo": "02-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 105406
+    },
+    {
+      "periodo": "01-2018",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 210039
+    },
+    {
+      "periodo": "12-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 101431
+    },
+    {
+      "periodo": "12-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 101431
+    },
+    {
+      "periodo": "11-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 202355
+    },
+    {
+      "periodo": "10-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 100813
+    },
+    {
+      "periodo": "10-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 100813
+    },
+    {
+      "periodo": "09-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 201792
+    },
+    {
+      "periodo": "08-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 201393
+    },
+    {
+      "periodo": "07-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 100671
+    },
+    {
+      "periodo": "07-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 100671
+    },
+    {
+      "periodo": "06-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 201855
+    },
+    {
+      "periodo": "05-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 201597
+    },
+    {
+      "periodo": "04-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 202801
+    },
+    {
+      "periodo": "03-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 200953
+    },
+    {
+      "periodo": "02-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 199788
+    },
+    {
+      "periodo": "02-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 30767
+    },
+    {
+      "periodo": "01-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 199229
+    },
+    {
+      "periodo": "01-2017",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 30681
+    },
+    {
+      "periodo": "12-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 195766
+    },
+    {
+      "periodo": "12-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 30148
+    },
+    {
+      "periodo": "11-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 30108
+    },
+    {
+      "periodo": "11-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 195510
+    },
+    {
+      "periodo": "10-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 195123
+    },
+    {
+      "periodo": "10-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 30049
+    },
+    {
+      "periodo": "09-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 194847
+    },
+    {
+      "periodo": "09-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 30006
+    },
+    {
+      "periodo": "08-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 97367
+    },
+    {
+      "periodo": "08-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 97367
+    },
+    {
+      "periodo": "08-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 14995
+    },
+    {
+      "periodo": "08-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 14994
+    },
+    {
+      "periodo": "07-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 29912
+    },
+    {
+      "periodo": "07-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 194233
+    },
+    {
+      "periodo": "06-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 193566
+    },
+    {
+      "periodo": "06-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 29810
+    },
+    {
+      "periodo": "05-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 193128
+    },
+    {
+      "periodo": "05-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 29742
+    },
+    {
+      "periodo": "04-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 192488
+    },
+    {
+      "periodo": "04-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 29643
+    },
+    {
+      "periodo": "03-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 129174
+    },
+    {
+      "periodo": "03-2016",
+      "rut_pagador": "76.079.669-7",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 19893
+    },
+    {
+      "periodo": "02-2016",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 191080
+    },
+    {
+      "periodo": "02-2016",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 29427
+    },
+    {
+      "periodo": "01-2016",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 190424
+    },
+    {
+      "periodo": "01-2016",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 29325
+    },
+    {
+      "periodo": "12-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 187605
+    },
+    {
+      "periodo": "12-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 28891
+    },
+    {
+      "periodo": "11-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 187381
+    },
+    {
+      "periodo": "11-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 28856
+    },
+    {
+      "periodo": "10-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 186588
+    },
+    {
+      "periodo": "10-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 28734
+    },
+    {
+      "periodo": "09-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 185539
+    },
+    {
+      "periodo": "09-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 28573
+    },
+    {
+      "periodo": "09-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 185539
+    },
+    {
+      "periodo": "09-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 28573
+    },
+    {
+      "periodo": "08-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 184422
+    },
+    {
+      "periodo": "08-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 28401
+    },
+    {
+      "periodo": "07-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 183634
+    },
+    {
+      "periodo": "07-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 28279
+    },
+    {
+      "periodo": "06-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 182876
+    },
+    {
+      "periodo": "06-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 28162
+    },
+    {
+      "periodo": "05-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 182303
+    },
+    {
+      "periodo": "05-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 28074
+    },
+    {
+      "periodo": "04-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 27905
+    },
+    {
+      "periodo": "04-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 181205
+    },
+    {
+      "periodo": "03-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 180238
+    },
+    {
+      "periodo": "03-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 27757
+    },
+    {
+      "periodo": "02-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 13835
+    },
+    {
+      "periodo": "02-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 13835
+    },
+    {
+      "periodo": "02-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 89835
+    },
+    {
+      "periodo": "02-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 89835
+    },
+    {
+      "periodo": "01-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 27683
+    },
+    {
+      "periodo": "01-2015",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 179758
+    },
+    {
+      "periodo": "12-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 178053
+    },
+    {
+      "periodo": "12-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 27421
+    },
+    {
+      "periodo": "11-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 177523
+    },
+    {
+      "periodo": "11-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 27339
+    },
+    {
+      "periodo": "10-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 175884
+    },
+    {
+      "periodo": "10-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 27086
+    },
+    {
+      "periodo": "09-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 174735
+    },
+    {
+      "periodo": "09-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 26909
+    },
+    {
+      "periodo": "08-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 26837
+    },
+    {
+      "periodo": "08-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 176185
+    },
+    {
+      "periodo": "07-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 175884
+    },
+    {
+      "periodo": "07-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 26791
+    },
+    {
+      "periodo": "06-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 13374
+    },
+    {
+      "periodo": "06-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 86846
+    },
+    {
+      "periodo": "06-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 86845
+    },
+    {
+      "periodo": "06-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 13374
+    },
+    {
+      "periodo": "05-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 86513
+    },
+    {
+      "periodo": "05-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 86513
+    },
+    {
+      "periodo": "05-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 13323
+    },
+    {
+      "periodo": "05-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 13323
+    },
+    {
+      "periodo": "04-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 85941
+    },
+    {
+      "periodo": "04-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 13235
+    },
+    {
+      "periodo": "04-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 85941
+    },
+    {
+      "periodo": "04-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 13235
+    },
+    {
+      "periodo": "03-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 85339
+    },
+    {
+      "periodo": "03-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 13142
+    },
+    {
+      "periodo": "03-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 85339
+    },
+    {
+      "periodo": "03-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 13143
+    },
+    {
+      "periodo": "02-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 26175
+    },
+    {
+      "periodo": "02-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 169966
+    },
+    {
+      "periodo": "01-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 169441
+    },
+    {
+      "periodo": "01-2014",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 26094
+    },
+    {
+      "periodo": "12-2013",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 25236
+    },
+    {
+      "periodo": "12-2013",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 163866
+    },
+    {
+      "periodo": "11-2013",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 163354
+    },
+    {
+      "periodo": "11-2013",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 25156
+    },
+    {
+      "periodo": "10-2013",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 25103
+    },
+    {
+      "periodo": "10-2013",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 163003
+    },
+    {
+      "periodo": "09-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 24998
+    },
+    {
+      "periodo": "09-2013",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 162331
+    },
+    {
+      "periodo": "09-2013",
+      "rut_pagador": "76.081.590-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 24998
+    },
+    {
+      "periodo": "09-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 162331
+    },
+    {
+      "periodo": "08-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 161962
+    },
+    {
+      "periodo": "08-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 24942
+    },
+    {
+      "periodo": "07-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 161338
+    },
+    {
+      "periodo": "07-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 24846
+    },
+    {
+      "periodo": "06-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 24741
+    },
+    {
+      "periodo": "06-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 160654
+    },
+    {
+      "periodo": "05-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 160888
+    },
+    {
+      "periodo": "05-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 24777
+    },
+    {
+      "periodo": "04-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 161268
+    },
+    {
+      "periodo": "04-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 24835
+    },
+    {
+      "periodo": "03-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 160772
+    },
+    {
+      "periodo": "03-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 24759
+    },
+    {
+      "periodo": "02-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 160555
+    },
+    {
+      "periodo": "01-2013",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 160337
+    },
+    {
+      "periodo": "12-2012",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 153947
+    },
+    {
+      "periodo": "11-2012",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 154219
+    },
+    {
+      "periodo": "10-2012",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 153220
+    },
+    {
+      "periodo": "09-2012",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 152264
+    },
+    {
+      "periodo": "08-2012",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 152051
+    },
+    {
+      "periodo": "07-2012",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 152184
+    },
+    {
+      "periodo": "06-2012",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 152508
+    },
+    {
+      "periodo": "05-2012",
+      "rut_pagador": "99.000.000-K",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 152463
+    },
+    {
+      "periodo": "04-2012",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 152265
+    },
+    {
+      "periodo": "03-2012",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 151877
+    },
+    {
+      "periodo": "02-2012",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 151398
+    },
+    {
+      "periodo": "01-2012",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 62748
+    },
+    {
+      "periodo": "01-2012",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 56599
+    },
+    {
+      "periodo": "01-2012",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 3892
+    },
+    {
+      "periodo": "12-2011",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 147141
+    },
+    {
+      "periodo": "11-2011",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 146610
+    },
+    {
+      "periodo": "10-2011",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 145886
+    },
+    {
+      "periodo": "09-2011",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 145284
+    },
+    {
+      "periodo": "08-2011",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 145039
+    },
+    {
+      "periodo": "07-2011",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 68896
+    },
+    {
+      "periodo": "07-2011",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 2435
+    },
+    {
+      "periodo": "07-2011",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 6186
+    },
+    {
+      "periodo": "06-2011",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 123712
+    },
+    {
+      "periodo": "06-2011",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 6804
+    },
+    {
+      "periodo": "06-2011",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 2057
+    },
+    {
+      "periodo": "05-2011",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 5478
+    },
+    {
+      "periodo": "05-2011",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 1528
+    },
+    {
+      "periodo": "05-2011",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 1528
+    },
+    {
+      "periodo": "04-2011",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 143296
+    },
+    {
+      "periodo": "04-2011",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 104087
+    },
+    {
+      "periodo": "03-2011",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 142417
+    },
+    {
+      "periodo": "02-2011",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 142078
+    },
+    {
+      "periodo": "01-2011",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 141747
+    },
+    {
+      "periodo": "12-2010",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 138817
+    },
+    {
+      "periodo": "11-2010",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 138677
+    },
+    {
+      "periodo": "11-2010",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 42083
+    },
+    {
+      "periodo": "10-2010",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 138421
+    },
+    {
+      "periodo": "09-2010",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 138070
+    },
+    {
+      "periodo": "08-2010",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 137927
+    },
+    {
+      "periodo": "07-2010",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 137342
+    },
+    {
+      "periodo": "06-2010",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 137177
+    },
+    {
+      "periodo": "05-2010",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 137120
+    },
+    {
+      "periodo": "04-2010",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 136493
+    },
+    {
+      "periodo": "03-2010",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 136446
+    },
+    {
+      "periodo": "02-2010",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 135761
+    },
+    {
+      "periodo": "01-2010",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 135015
+    },
+    {
+      "periodo": "12-2009",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 125657
+    },
+    {
+      "periodo": "11-2009",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 126105
+    },
+    {
+      "periodo": "10-2009",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 125741
+    },
+    {
+      "periodo": "09-2009",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 126222
+    },
+    {
+      "periodo": "08-2009",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 125510
+    },
+    {
+      "periodo": "07-2009",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 125926
+    },
+    {
+      "periodo": "06-2009",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 125662
+    },
+    {
+      "periodo": "05-2009",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 126643
+    },
+    {
+      "periodo": "04-2009",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 125964
+    },
+    {
+      "periodo": "03-2009",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 126943
+    },
+    {
+      "periodo": "02-2009",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 127651
+    },
+    {
+      "periodo": "01-2009",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 127580
+    },
+    {
+      "periodo": "12-2008",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 128715
+    },
+    {
+      "periodo": "11-2008",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 129028
+    },
+    {
+      "periodo": "10-2008",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 127253
+    },
+    {
+      "periodo": "09-2008",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 129726
+    },
+    {
+      "periodo": "08-2008",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 124794
+    },
+    {
+      "periodo": "07-2008",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 123321
+    },
+    {
+      "periodo": "06-2008",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 121516
+    },
+    {
+      "periodo": "05-2008",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 120366
+    },
+    {
+      "periodo": "04-2008",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 119817
+    },
+    {
+      "periodo": "03-2008",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 118935
+    },
+    {
+      "periodo": "02-2008",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 118640
+    },
+    {
+      "periodo": "01-2008",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 118460
+    },
+    {
+      "periodo": "12-2007",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 117736
+    },
+    {
+      "periodo": "11-2007",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 116967
+    },
+    {
+      "periodo": "10-2007",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 116348
+    },
+    {
+      "periodo": "09-2007",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 115042
+    },
+    {
+      "periodo": "08-2007",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 113883
+    },
+    {
+      "periodo": "07-2007",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 112660
+    },
+    {
+      "periodo": "06-2007",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 111745
+    },
+    {
+      "periodo": "05-2007",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 111085
+    },
+    {
+      "periodo": "04-2007",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 110482
+    },
+    {
+      "periodo": "03-2007",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 110238
+    },
+    {
+      "periodo": "02-2007",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 110288
+    },
+    {
+      "periodo": "01-2007",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 110032
+    },
+    {
+      "periodo": "12-2006",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 111547
+    },
+    {
+      "periodo": "11-2006",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 110274
+    },
+    {
+      "periodo": "10-2006",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 110506
+    },
+    {
+      "periodo": "09-2006",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 110567
+    },
+    {
+      "periodo": "08-2006",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 110016
+    },
+    {
+      "periodo": "07-2006",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 109273
+    },
+    {
+      "periodo": "06-2006",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 108908
+    },
+    {
+      "periodo": "05-2006",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 109168
+    },
+    {
+      "periodo": "04-2006",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 107914
+    },
+    {
+      "periodo": "03-2006",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 108877
+    },
+    {
+      "periodo": "02-2006",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 109362
+    },
+    {
+      "periodo": "01-2006",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 107557
+    },
+    {
+      "periodo": "12-2005",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 108683
+    },
+    {
+      "periodo": "11-2005",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 108184
+    },
+    {
+      "periodo": "10-2005",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 107492
+    },
+    {
+      "periodo": "09-2005",
+      "rut_pagador": "86.542.100-1",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 106305
+    },
+    {
+      "periodo": "08-2005",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 105899
+    },
+    {
+      "periodo": "07-2005",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 105328
+    },
+    {
+      "periodo": "06-2005",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 105202
+    },
+    {
+      "periodo": "05-2005",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 105160
+    },
+    {
+      "periodo": "04-2005",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 103596
+    },
+    {
+      "periodo": "03-2005",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 103193
+    },
+    {
+      "periodo": "02-2005",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 103366
+    },
+    {
+      "periodo": "01-2005",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 104120
+    },
+    {
+      "periodo": "12-2004",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 104454
+    },
+    {
+      "periodo": "11-2004",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 103589
+    },
+    {
+      "periodo": "10-2004",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 103342
+    },
+    {
+      "periodo": "09-2004",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 103691
+    },
+    {
+      "periodo": "08-2004",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 103106
+    },
+    {
+      "periodo": "07-2004",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 103860
+    },
+    {
+      "periodo": "06-2004",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 102278
+    },
+    {
+      "periodo": "05-2004",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 101616
+    },
+    {
+      "periodo": "04-2004",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 101851
+    },
+    {
+      "periodo": "03-2004",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 100925
+    },
+    {
+      "periodo": "02-2004",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 87523
+    },
+    {
+      "periodo": "02-2004",
+      "rut_pagador": "95.078.000-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 13496
+    },
+    {
+      "periodo": "01-2004",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 102768
+    },
+    {
+      "periodo": "12-2003",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 102157
+    },
+    {
+      "periodo": "11-2003",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 102458
+    },
+    {
+      "periodo": "10-2003",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 101882
+    },
+    {
+      "periodo": "09-2003",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 102268
+    },
+    {
+      "periodo": "08-2003",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 101581
+    },
+    {
+      "periodo": "07-2003",
+      "rut_pagador": "95.078.000-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 17144
+    },
+    {
+      "periodo": "07-2003",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 85237
+    },
+    {
+      "periodo": "06-2003",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 102600
+    },
+    {
+      "periodo": "05-2003",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 102074
+    },
+    {
+      "periodo": "04-2003",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 102263
+    },
+    {
+      "periodo": "03-2003",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 102245
+    },
+    {
+      "periodo": "02-2003",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 100102
+    },
+    {
+      "periodo": "01-2003",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 100799
+    },
+    {
+      "periodo": "12-2002",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 101042
+    },
+    {
+      "periodo": "11-2002",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 87417
+    },
+    {
+      "periodo": "11-2002",
+      "rut_pagador": "95.078.000-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 3294
+    },
+    {
+      "periodo": "10-2002",
+      "rut_pagador": "95.078.000-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 9993
+    },
+    {
+      "periodo": "10-2002",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 99730
+    },
+    {
+      "periodo": "09-2002",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 98730
+    },
+    {
+      "periodo": "08-2002",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 98341
+    },
+    {
+      "periodo": "07-2002",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 98091
+    },
+    {
+      "periodo": "06-2002",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 98131
+    },
+    {
+      "periodo": "05-2002",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 97949
+    },
+    {
+      "periodo": "04-2002",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 97526
+    },
+    {
+      "periodo": "03-2002",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 97186
+    },
+    {
+      "periodo": "02-2002",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 97217
+    },
+    {
+      "periodo": "01-2002",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 97368
+    },
+    {
+      "periodo": "12-2001",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 97576
+    },
+    {
+      "periodo": "11-2001",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 97547
+    },
+    {
+      "periodo": "10-2001",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 97281
+    },
+    {
+      "periodo": "09-2001",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 96570
+    },
+    {
+      "periodo": "08-2001",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 96089
+    },
+    {
+      "periodo": "07-2001",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 96197
+    },
+    {
+      "periodo": "06-2001",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 96014
+    },
+    {
+      "periodo": "05-2001",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 95608
+    },
+    {
+      "periodo": "04-2001",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 94878
+    },
+    {
+      "periodo": "03-2001",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 94878
+    },
+    {
+      "periodo": "02-2001",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 94989
+    },
+    {
+      "periodo": "01-2001",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 94769
+    },
+    {
+      "periodo": "12-2000",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 94620
+    },
+    {
+      "periodo": "11-2000",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 94249
+    },
+    {
+      "periodo": "11-2000",
+      "rut_pagador": "78.896.610-5",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 55533
+    },
+    {
+      "periodo": "10-2000",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 93693
+    },
+    {
+      "periodo": "09-2000",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 93212
+    },
+    {
+      "periodo": "08-2000",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 92990
+    },
+    {
+      "periodo": "07-2000",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 92900
+    },
+    {
+      "periodo": "06-2000",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 92683
+    },
+    {
+      "periodo": "05-2000",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 92419
+    },
+    {
+      "periodo": "04-2000",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 91900
+    },
+    {
+      "periodo": "03-2000",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 91294
+    },
+    {
+      "periodo": "03-2000",
+      "rut_pagador": "95.078.000-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 12114
+    },
+    {
+      "periodo": "02-2000",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 90851
+    },
+    {
+      "periodo": "01-2000",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 90647
+    },
+    {
+      "periodo": "12-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 91425
+    },
+    {
+      "periodo": "11-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 90222
+    },
+    {
+      "periodo": "10-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 89856
+    },
+    {
+      "periodo": "09-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 89681
+    },
+    {
+      "periodo": "08-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 89530
+    },
+    {
+      "periodo": "07-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 89440
+    },
+    {
+      "periodo": "06-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 89350
+    },
+    {
+      "periodo": "05-1999",
+      "rut_pagador": "95.078.000-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 14795
+    },
+    {
+      "periodo": "05-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 89184
+    },
+    {
+      "periodo": "05-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 16880
+    },
+    {
+      "periodo": "04-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 88772
+    },
+    {
+      "periodo": "04-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 2308
+    },
+    {
+      "periodo": "03-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 88376
+    },
+    {
+      "periodo": "02-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 88398
+    },
+    {
+      "periodo": "01-1999",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 88450
+    },
+    {
+      "periodo": "12-1998",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 88112
+    },
+    {
+      "periodo": "11-1998",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 87840
+    },
+    {
+      "periodo": "10-1998",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 87225
+    },
+    {
+      "periodo": "09-1998",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 86838
+    },
+    {
+      "periodo": "08-1998",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 86556
+    },
+    {
+      "periodo": "07-1998",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 86236
+    },
+    {
+      "periodo": "06-1998",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 86002
+    },
+    {
+      "periodo": "05-1998",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 85782
+    },
+    {
+      "periodo": "04-1998",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 85437
+    },
+    {
+      "periodo": "03-1998",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 85223
+    },
+    {
+      "periodo": "02-1998",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 85093
+    },
+    {
+      "periodo": "01-1998",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 84666
+    },
+    {
+      "periodo": "12-1997",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 84582
+    },
+    {
+      "periodo": "11-1997",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 84220
+    },
+    {
+      "periodo": "10-1997",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 83302
+    },
+    {
+      "periodo": "09-1997",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 82675
+    },
+    {
+      "periodo": "08-1997",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 82302
+    },
+    {
+      "periodo": "07-1997",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 81905
+    },
+    {
+      "periodo": "06-1997",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 81740
+    },
+    {
+      "periodo": "05-1997",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 81555
+    },
+    {
+      "periodo": "05-1997",
+      "rut_pagador": "95.078.000-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 18752
+    },
+    {
+      "periodo": "04-1997",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 81309
+    },
+    {
+      "periodo": "04-1997",
+      "rut_pagador": "95.078.000-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 18752
+    },
+    {
+      "periodo": "04-1997",
+      "rut_pagador": "95.078.000-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 18752
+    },
+    {
+      "periodo": "04-1997",
+      "rut_pagador": "95.078.000-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 18752
+    },
+    {
+      "periodo": "03-1997",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 80951
+    },
+    {
+      "periodo": "02-1997",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 80366
+    },
+    {
+      "periodo": "01-1997",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 80001
+    },
+    {
+      "periodo": "12-1996",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 79683
+    },
+    {
+      "periodo": "11-1996",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 79291
+    },
+    {
+      "periodo": "10-1996",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 78791
+    },
+    {
+      "periodo": "09-1996",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 83259
+    },
+    {
+      "periodo": "09-1996",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 3113
+    },
+    {
+      "periodo": "08-1996",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 84515
+    },
+    {
+      "periodo": "07-1996",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 78533
+    },
+    {
+      "periodo": "07-1996",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 18239
+    },
+    {
+      "periodo": "06-1996",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 78087
+    },
+    {
+      "periodo": "05-1996",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 79712
+    },
+    {
+      "periodo": "04-1996",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 79213
+    },
+    {
+      "periodo": "03-1996",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 24621
+    },
+    {
+      "periodo": "03-1996",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 32530
+    },
+    {
+      "periodo": "03-1996",
+      "rut_pagador": "96.701.340-4",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 51016
+    },
+    {
+      "periodo": "02-1996",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 69197
+    },
+    {
+      "periodo": "01-1996",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 71110
+    },
+    {
+      "periodo": "12-1995",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 70812
+    },
+    {
+      "periodo": "11-1995",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 66812
+    },
+    {
+      "periodo": "10-1995",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 66812
+    },
+    {
+      "periodo": "09-1995",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 70812
+    },
+    {
+      "periodo": "08-1995",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 68448
+    },
+    {
+      "periodo": "07-1995",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 71922
+    },
+    {
+      "periodo": "06-1995",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 64332
+    },
+    {
+      "periodo": "05-1995",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 64065
+    },
+    {
+      "periodo": "04-1995",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 64065
+    },
+    {
+      "periodo": "03-1995",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 70193
+    },
+    {
+      "periodo": "02-1995",
+      "rut_pagador": "96.580.310-6",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 47531
+    },
+    {
+      "periodo": "01-1995",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 37129
+    },
+    {
+      "periodo": "12-1994",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 51149
+    },
+    {
+      "periodo": "12-1994",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 8526
+    },
+    {
+      "periodo": "11-1994",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 51158
+    },
+    {
+      "periodo": "10-1994",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 51166
+    },
+    {
+      "periodo": "09-1994",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 51182
+    },
+    {
+      "periodo": "08-1994",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 51190
+    },
+    {
+      "periodo": "08-1994",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 8536
+    },
+    {
+      "periodo": "07-1994",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 47871
+    },
+    {
+      "periodo": "06-1994",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 51218
+    },
+    {
+      "periodo": "05-1994",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 41091
+    },
+    {
+      "periodo": "04-1994",
+      "rut_pagador": "96.501.450-0",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 8784
+    },
+    {
+      "periodo": "04-1994",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 41106
+    },
+    {
+      "periodo": "03-1994",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 41110
+    },
+    {
+      "periodo": "02-1994",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 41125
+    },
+    {
+      "periodo": "01-1994",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 41127
+    },
+    {
+      "periodo": "12-1993",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 41766
+    },
+    {
+      "periodo": "11-1993",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 44182
+    },
+    {
+      "periodo": "10-1993",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 33227
+    },
+    {
+      "periodo": "09-1993",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 38087
+    },
+    {
+      "periodo": "08-1993",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 38725
+    },
+    {
+      "periodo": "07-1993",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 39118
+    },
+    {
+      "periodo": "06-1993",
+      "rut_pagador": "78.114.140-2",
+      "renta_imponible": 0,
+      "monto_cotizacion_obligatoria": 40204
+    }
+  ]
+}

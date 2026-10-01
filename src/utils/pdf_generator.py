@@ -1,8 +1,14 @@
 import os
 import datetime
 from io import BytesIO
-from xhtml2pdf import pisa
 import base64
+
+try:
+    from xhtml2pdf import pisa
+    XHTML2PDF_AVAILABLE = True
+except (OSError, ImportError):
+    pisa = None
+    XHTML2PDF_AVAILABLE = False
 
 def _get_logo_base64(filename="fv_logo_vector_pure.svg"):
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -68,6 +74,7 @@ def generate_kyc_manual(cliente_nombre: str) -> bytes:
                 font-size: 10.5pt;
                 color: #2d3748;
                 line-height: 1.5;
+                text-align: justify;
             }}
             .header-box {{ text-align: center; margin-bottom: 20px; }}
             h1 {{ color: #0f172a; font-size: 18pt; text-align: center; border-bottom: 2px solid #e5b154; padding-bottom: 8px; margin-top: 10px; }}
@@ -95,26 +102,42 @@ def generate_kyc_manual(cliente_nombre: str) -> bytes:
         
         <p>Este manual le guiará paso a paso para descargar los documentos oficiales requeridos desde los portales institucionales del Estado (SII y CMF):</p>
         
-        <h2>1. Carpeta Tributaria Regular (Servicio de Impuestos Internos - SII)</h2>
-        <div class="step">
-            <b>Paso 1:</b> Ingrese a la página web del SII en <a href="https://homer.sii.cl/">www.sii.cl</a> y haga clic en "Mi SII".<br>
-            <b>Paso 2:</b> Ingrese con su RUT y Clave Tributaria o Clave Única.<br>
-            <b>Paso 3:</b> Vaya a <b>"Situación Tributaria"</b> > <b>"Carpeta Tributaria Electrónica"</b> > <b>"Generar Carpeta Tributaria"</b>.<br>
-            <b>Paso 4:</b> Seleccione la opción <b>"Regular para Solicitar Créditos"</b>.<br>
-            <b>Paso 5:</b> Haga clic en <b>"Generar PDF"</b> y guarde el archivo descargado.
+        <div style="page-break-inside: avoid;">
+            <h2>1. Carpeta Tributaria Regular (Servicio de Impuestos Internos - SII)</h2>
+            <div class="step">
+                <b>Paso 1:</b> Ingrese a la página web del SII en <a href="https://homer.sii.cl/">www.sii.cl</a> y haga clic en "Mi SII".<br>
+                <b>Paso 2:</b> Ingrese con su RUT y Clave Tributaria o Clave Única.<br>
+                <b>Paso 3:</b> Vaya a <b>"Situación Tributaria"</b> > <b>"Carpeta Tributaria Electrónica"</b> > <b>"Generar Carpeta Tributaria"</b>.<br>
+                <b>Paso 4:</b> Seleccione la opción <b>"Regular para Solicitar Créditos"</b>.<br>
+                <b>Paso 5:</b> Haga clic en <b>"Generar PDF"</b> y guarde el archivo descargado.
+            </div>
         </div>
         
-        <h2>2. Informe de Deudas (Comisión para el Mercado Financiero - CMF)</h2>
-        <div class="step">
-            <b>Paso 1:</b> Ingrese al portal oficial CMF en <a href="https://conocetudeuda.cmfchile.cl/">conocetudeuda.cmfchile.cl</a>.<br>
-            <b>Paso 2:</b> Inicie sesión con su RUT y Clave Única.<br>
-            <b>Paso 3:</b> Presione <b>"Descargar CSV / PDF"</b> para obtener su informe oficial de obligaciones consolidadas.
+        <div style="page-break-inside: avoid;">
+            <h2>2. Informe de Deudas (Comisión para el Mercado Financiero - CMF)</h2>
+            <div class="step">
+                <b>Paso 1:</b> Ingrese al portal oficial CMF en <a href="https://conocetudeuda.cmfchile.cl/">conocetudeuda.cmfchile.cl</a>.<br>
+                <b>Paso 2:</b> Inicie sesión con su RUT y Clave Única.<br>
+                <b>Paso 3:</b> Presione <b>"Descargar CSV / PDF"</b> para obtener su informe oficial de obligaciones consolidadas. Se recomienda enviar el documento en formato <b>Excel (CSV)</b>.
+            </div>
         </div>
         
-        <h2>3. Certificado de Seguros (Comisión para el Mercado Financiero - CMF)</h2>
-        <div class="step">
-            <b>Paso 1:</b> Ingrese a <a href="https://www.conocetuseguro.cl/">www.conocetuseguro.cl</a>.<br>
-            <b>Paso 2:</b> Inicie sesión con su Clave Única y presione <b>"Descargar Certificado (PDF)"</b>.
+        <div style="page-break-inside: avoid;">
+            <h2>3. Certificado de Seguros (Comisión para el Mercado Financiero - CMF)</h2>
+            <div class="step">
+                <b>Paso 1:</b> Ingrese a <a href="https://www.conocetuseguro.cl/">www.conocetuseguro.cl</a>.<br>
+                <b>Paso 2:</b> Inicie sesión con su Clave Única y presione <b>"Descargar Certificado (PDF)"</b>.
+            </div>
+        </div>
+        
+        <pdf:nextpage />
+        <div style="page-break-inside: avoid;">
+            <h2>4. Información de Sucesión Familiar y Herederos Legales</h2>
+            <div class="step">
+                <b>Paso 1:</b> Recopile el RUT, Nombre Completo, Fecha de Nacimiento y Parentesco de sus herederos legales (cónyuge, hijos, etc.).<br>
+                <b>Paso 2:</b> Indique si existe algún testamento vigente o acuerdo prenupcial.<br>
+                <b>Paso 3:</b> Esta información es fundamental para la correcta planificación y exenciones del Impuesto a la Herencia.
+            </div>
         </div>
 
         <div class="security-box">
@@ -128,9 +151,11 @@ def generate_kyc_manual(cliente_nombre: str) -> bytes:
         </div>
         
         <div class="footer">
-            FV Asesorías e Inversiones SpA • Multi-Family Office Digital impulsado por Altus AI
+            FV Asesorías e Inversiones SpA &bull; Multi-Family Office Digital impulsado por ALTUS AI SpA (RUT: 78.491.305-8)
         </div>
-    </body>
+    
+
+</body>
     </html>
     """
     
@@ -139,7 +164,10 @@ def generate_kyc_manual(cliente_nombre: str) -> bytes:
     return result.getvalue() if not pisa_status.err else b""
 
 
-def generate_succession_report_pdf(prospect_id: int) -> bytes:
+def generate_succession_report_pdf(prospect_id: int, report_type: str = "Detallado") -> bytes:
+    if not XHTML2PDF_AVAILABLE:
+        return _generate_fallback_pdf_fpdf("Reporte 360", "Falta GTK3/Cairo en Windows para renderizar el PDF HTML original.")
+
     """
     Genera el Informe Ejecutivo Consolidado 360° & Planificación Sucesoria
     con doble columna UF/$ CLP, segregación previsional y estética corporativa.
@@ -148,6 +176,35 @@ def generate_succession_report_pdf(prospect_id: int) -> bytes:
     data = calculate_advanced_succession(prospect_id)
     if not data:
         return b""
+
+    # Llamar al Motor Estratégico (strategy_engine.py)
+    try:
+        from src.intelligence.strategy_engine import generate_strategic_recommendations
+        import pandas as pd
+        from src.database.connection import SessionLocal
+        from src.database.models import Prospect, ClientDebt, ClientPortfolio, ClientProperty, ClientInsurance, ClientCompany
+
+        db = SessionLocal()
+        prospect = db.query(Prospect).filter_by(id=prospect_id).first()
+        
+        # Build DFs
+        deudas_df = pd.DataFrame([{"Monto Actual": d.monto_actual} for d in prospect.debts]) if prospect else pd.DataFrame()
+        inversiones_df = pd.DataFrame([{"Monto USD": p.monto_clp/950.0} for p in prospect.portfolios]) if prospect and hasattr(prospect, 'portfolios') else pd.DataFrame()
+        propiedades_df = pd.DataFrame([{"Arrendada": (p.arriendo_mensual > 0)} for p in prospect.properties]) if prospect else pd.DataFrame()
+        polizas_df = pd.DataFrame([{"Monto (UF)": p.capital_asegurado} for p in prospect.insurances]) if prospect else pd.DataFrame()
+        sociedades_df = pd.DataFrame([{"RUT Empresa": c.rut_empresa} for c in prospect.companies]) if prospect else pd.DataFrame()
+        
+        recs = generate_strategic_recommendations(prospect, deudas_df, inversiones_df, propiedades_df, polizas_df, sociedades_df)
+        db.close()
+        
+        if recs:
+            estrategias_html = ""
+            for r in recs:
+                estrategias_html += f"<li style='margin-bottom: 8px;'><b>{r['titulo']} ({r['categoria']}):</b> {r['descripcion']}</li>\n"
+        else:
+            estrategias_html = "<li>No se generaron recomendaciones para el perfil actual.</li>"
+    except Exception as e:
+        estrategias_html = f"<li>Error al generar recomendaciones estratégicas: {e}</li>"
 
     logo_fv = _get_logo_base64("fv_logo_vector_pure.svg")
     logo_altus = _get_logo_base64("altus_ai_logo_dark.svg")
@@ -321,14 +378,15 @@ def generate_succession_report_pdf(prospect_id: int) -> bytes:
             
             h2 {{ color: #1a365d; font-size: 11pt; border-bottom: 2px solid #2b6cb0; padding-bottom: 4px; margin-top: 18px; margin-bottom: 8px; text-transform: uppercase; }}
             
-            table {{ width: 100%; border-collapse: collapse; margin-top: 6px; margin-bottom: 14px; font-size: 8.5pt; }}
-            th {{ background-color: #1e293b; color: white; padding: 6px 8px; text-align: left; font-size: 8.5pt; }}
+            table {{ width: 100%; border-collapse: collapse; margin-top: 6px; margin-bottom: 14px; font-size: 8.5pt; page-break-inside: avoid; }}
+            th {{ background-color: #0A2342; color: #ffffff; padding: 8px; text-align: left; font-size: 8.5pt; border: 1px solid #1E3A5F; }}
             td {{ padding: 6px 8px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }}
+            tr:nth-child(even) {{ background-color: #f8fafc; }}
             
             .badge-gold {{ background-color: #fffbeb; color: #b45309; border: 1px solid #fef3c7; font-weight: bold; padding: 2px 6px; border-radius: 4px; }}
             .highlight-total {{ background-color: #ebf8ff; font-weight: bold; color: #2b6cb0; }}
             
-            .legal-box {{ background-color: #f0f9ff; border-left: 4px solid #0369a1; padding: 12px; margin-top: 14px; font-size: 8.5pt; line-height: 1.45; }}
+            .legal-box {{ background-color: #f0f9ff; border-left: 4px solid #0369a1; padding: 12px; margin-top: 14px; font-size: 8.5pt; line-height: 1.45; page-break-inside: avoid; }}
             .footer {{ text-align: center; font-size: 8pt; color: #718096; margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 8px; }}
         </style>
     </head>
@@ -491,7 +549,8 @@ def generate_succession_report_pdf(prospect_id: int) -> bytes:
             {herederos_rows}
         </table>
 
-        <!-- SECCIÓN 7: SUSTENTO LEGAL -->
+        <!-- SECCIÓN 7: SUSTENTO LEGAL (Condicional) -->
+        {f'''
         <h2>7. Matriz de Citas y Sustento Legal por Artículo</h2>
         <table>
             <tr>
@@ -500,6 +559,7 @@ def generate_succession_report_pdf(prospect_id: int) -> bytes:
             </tr>
             {sustento_rows}
         </table>
+        ''' if report_type != "Ejecutivo" else ""}
 
         <div class="legal-box">
             <b>💡 Opción EXCLUSIVA del Cónyuge en Póliza de APV (Régimen B):</b> Al fallecer el titular, <u>únicamente el cónyuge sobreviviente</u> cuenta con la facultad legal de elegir entre:<br>
@@ -509,12 +569,317 @@ def generate_succession_report_pdf(prospect_id: int) -> bytes:
         </div>
 
         <div class="footer">
-            Documento confidencial generado por <b>FV Asesorías e Inversiones SpA</b> con tecnología <b>ALTUS AI</b>.
+            Documento confidencial generado por <b>FV Asesorías e Inversiones SpA</b> con tecnología <b>ALTUS AI SpA (RUT: 78.491.305-8)</b>.
         </div>
-    </body>
+    
+</body>
     </html>
     """
 
     result = BytesIO()
     pisa_status = pisa.CreatePDF(html_content, dest=result)
     return result.getvalue() if not pisa_status.err else b""
+
+def generate_nda_pdf(cliente_nombre: str, cliente_rut: str, cliente_direccion: str = "") -> bytes:
+    if not XHTML2PDF_AVAILABLE:
+        return _generate_fallback_pdf_fpdf("NDA", "Falta GTK3/Cairo en Windows.")
+
+    """
+    Genera el documento NDA (Acuerdo de Confidencialidad) en PDF 
+    listo para firma, utilizando el logo corporativo.
+    """
+    logo_src = _get_logo_base64("fv_logo_principal_light.png")
+    if not logo_src:
+        logo_src = _get_logo_base64("fv_emblem_3d_metallic.png")
+    img_tag = f'<img src="{logo_src}" width="200" style="margin-bottom: 15px;"/>' if logo_src else '<h2>FV Asesorías e Inversiones</h2>'
+
+    firma_src = _get_logo_base64("firma_fv.png")
+    firma_img_tag = f'<img src="{firma_src}" width="150" style="margin-bottom: -15px;"/><br>' if firma_src else ''
+
+    today_str = datetime.datetime.now().strftime("%d de %B de %Y")
+
+    html_content = f"""
+    <html>
+    <head>
+        <style>
+            @page {{
+                size: a4 portrait;
+                margin: 2cm;
+            }}
+            body {{
+                font-family: Helvetica, Arial, sans-serif;
+                font-size: 10.5pt;
+                color: #2d3748;
+                line-height: 1.6;
+                text-align: justify;
+            }}
+            p, li {{
+                text-align: justify;
+                page-break-inside: avoid;
+            }}
+            .header-box {{ text-align: center; margin-bottom: 30px; }}
+            h1 {{ color: #0f172a; font-size: 16pt; text-align: center; border-bottom: 2px solid #e5b154; padding-bottom: 10px; margin-bottom: 25px; }}
+            h2 {{ color: #0A2342; font-size: 12pt; margin-top: 15px; margin-bottom: 8px; text-decoration: underline; }}
+            .signatures {{ margin-top: 60px; text-align: center; }}
+        </style>
+    </head>
+    <body>
+        <div class="header-box">
+            {img_tag}
+        </div>
+        
+        <h1>ACUERDO MARCO DE CONFIDENCIALIDAD Y NO DIVULGACIÓN (NDA INSTITUCIONAL)</h1>
+        
+        <p><strong>COMPARECIENTES:</strong></p>
+        <p>Por una parte, <strong>FV ASESORÍAS E INVERSIONES SpA</strong>, RUT 78.328.835-4 (en adelante, el "Asesor" o la "Firma"), con domicilio en Javier Morales Morales 1565, Coquimbo, debidamente representada por don Francisco Javier Valencia Aguila, RUT 15884242-4; y por la otra, don/doña <strong>{cliente_nombre}</strong>, RUT <strong>{cliente_rut}</strong> (en adelante, el "Cliente"), con domicilio en {cliente_direccion if cliente_direccion else "___________________________"}. Ambas partes denominadas conjuntamente como las "Partes".</p>
+
+        <p><strong>CONSIDERANDO:</strong></p>
+        <ol>
+            <li>Que el Cliente y el Asesor mantienen una relación comercial y de confianza previa, en virtud de la cual el Asesor proporcionará —como valor agregado y sin costo adicional para el Cliente— los servicios especializados de estructuración patrimonial, planificación sucesoria, consolidación de inversiones y asesoría estratégica (el "Servicio" o "Multi-Family Office Services").</li>
+            <li>Que, dada la naturaleza del Servicio, el Cliente deberá revelar al Asesor información altamente sensible, privilegiada y reservada que comprende aspectos financieros, tributarios, societarios, de inversiones y del núcleo familiar.</li>
+            <li>Que el Asesor utilizará sistemas de alto estándar tecnológico, incluyendo la plataforma "Altus Core" (cuyos derechos de propiedad intelectual pertenecen a ALTUS AI SpA, RUT: 78.491.305-8), para el procesamiento, encriptación y consolidación algorítmica de los datos patrimoniales del Cliente.</li>
+            <li>Que las Partes desean establecer términos estrictos y vinculantes para asegurar la absoluta confidencialidad, integridad y resguardo de la información compartida, acorde a los más altos estándares de la industria financiera.</li>
+        </ol>
+
+        <p><strong>CLÁUSULAS:</strong></p>
+
+        <div style="page-break-inside: avoid;">
+            <h2>PRIMERO: OBJETO DEL ACUERDO Y DEFINICIÓN DE INFORMACIÓN CONFIDENCIAL</h2>
+            <p>Para los efectos de este Acuerdo, se entenderá por "Información Confidencial" toda la información, datos, análisis, proyecciones, estrategias, carpetas tributarias, cartolas de inversión, escrituras, pólizas de seguros, información de herederos, estructuras societarias, y cualquier otro antecedente de carácter personal, comercial, financiero o técnico entregado por el Cliente al Asesor, ya sea en forma verbal, escrita, magnética, digital o por cualquier otro medio. Asimismo, tendrán el carácter de confidencial todos los reportes, diagnósticos y modelos financieros generados por el Asesor a partir de dicha información.</p>
+        </div>
+
+        <div style="page-break-inside: avoid;">
+            <h2>SEGUNDO: OBLIGACIONES DE RESGUARDO Y SECRETO</h2>
+            <p>El Asesor se obliga de manera expresa, absoluta e irrevocable a:
+            <br>a) Mantener la Información Confidencial en el más estricto secreto y reserva.
+            <br>b) Utilizar la Información Confidencial única y exclusivamente para los fines del análisis y prestación del Servicio acordado, quedando estrictamente prohibido su uso para beneficio propio o de terceros ajenos a la relación comercial.
+            <br>c) Implementar y mantener medidas de seguridad informáticas e infraestructurales de grado institucional (tales como cifrado AES-256 en bases de datos y tránsito) para prevenir el acceso, copia, divulgación o alteración no autorizada de la Información Confidencial.
+            <br>d) Restringir el acceso a la Información Confidencial únicamente a aquellos directores, empleados o procesadores tecnológicos (incluyendo ALTUS AI SpA) que tengan una estricta necesidad de conocerla para ejecutar el Servicio, sujetos a acuerdos de confidencialidad igual de rigurosos.</p>
+        </div>
+
+        <div style="page-break-inside: avoid;">
+            <h2>TERCERO: EXCEPCIONES A LA CONFIDENCIALIDAD</h2>
+            <p>Las obligaciones de reserva no aplicarán a aquella información que: a) Sea o pase a ser de dominio público sin mediar incumplimiento; b) Ya estuviera en posesión legítima del Asesor antes de su revelación; c) Deba ser revelada por orden judicial o requerimiento de autoridad competente (CMF, SII), en cuyo caso el Asesor deberá notificar de inmediato al Cliente antes de la divulgación.</p>
+        </div>
+
+        <div style="page-break-inside: avoid;">
+            <h2>CUARTO: PROPIEDAD Y DEVOLUCIÓN DE LA INFORMACIÓN</h2>
+            <p>Toda la Información Confidencial seguirá siendo de propiedad exclusiva del Cliente. A la terminación de la relación comercial, o ante el requerimiento escrito del Cliente, el Asesor deberá, en un plazo no superior a 15 días corridos, devolver o destruir (a elección del Cliente) todos los registros que contengan Información Confidencial, emitiendo un Certificado de Destrucción. El Asesor sólo retendrá aquellas copias exigidas por normativas legales.</p>
+        </div>
+
+        <div style="page-break-inside: avoid;">
+            <h2>QUINTO: RESPONSABILIDAD E INDEMNIZACIÓN (RESERVA DE ACCIONES)</h2>
+            <p>Cualquier incumplimiento facultará al Cliente para exigir el cese inmediato de la vulneración, sin perjuicio de su derecho a demandar la indemnización total de los perjuicios directos, indirectos y daño moral causados por la filtración, quedando el Asesor sujeto a las responsabilidades civiles y penales aplicables (Ley N° 19.628).</p>
+        </div>
+
+        <div style="page-break-inside: avoid;">
+            <h2>SEXTO: NO COMPETENCIA Y NO SOLICITACIÓN</h2>
+            <p>Durante la vigencia de este acuerdo y por un período de dos (2) años posteriores a su término, el Asesor se obliga a no contactar ni intentar contratar a los asesores legales, contables o miembros del family office del Cliente con fines de competencia desleal.</p>
+        </div>
+
+        <div style="page-break-inside: avoid;">
+            <h2>SÉPTIMO: VIGENCIA</h2>
+            <p>Las obligaciones de confidencialidad regirán desde el momento de su suscripción y se mantendrán plenamente vigentes de forma <strong>indefinida</strong>, sobreviviendo a la terminación de cualquier contrato de servicios entre las Partes.</p>
+        </div>
+
+        <div style="page-break-inside: avoid;">
+            <h2>OCTAVO: JURISDICCIÓN Y DOMICILIO</h2>
+            <p>Para todos los efectos legales, las Partes fijan su domicilio en la ciudad y comuna de Santiago de Chile, sometiéndose a la competencia de sus Tribunales Ordinarios de Justicia.</p>
+        </div>
+
+        <h2>NOVENO: FIRMA ELECTRÓNICA Y ACEPTACIÓN</h2>
+        <p>El presente documento podrá ser firmado de forma física en papel o mediante mecanismos de firma electrónica. Para efectos de celeridad, bastará con que el Cliente responda al correo electrónico mediante el cual el Asesor le remitió este instrumento, manifestando su aceptación expresa a los términos aquí contenidos, lo cual constituirá una firma electrónica simple plenamente válida y vinculante conforme a la Ley N° 19.799.</p>
+
+        <p style="margin-top: 30px;">Emitido en Santiago de Chile, a {today_str}.</p>
+
+        <div class="signatures" style="page-break-inside: avoid;">
+            <table width="100%" style="margin-top: 20px;">
+                <tr>
+                    <td align="center" width="50%" valign="bottom" height="80">
+                        {firma_img_tag}
+                    </td>
+                    <td align="center" width="50%" valign="bottom" height="80">
+                    </td>
+                </tr>
+                <tr>
+                    <td align="center" width="50%" valign="top">
+                        ________________________________<br>
+                        <strong>FV ASESORÍAS E INVERSIONES SpA</strong><br>
+                        Representante Legal: Francisco Javier Valencia Aguila<br>
+                        RUT: 15884242-4
+                    </td>
+                    <td align="center" width="50%" valign="top">
+                        ________________________________<br>
+                        <strong>{cliente_nombre}</strong><br>
+                        Cliente<br>
+                        RUT: {cliente_rut}
+                    </td>
+                </tr>
+            </table>
+        </div>
+    
+</body>
+</html>
+    """
+    
+    result = BytesIO()
+    pisa_status = pisa.CreatePDF(html_content, dest=result)
+    return result.getvalue() if not pisa_status.err else b""
+
+def generate_reporte_360_from_markdown(md_text: str, title: str = "Reporte Patrimonial 360°") -> bytes:
+    if not XHTML2PDF_AVAILABLE:
+        return _generate_fallback_pdf_fpdf("Reporte Patrimonial 360", "Falta GTK3/Cairo en Windows para procesar Markdown a PDF.")
+    
+    import markdown
+    html_body = markdown.markdown(md_text, extensions=['tables'])
+    
+    # xhtml2pdf fixes
+    html_body = html_body.replace('<li><p>', '<li>').replace('</p></li>', '</li>')
+    html_body = html_body.replace('<li>\n<p>', '<li>').replace('</p>\n</li>', '</li>')
+    html_body = html_body.replace('<hr />', '<pdf:nextpage />').replace('<hr>', '<pdf:nextpage />')
+    
+    logo_fv = _get_logo_base64("fv_logo_vector_pure.svg")
+    logo_altus = _get_logo_base64("altus_ai_logo_dark.svg")
+
+    img_fv_tag = f'<img src="{logo_fv}" width="200" style="vertical-align: middle;"/>' if logo_fv else '<strong style="color:#fff; font-size:16pt;">FV ASESORÍAS</strong>'
+    img_altus_tag = f'<img src="{logo_altus}" width="70" style="vertical-align: middle; margin-left: 20px;"/>' if logo_altus else ''
+    
+    html_content = f"""
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            @page {{
+                size: a4 portrait;
+                margin: 1.2cm;
+            }}
+            body {{
+                font-family: Helvetica, Arial, sans-serif;
+                font-size: 9pt;
+                color: #2d3748;
+                line-height: 1.4;
+            }}
+            
+            /* HEADER CORPORATIVO OFICIAL CON LOGOS */
+            .header-bar {{
+                background-color: #0f172a;
+                padding: 16px 20px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+            }}
+            .header-table {{
+                width: 100%;
+                border-collapse: collapse;
+            }}
+            .header-title-text {{
+                color: #ffffff;
+                font-size: 15pt;
+                font-weight: bold;
+                text-transform: uppercase;
+                margin: 0;
+                letter-spacing: 0.5px;
+            }}
+            .header-subtitle-text {{
+                color: #f59e0b;
+                font-size: 9.5pt;
+                margin-top: 4px;
+            }}
+
+            h2 {{ color: #1a365d; font-size: 11pt; border-bottom: 2px solid #2b6cb0; padding-bottom: 4px; margin-top: 18px; margin-bottom: 8px; text-transform: uppercase; }}
+            h3 {{ color: #0A2342; font-size: 10pt; margin-top: 15px; margin-bottom: 8px; }}
+            
+            table {{ width: 100%; border-collapse: collapse; margin-top: 6px; margin-bottom: 14px; font-size: 8.5pt; page-break-inside: avoid; }}
+            th {{ background-color: #0A2342; color: #ffffff; padding: 8px; text-align: left; font-size: 8.5pt; border: 1px solid #1E3A5F; }}
+            td {{ padding: 6px 8px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }}
+            tr:nth-child(even) {{ background-color: #f8fafc; }}
+            
+            .badge-gold {{ background-color: #fffbeb; color: #b45309; border: 1px solid #fef3c7; font-weight: bold; padding: 2px 6px; border-radius: 4px; }}
+            .highlight-total {{ background-color: #ebf8ff; font-weight: bold; color: #2b6cb0; }}
+            
+            table.table-360 {{ border: 1px solid #cbd5e1; }}
+            table.table-360 th {{ background-color: #0A2342; color: #ffffff; border-bottom: 2px solid #e5b154; font-weight: bold; }}
+            
+            .tax-callout {{
+                background-color: #f8fafc;
+                border-left: 4px solid #e5b154;
+                padding: 10px 14px;
+                margin-top: 10px;
+                margin-bottom: 15px;
+                font-size: 8.5pt;
+                color: #334155;
+                page-break-inside: avoid;
+            }}
+            
+            .alert-danger {{
+                background-color: #fef2f2;
+                border-left: 4px solid #dc2626;
+
+
+                padding: 10px 14px;
+                margin-top: 10px;
+                margin-bottom: 15px;
+                font-size: 8.5pt;
+                color: #991b1b;
+                page-break-inside: avoid;
+            }}
+            
+            .callout-principal {{
+                background-color: #f1f5f9;
+                border-left: 4px solid #D4AF37;
+                padding: 10px 14px;
+                margin-top: 10px;
+                margin-bottom: 15px;
+                font-size: 8.5pt;
+                color: #0f172a;
+                page-break-inside: avoid;
+            }}
+            
+            .legal-box {{ background-color: #f0f9ff; border-left: 4px solid #0369a1; padding: 12px; margin-top: 14px; font-size: 8.5pt; line-height: 1.45; page-break-inside: avoid; }}
+            .footer {{ text-align: center; font-size: 8pt; color: #718096; margin-top: 25px; border-top: 1px solid #e2e8f0; padding-top: 8px; }}
+        </style>
+    </head>
+    <body>
+        <div class="header-bar">
+            <table class="header-table">
+                <tr>
+                    <td style="border:none; padding:0;">
+                        {img_fv_tag}
+                        {img_altus_tag}
+                    </td>
+                    <td style="border:none; padding:0; text-align:right;">
+                        <div class="header-title-text">{title}</div>
+                        <div class="header-subtitle-text">Planificación Patrimonial & Sucesoria</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        {html_body}
+    </body>
+    </html>
+    """
+    
+    result = BytesIO()
+    pisa_status = pisa.CreatePDF(html_content, dest=result)
+    return result.getvalue() if not pisa_status.err else b""
+
+def generate_pdf_from_html(html_content: str) -> bytes:
+    from xhtml2pdf import pisa
+    from io import BytesIO
+    result = BytesIO()
+    pisa_status = pisa.CreatePDF(html_content, dest=result)
+    return result.getvalue() if not pisa_status.err else b""
+
+def _generate_fallback_pdf_fpdf(title: str, msg: str) -> bytes:
+    from fpdf import FPDF
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Helvetica", size=12)
+    pdf.cell(0, 10, title, ln=True, align="C")
+    pdf.ln(10)
+    pdf.multi_cell(0, 10, msg)
+    pdf.ln(10)
+    pdf.multi_cell(0, 10, "Este es un archivo temporal generado con FPDF para evitar la caida del sistema.")
+    try:
+        return bytes(pdf.output()) # fpdf2
+    except TypeError:
+        return pdf.output(dest='S').encode('latin1') # fpdf 1.x

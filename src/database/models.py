@@ -12,6 +12,7 @@ class Prospect(Base):
     telefono = Column(String(30), nullable=True) 
     email = Column(String(150), nullable=True)
     ciudad = Column(String(100), nullable=True)
+    direccion = Column(String(200), nullable=True)
     
     # Nuevos campos específicos del Excel indicado
     nombre_asesor = Column(String(200), nullable=True)
@@ -40,6 +41,12 @@ class Prospect(Base):
     # Estado Previsional y Renta Vitalicia
     estado_previsional = Column(String(100), nullable=True) # Activo, Retiro Programado, Renta Vitalicia Simple, Renta Vitalicia Garantizada
     periodo_garantizado_rv_meses = Column(Integer, default=0)
+    
+    # Nuevos Datos Financieros Estructurados (Formulario KYC / Tributario)
+    gastos_recurrentes = Column(Float, default=0.0)
+    retenciones_2da_cat = Column(Float, default=0.0)
+    intereses_hipotecario = Column(Float, default=0.0)
+    gastos_educacion = Column(Float, default=0.0)
     
     # Relaciones Fase D
     profile = relationship("ClientProfile", back_populates="prospect", uselist=False, cascade="all, delete-orphan")
@@ -163,6 +170,9 @@ class ClientProfile(Base):
     alertas_sistema = Column(Text, nullable=True) # Para la caja de Alertas y Notificaciones
     audio_path = Column(String(500), nullable=True) # Ruta de la nota de audio
     
+    # Flujo Sucesorio JSON (Reporte 360)
+    flujo_sucesorio = Column(Text, nullable=True)
+    
     # Datos específicos para Persona Jurídica (PJ)
     fecha_constitucion = Column(Date, nullable=True)
     notaria_constitucion = Column(String(200), nullable=True)
@@ -252,6 +262,11 @@ class ClientPortfolio(Base):
     moneda_original = Column(String(10), default="CLP") # CLP, USD, UF
     monto_clp = Column(Float, default=0.0) # Monto convertido a pesos chilenos para consolidar
     
+    # Métricas ampliadas (Reporte 360)
+    riesgo = Column(String(50), nullable=True)
+    tir = Column(Float, nullable=True)
+    rentabilidad = Column(Float, nullable=True)
+    
     objetivo_personal = Column(String(300), nullable=True) # Ej: "Renovar auto en enero 2027"
     rentabilidad_objetivo = Column(Float, nullable=True) # Ej: 10.0 (%)
     fecha_inicio_objetivo = Column(DateTime, nullable=True)
@@ -325,6 +340,10 @@ class ClientProperty(Base):
     contribuciones_anuales = Column(Float, default=0.0)
     gastos_mantencion_anual = Column(Float, default=0.0)
     plusvalia_esperada_anual = Column(Float, default=0.0)
+    
+    # Métricas ampliadas (Reporte 360)
+    seguros = Column(Float, default=0.0)
+    cap_rate = Column(Float, default=0.0)
     
     observaciones = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -430,6 +449,10 @@ class ClientCompany(Base):
     fecha_incorporacion = Column(String(50), nullable=True)
     porcentaje_capital = Column(Float, default=0.0)
     porcentaje_utilidades = Column(Float, default=0.0)
+    
+    # [HITO 2] Expansión VPP
+    valor_estimado = Column(Float, default=0.0)
+    posee_bienes_raices = Column(Boolean, default=False)
     
     created_at = Column(DateTime, default=datetime.utcnow)
     prospect = relationship("Prospect", back_populates="companies")
@@ -579,3 +602,75 @@ class CompanyAccount(Base):
     
     created_at = Column(DateTime, default=datetime.utcnow)
 
+
+class OsintLead(Base):
+    __tablename__ = 'osint_leads'
+    id = Column(Integer, primary_key=True, index=True)
+    nombre_persona_empresa = Column(String, index=True)
+    rut = Column(String, index=True)
+    monto = Column(Float)
+    motivo = Column(String)
+    fecha_documento = Column(String)
+    archivo_origen = Column(String)
+    nivel_certeza = Column(String)
+    estado = Column(String, default='Pendiente') # Pendiente, Descartado, Convertido
+    creado_el = Column(DateTime, default=datetime.utcnow)
+
+class EmpresaB2B(Base):
+    """
+    Empresas o Corporaciones suscritas al plan SaaS institucional de Altus Core.
+    """
+    __tablename__ = "empresas_b2b"
+
+    id = Column(Integer, primary_key=True, index=True)
+    rut = Column(String(20), unique=True, index=True, nullable=False)
+    razon_social = Column(String(200), nullable=False)
+    contacto_comercial = Column(String(200), nullable=True)
+    plan_contratado = Column(String(50), default="TIER_1") # TIER_1, TIER_2, ENTERPRISE
+    cupo_licencias = Column(Integer, default=50)
+    estado_activo = Column(Boolean, default=True)
+    
+    ultimo_certificado_hash = Column(String(64), nullable=True)
+    fecha_ultimo_certificado = Column(DateTime, nullable=True)
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    ejecutivos = relationship("EjecutivoB2B", back_populates="empresa", cascade="all, delete-orphan")
+
+
+class EjecutivoB2B(Base):
+    """
+    Ejecutivos C-Level / Alta Gerencia dados de alta en un Tenant Corporativo B2B.
+    """
+    __tablename__ = "ejecutivos_b2b"
+
+    id = Column(Integer, primary_key=True, index=True)
+    empresa_id = Column(Integer, ForeignKey("empresas_b2b.id"))
+    
+    rut = Column(String(20), unique=True, index=True, nullable=False)
+    nombre_completo = Column(String(200), nullable=False)
+    correo_corporativo = Column(String(150), nullable=True)
+    cargo = Column(String(150), nullable=True)
+    
+    token_acceso = Column(String(500), unique=True, index=True, nullable=True) # Token cifrado/hash para magic link
+    estado_onboarding = Column(String(50), default="Pendiente") # Pendiente, Completado, Reporte Emitido
+    fecha_expiracion_acceso = Column(DateTime, nullable=True)
+    
+    metadata_json = Column(Text, nullable=True) # Extras
+    
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    empresa = relationship("EmpresaB2B", back_populates="ejecutivos")
+
+class HistorialValorizacion(Base):
+    """
+    Registro histórico automatizado de las tasaciones y valorizaciones maestras.
+    """
+    __tablename__ = "historial_valorizacion"
+
+    id = Column(Integer, primary_key=True, index=True)
+    fecha = Column(DateTime, default=datetime.utcnow)
+    valor_base = Column(Float, default=0.0)
+    prima_deeptech = Column(Float, default=0.0)
+    valor_total = Column(Float, default=0.0)
+    ruta_archivo = Column(String(500), nullable=True)

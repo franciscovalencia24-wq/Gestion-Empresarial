@@ -1,0 +1,111 @@
+Created At: 2026-09-28T12:37:19-03:00
+Completed At: 2026-09-28T12:37:19-03:00
+File Path: `file:///c:/Users/franc/OneDrive/Documentos/PROYECTOS/BD%20SENIOR/src/web/company_management_ui.py`
+Total Lines: 1372
+Total Bytes: 83358
+Showing lines 950 to 1000
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+950:                         "Cuenta Corriente": st.column_config.TextColumn("Cuenta Corriente", width="medium"),
+
+951:                         "INGRESO": st.column_config.NumberColumn("Abonos Totales", format="$ %,.0f", width="medium"),
+
+952:                         "EGRESO": st.column_config.NumberColumn("Cargos/Gastos Totales", format="$ %,.0f", width="medium"),
+
+953:                         "Balance Neto de Cuenta": st.column_config.NumberColumn("Flujo Neto", format="$ %,.0f", width="medium")
+
+954:                     }
+
+955:                 )
+
+956: 
+
+957:         with tab6:
+
+958:             st.markdown("##### 🏢 Administración de Empresas y Cupos B2B (Reporte 360)")
+
+959:             from src.database.models import EmpresaB2B, EjecutivoB2B
+
+960:             from src.core.config import B2B_LICENSE_TIERS
+
+961:             import uuid
+
+962:             import io
+
+963:             import time
+
+964:             
+
+965:             # --- SECCIÓN 1: Registrar y editar EmpresaB2B ---
+
+966:             st.markdown("###### 1️⃣ Gestión de Empresas (Tenant Corporativo)")
+
+967:             
+
+968:             empresas_db = db.query(EmpresaB2B).all()
+
+969:             
+
+970:             col_b1, col_b2 = st.columns([1, 1])
+
+971:             with col_b1:
+
+972:                 st.markdown("**Registrar Nueva Empresa**")
+
+973:                 with st.form("form_nueva_empresa_b2b"):
+
+974:                     n_rut_empresa = st.text_input("RUT Empresa (ej: 76.123.456-7)")
+
+975:                     n_razon_social = st.text_input("Razón Social")
+
+976:                     n_contacto = st.text_input("Contacto Comercial (Nombre, Email)")
+
+977:                     n_plan = st.selectbox("Plan Contratado", list(B2B_LICENSE_TIERS.keys()))
+
+978:                     submit_new_emp = st.form_submit_button("Registrar Empresa B2B")
+
+979:                     
+
+980:                     if submit_new_emp:
+
+981:                         if n_rut_empresa and n_razon_social:
+
+982:                             check_exist = db.query(EmpresaB2B).filter_by(rut=n_rut_empresa).first()
+
+983:                             if not check_exist:
+
+984:                                 plan_cupos = B2B_LICENSE_TIERS[n_plan]["max_users"]
+
+985:                                 if plan_cupos == float('inf'): plan_cupos = 9999
+
+986:                                 new_emp = EmpresaB2B(
+
+987:                                     rut=n_rut_empresa,
+
+988:                                     razon_social=n_razon_social,
+
+989:                                     contacto_comercial=n_contacto,
+
+990:                                     plan_contratado=n_plan,
+
+991:                                     cupo_licencias=plan_cupos,
+
+992:                                     estado_activo=True
+
+993:                                 )
+
+994:                                 db.add(new_emp)
+
+995:                                 db.commit()
+
+996:                                 try:
+
+997:                                     from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+
+998:                                     safe_upload_with_streamlit_ui()
+
+999:                                 except: pass
+
+1000:                                 st.success("✅ Empresa B2B Registrada con éxito.")
+
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+

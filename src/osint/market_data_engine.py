@@ -521,7 +521,7 @@ class MarketDataEngine:
         logging.info(f"Post optimizado a {final_count} caracteres UTF-16 de LinkedIn (sin asteriscos).")
         return final_post
 
-    def generate_content(self, currency_stats, commodity_stats, global_stats, custom_news_text=None, mode="auto"):
+    def generate_content(self, currency_stats, commodity_stats, global_stats, custom_news_text=None, mode="auto", images=None):
         if not self.model: return None
         
         if custom_news_text:
@@ -602,17 +602,45 @@ class MarketDataEngine:
         3. 💼 **ANÁLISIS DE IMPACTO EN PORTAFOLIOS**: Explica en 2-3 oraciones neutras y educativas cómo este escenario macroeconómico impacta a las distintas clases de activos (Renta Variable, Renta Fija) en portafolios diversificados (SIN DAR CONSEJOS NI RECOMENDACIONES DIRECTAS).
         """
         
+        
         current_date_str = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")
-        prompt = f"""
-        Eres un Analista Senior de FV Asesorías e Inversiones SPA.
-        La fecha y hora actual del sistema es: {current_date_str}.
+        
+        if mode == "pdf_local":
+            prompt = f"""
+            Eres un Analista de Research Senior de FV Asesorías e Inversiones SPA.
+            El usuario ha subido un documento PDF para análisis.
+            INSTRUCCIONES Y TEXTO DEL DOCUMENTO:
+            {news_text}
+            
+            Tu objetivo es extraer los 3 puntos más críticos del documento para generar un reporte ejecutivo y un post de LinkedIn de alto valor.
+            El texto final para la infografía debe ser profesional, profundo y directo al grano, sin inventar cifras que no estén en el texto.
+            
+            Devuelve SOLO un JSON con esta estructura exacta:
+            {{
+                "titulo_principal": "TÍTULO DE IMPACTO EN MAYÚSCULAS",
+                "titulo_documento": "Título muy corto, MÁXIMO 58 caracteres. Será el nombre del PDF.",
+                "noticia_completa": "El análisis ejecutivo de 4-5 oraciones profundizando en el documento y resumiendo los hallazgos principales.",
+                "fuente_noticia": "Usa la fuente mencionada en el documento o 'Análisis Documental'.",
+                "fecha_noticia": "Usa la fecha mencionada en el documento o '{current_date_str}'.",
+                "post_linkedin": "El post completo para RRSS para LinkedIn. DEBE comenzar con un Titular Periodístico de Impacto en Mayúsculas seguido de los hallazgos clave de forma ágil y concisa. Finaliza EXACTAMENTE con este bloque literal:\n\n¿Qué podría significar esto para tus ahorros e inversiones?\nDescubre cómo preparar tu portafolio ante estos nuevos desafíos. Escríbenos para una asesoría patrimonial integral y optimiza tu estrategia de inversión.\n\n📧 contacto@fv-inversiones.com | 📱 WhatsApp: +56966779662\n\nAgrega hashtags relevantes.",
+                "explicacion_interna": "Una explicación detallada del análisis para uso interno.",
+                "explicacion_multifondos": "N/A",
+                "imagen_keyword_ingles": "1 o 2 palabras clave EN INGLÉS que describan visualmente el tema principal para buscar una fotografía (ej: 'oil rig', 'european central bank', 'wheat field').",
+                "impacto_local": {{}}
+            }}
+            """
+        else:
+            prompt = f"""
+            Eres un Analista Senior de FV Asesorías e Inversiones SPA.
+            La fecha y hora actual del sistema es: {current_date_str}.
         Evalúa las noticias del día y sus impactos:
         NOTICIAS HOY: {news_text}
         
         {market_status_text}
         
         {focus_instruction}
-        IMPORTANTE: La explicación en 'explicacion_interna' y los 'efectos' DEBEN ser tu predicción prospectiva (hacia el futuro) de lo que pasará producto de la noticia. Si hay guerra, predice ALZA de petróleo. El EFECTO es el resultado *posible* que puede suceder a consecuencia de la noticia en vista, por ende el reporte y el JSON deben coincidir en esta predicción prospectiva.
+        IMPORTANTE: De la lista proporcionada en NOTICIAS HOY, SELECCIONA ÚNICAMENTE LA NOTICIA QUE TENGA EL MAYOR IMPACTO MACROECONÓMICO O FINANCIERO A NIVEL GLOBAL. Analiza todas y escoge solo la más relevante para los mercados. Ignora el resto.
+        La explicación en 'explicacion_interna' y los 'efectos' DEBEN ser tu predicción prospectiva (hacia el futuro) de lo que pasará producto de la noticia seleccionada. Si hay guerra, predice ALZA de petróleo. El EFECTO es el resultado *posible* que puede suceder a consecuencia de la noticia en vista, por ende el reporte y el JSON deben coincidir en esta predicción prospectiva.
         Devuelve SOLO un JSON con esta estructura exacta:
         {{
             "titulo_principal": "TÍTULO DE IMPACTO EN MAYÚSCULAS",
@@ -620,10 +648,10 @@ class MarketDataEngine:
             "noticia_completa": "El texto periodístico de 4-5 oraciones profundizando en la noticia. (No des consejos).",
             "fuente_noticia": "Usa la 'Fuente:' explícita que acompaña a la noticia seleccionada (ej: Reuters, Wall Street Journal). ESTRICTAMENTE PROHIBIDO poner 'Yahoo Finance' si la noticia dice explícitamente (Fuente: Reuters).",
             "fecha_noticia": "Usa ESTRICTAMENTE la fecha y hora que viene en el texto de NOTICIAS HOY. Si la hora viene en formato UTC (ejemplo terminada en Z), réstale 4 horas para ajustarla a Chile. NO inventes fechas pasadas ni uses la fecha de tus ejemplos. Formato final: DD de Mes, YYYY - HH:MM hrs",
-            "prompt_imagen": "Un prompt fotográfico en inglés (max 10 palabras) para ilustrar la noticia. PROHIBIDO pedir 'charts', 'graphs', 'screens', 'stock market lines' o gráficos de velas. Pide SOLAMENTE fotografía del mundo real, como 'corporate executives shaking hands', 'oil refinery at sunset', o 'modern wall street architecture'.",
             "post_linkedin": "El post completo para RRSS para LinkedIn. REQUISITO DE TITULARES Y EXTENSIÓN ÁGIL: El post DEBE comenzar con un Titular Periodístico de Impacto en Mayúsculas (ej: 🚨 WALL STREET EN EXPECTATIVA ANTE LA FED) seguido de 3 párrafos concisos y ágiles (entre 1.100 y 1.400 caracteres brutos en total). Integra datos oficiales y estadísticas clave para diferenciarte de la competencia. Separa con dobles saltos de línea (\\n\\n). Finaliza EXACTAMENTE con este bloque literal:\n\n¿Qué podría significar esto para tus ahorros e inversiones?\nDescubre cómo preparar tu portafolio ante estos nuevos desafíos. Escríbenos para una asesoría patrimonial integral y optimiza tu estrategia de inversión.\n\n📧 contacto@fv-inversiones.com | 📱 WhatsApp: +56966779662\n\nAgrega de 3 a 5 HASHTAGS únicos e hiper-relevantes a la temática específica de la noticia (ej. empresas o commodities específicos mencionados). Tienes estrictamente prohibido usar hashtags genéricos repetitivos como #Inversiones, #Mercados, #MercadosFinancieros, #WallStreet o #Chile.",
             "explicacion_interna": "Una explicación detallada (dirigida a los asesores de FV) de la lógica económica/financiera detrás de la noticia elegida y cómo fundamenta de forma causal los impactos (alzas y bajas) predichos en los commodities e índices. Sirve para responder dudas de clientes.",
             "explicacion_multifondos": "Un texto explicativo de unas 3-4 líneas (para clientes) justificando los movimientos proyectados (ALZA o BAJA) específicos de los Multifondos chilenos en base a la noticia y los mercados globales. Se incluirá en la presentación.",
+            "imagen_keyword_ingles": "1 a 3 palabras clave EN INGLÉS que describan visualmente el sujeto principal de la noticia para buscar una fotografía fotorrealista (ej: 'european central bank', 'oil rig', 'container ship', 'natural gas', 'wall street'). NO uses palabras genéricas como 'finance' o 'economy'.",
             "impacto_local": {{
                 "fondos_mutuos": [
                     {{"nombre": "GLOBAL", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
@@ -657,12 +685,17 @@ class MarketDataEngine:
             }}
         }}
         Recuerda usar SOLO "BAJA", "ALZA" o "NEUTRAL" para efecto y "IMPORTANTE", "MODERADA" o "LEVE" para relevancia.
-        IMPORTANTE: NO copies la palabra <EVALUAR>. DEBES evaluar e interpretar tú mismo la noticia y calcular de forma lógica el efecto y la relevancia para CADA UNO de los ítems.
-        Devuelve un JSON strictly válido. Escapa las comillas internas con \\" y los saltos de línea dentro de los textos con \\n.
+        IMPORTANTE: La explicación en 'explicacion_interna' y los 'efectos' DEBEN ser tu predicción prospectiva (hacia el futuro) de lo que pasará producto de la noticia. Si hay guerra, predice ALZA de petróleo. El EFECTO es el resultado *posible* que puede suceder a consecuencia de la noticia en vista, por ende el reporte y el JSON deben coincidir en esta predicción prospectiva.
+        Devuelve SOLO un JSON con esta estructura exacta. Escapa las comillas internas con \\" y los saltos de línea dentro de los textos con \\n.
         """
+        
         try:
-            logging.info("Solicitando análisis de la noticia...")
-            response = self.model.generate_content(prompt)
+            logging.info("Solicitando análisis de la noticia al modelo...")
+            prompt_parts = [prompt]
+            if images:
+                prompt_parts.extend(images)
+                
+            response = self.model.generate_content(prompt_parts)
             clean_text = response.text.replace('```json', '').replace('```', '').strip()
             
             import json_repair
@@ -715,47 +748,75 @@ class MarketDataEngine:
                     item['efecto'] = 'NEUTRAL'
                     item['relevancia'] = 'LEVE'
             
-            # Selección inteligente de imagen HD según tendencia del titular (Alza vs Baja)
-            headline_upper = data.get('titular_principal', '').upper()
+            # Selección inteligente de imagen HD dinámica con API oficial Unsplash
+            import os
+            import requests
+            import random
             
-            bullish_keywords = ['ALZA', 'RALLY', 'REPUNTE', 'SUBE', 'SUBIDA', 'AVANZA', 'RÉCORD', 'RECORD', 'OPTIMISMO', 'DESPEGUE']
-            bearish_keywords = ['CAÍDA', 'CAIDA', 'DESPLOME', 'DERRUMBE', 'BAJA', 'BAJADA', 'PÉRDIDA', 'PERDIDA', 'RECESIÓN', 'TEMOR', 'PANICO', 'CRISIS']
+            headline_upper = data.get('titulo_principal', '').upper()
+            imagen_keyword_ingles = data.get('imagen_keyword_ingles', '')
+            
+            bullish_keywords = ['ALZA', 'RALLY', 'REPUNTE', 'SUBE', 'SUBIDA', 'AVANZA', 'RÉCORD', 'RECORD', 'OPTIMISMO', 'DESPEGUE', 'IMPULSAN', 'IMPULSO', 'CRECIMIENTO']
+            bearish_keywords = ['CAÍDA', 'CAIDA', 'DESPLOME', 'DERRUMBE', 'BAJA', 'BAJADA', 'PÉRDIDA', 'PERDIDA', 'RECESIÓN', 'TEMOR', 'PANICO', 'CRISIS', 'ALERTA', 'ESTANFLACIÓN', 'INFLACIÓN', 'RIESGO']
             
             is_bullish = any(k in headline_upper for k in bullish_keywords)
             is_bearish = any(k in headline_upper for k in bearish_keywords) and not is_bullish
             
-            bullish_images = [
-                "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80", # Gráficos verdes al alza
-                "https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80", # Pantalla trading en alza
-                "https://images.unsplash.com/photo-1642543492481-44e81e3914a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"  # Crecimiento de mercado
-            ]
-            
-            bearish_images = [
-                "https://images.unsplash.com/photo-1640340434855-6084b1f4901c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80", # Velas rojas bajistas
-                "https://images.unsplash.com/photo-1535320903710-d993d3d77d29?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"  # Gráfico a la baja
-            ]
-            
-            neutral_images = [
-                "https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80", # Escritorio financiero analítico
-                "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"  # Torres corporativas de Wall St.
-            ]
-            
-            import urllib.parse
-            prompt_img = data.get('prompt_imagen', 'financial stock market') + ", professional 8k photograph, cinematic lighting, corporate business, depth of field, sharp focus, highly detailed, photorealistic"
-            safe_prompt = urllib.parse.quote(prompt_img)
-            
-            # 1. Intentar SIEMPRE primero con la IA Generativa. 
-            # CLAVE: Usamos model=flux para fotorealismo absoluto y tamaño 1200x1200 (cuadrado) para que el CSS cover recorte bien en cualquier formato.
-            data['imagen_noticia'] = f"https://image.pollinations.ai/prompt/{safe_prompt}?width=1200&height=1200&model=flux&nologo=true"
-            
-            # Guardamos la lógica predefinida en el diccionario por si falla la descarga (timeout de la IA)
-            import random
-            if is_bullish:
-                data['imagen_fallback'] = random.choice(bullish_images)
+            search_query = "finance stock market"
+            if imagen_keyword_ingles and len(imagen_keyword_ingles) > 2:
+                # Usar la keyword específica generada por la IA para mayor contexto
+                search_query = f"{imagen_keyword_ingles}"
+            elif is_bullish:
+                search_query = "finance bull market green growth"
             elif is_bearish:
-                data['imagen_fallback'] = random.choice(bearish_images)
-            else:
-                data['imagen_fallback'] = random.choice(neutral_images)
+                search_query = "finance crisis red market down"
+                
+            final_image_url = None
+            unsplash_key = os.getenv("UNSPLASH_ACCESS_KEY")
+            
+            if unsplash_key:
+                try:
+                    unsplash_api_url = f"https://api.unsplash.com/search/photos?query={search_query}&orientation=landscape&per_page=30"
+                    headers = {"Authorization": f"Client-ID {unsplash_key}"}
+                    response = requests.get(unsplash_api_url, headers=headers, timeout=5)
+                    
+                    if response.status_code == 200:
+                        results = response.json().get('results', [])
+                        if results:
+                            # Evitar elegir siempre los primeros para no repetir
+                            chosen = random.choice(results)
+                            final_image_url = chosen['urls']['raw'] + "&w=1200&q=80&fm=jpg&crop=entropy&fit=crop"
+                except Exception as e:
+                    logging.warning(f"Fallo en API de Unsplash: {e}")
+                    
+            if not final_image_url:
+                bullish_catalog = [
+                    "1611974789855-9c2a0a7236a3", "1590283603385-17ffb3a7f29f", "1642543492481-44e81e3914a7", 
+                    "1579226905147-1521626f21bc", "1600880292203-757bb62b4baf", "1559526324-4f879b880191",
+                    "1612015900986-4c4d017d1648", "1460925895917-afdab827c52f", "1526304640581-d334cdbbf45e"
+                ]
+                bearish_catalog = [
+                    "1640340434855-6084b1f4901c", "1535320903710-d993d3d77d29", "1512359403239-165b6b8f36c5",
+                    "1611974789855-9c2a0a7236a3", "1526304640581-d334cdbbf45e", "1633158829585-23ba8dc1c11a",
+                    "1507679622140-5e0031175069", "1611974789855-9c2a0a7236a3", "1535320903710-d993d3d77d29"
+                ]
+                neutral_catalog = [
+                    "1526304640581-d334cdbbf45e", "1486406146926-c627a92ad1ab", "1444653614773-995cb1ef9efa",
+                    "1611974789855-9c2a0a7236a3", "1507679622140-5e0031175069", "1460925895917-afdab827c52f",
+                    "1612015900986-4c4d017d1648", "1642543492481-44e81e3914a7", "1559526324-4f879b880191"
+                ]
+                
+                if is_bullish:
+                    selected_id = random.choice(bullish_catalog)
+                elif is_bearish:
+                    selected_id = random.choice(bearish_catalog)
+                else:
+                    selected_id = random.choice(neutral_catalog)
+                    
+                final_image_url = f"https://images.unsplash.com/photo-{selected_id}?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+            
+            data['imagen_noticia'] = final_image_url
+            data['imagen_fallback'] = final_image_url
             
             data['ltm_stats'] = self.fetch_ltm_variations()
 
@@ -963,6 +1024,8 @@ class MarketDataEngine:
         env = Environment(loader=FileSystemLoader('src/web/templates'))
         if mode in ["weekly", "audio"]:
             template = env.get_template('infografia_resumen_semanal.html')
+        elif mode == "pdf_local":
+            template = env.get_template('infografia_documento.html')
         else:
             template = env.get_template('infografia_diaria.html')
         html_out = template.render(json_data=ai_data)
@@ -1178,7 +1241,7 @@ class MarketDataEngine:
         logging.info("Publicación enviada a LinkedIn exitosamente.")
         return True
 
-    def run_daily_routine(self, mode="auto", custom_input=None):
+    def run_daily_routine(self, mode="auto", custom_input=None, images=None):
         global_stats = self.fetch_global_stats()
         currency_stats = self.fetch_currency_stats()
         commodity_stats = self.fetch_commodities_stats()
@@ -1210,13 +1273,23 @@ class MarketDataEngine:
         elif mode in ["weekly", "audio"] and custom_input:
             logging.info("Iniciando procesamiento de Infografía desde Reporte Resumen Semanal de Mercado (Audio/WhatsApp)")
             custom_news_text = custom_input
+        elif mode == "pdf_local" and custom_input:
+            logging.info("Iniciando procesamiento de Infografía desde PDF Local")
+            custom_news_text = custom_input
             
         if mode == "auto":
             self.fetch_reuters_news()
         elif mode == "auto_chile":
             self.fetch_chile_news()
-        
-        ai_data = self.generate_content(currency_stats, commodity_stats, global_stats, custom_news_text, mode)
+
+        ai_data = self.generate_content(
+            currency_stats=currency_stats,
+            commodity_stats=commodity_stats,
+            global_stats=global_stats,
+            custom_news_text=custom_news_text,
+            mode=mode,
+            images=images
+        )
         if ai_data:
             # Si generamos un gráfico de COCHILCO, reemplazar la imagen genérica de IA por nuestro gráfico duro
             if mode == "cochilco" and hasattr(self, 'cochilco_chart_b64'):

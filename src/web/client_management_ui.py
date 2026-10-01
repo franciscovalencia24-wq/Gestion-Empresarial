@@ -18,7 +18,7 @@ import src.utils.kyc_email_generator as email_gen
 importlib.reload(excel_gen)
 importlib.reload(email_gen)
 
-from src.database.models import Prospect, ClientProfile, ClientHeir, ClientProperty, ClientInsurance, ClientDebt, ClientCompany, ClientPortfolio, CompanyShareholder, CompanyRepresentative
+from src.database.models import Prospect, ClientProfile, ClientHeir, ClientProperty, ClientInsurance, ClientDebt, ClientCompany, ClientPortfolio, CompanyShareholder, CompanyRepresentative, ClientInventory
 from src.osint.herencia import calculate_inheritance_chile
 from src.utils.backup_manager import save_client_backup, get_latest_client_backup
 
@@ -70,9 +70,9 @@ def render_client_management_ui():
         path = os.path.join("assets", "manuales", file_name)
         if os.path.exists(path):
             with open(path, "rb") as f:
-                st.download_button(label=label, data=f, file_name=file_name, mime="application/pdf", use_container_width=True)
+                st.download_button(label=label, data=f, file_name=file_name, mime="application/pdf", width="stretch")
         else:
-            st.download_button(label=label, data=b"", file_name=file_name, mime="application/pdf", disabled=True, help="Manual no disponible", use_container_width=True)
+            st.download_button(label=label, data=b"", file_name=file_name, mime="application/pdf", disabled=True, help="Manual no disponible", width="stretch")
 
     with main_container:
         st.markdown("""
@@ -173,7 +173,7 @@ def render_client_management_ui():
 
             col_title, col_btn_ref, col_btn_res, col_btn_pdf = st.columns([0.4, 0.2, 0.2, 0.2])
             col_title.markdown(f"## 👤 {rut} - Perfil Integral del Cliente")
-            if col_btn_ref.button("🔄 Refrescar", help="Recarga la información desde la Base de Datos", use_container_width=True):
+            if col_btn_ref.button("🔄 Refrescar", help="Recarga la información desde la Base de Datos", width="stretch"):
                 for key in list(st.session_state.keys()):
                     if rut in key or key.endswith(f"_{rut}") or key.startswith(f"{rut}_") or key.startswith(f"omit_{rut}_"):
                         del st.session_state[key]
@@ -181,7 +181,7 @@ def render_client_management_ui():
 
             latest_backup = get_latest_client_backup(rut)
             if latest_backup and "_saved_at" in latest_backup:
-                if col_btn_res.button("🛡️ Restaurar Copia", help=f"Restaurar copia física en disco del {latest_backup['_saved_at']}", use_container_width=True):
+                if col_btn_res.button("🛡️ Restaurar Copia", help=f"Restaurar copia física en disco del {latest_backup['_saved_at']}", width="stretch"):
                     try:
                         if latest_backup.get("nombre"): st.session_state[f"{rut}_nombre"] = latest_backup["nombre"]
                         if latest_backup.get("telefono"): st.session_state[f"{rut}_telefono"] = latest_backup["telefono"]
@@ -205,7 +205,8 @@ def render_client_management_ui():
                 db_top = SessionLocal()
                 clean_rut_top = rut.replace(".", "").replace("-", "").strip()
                 p_top = db_top.query(Prospect).filter(Prospect.rut.contains(clean_rut_top) | (Prospect.rut == rut)).first()
-                pdf_top_bytes = generate_succession_report_pdf(p_top.id) if p_top else None
+                report_type = st.radio("Tipo de Reporte 360°", ["Ejecutivo (Resumen de Alto Impacto)", "Detallado (Análisis Completo)"], horizontal=True, key=f"rep_type_{rut}")
+                pdf_top_bytes = generate_succession_report_pdf(p_top.id, "Ejecutivo" if "Ejecutivo" in report_type else "Detallado") if p_top else None
                 db_top.close()
             except:
                 pdf_top_bytes = None
@@ -217,7 +218,7 @@ def render_client_management_ui():
                     file_name=f"Reporte_Consolidado_360_{rut}.pdf",
                     mime="application/pdf",
                     type="primary",
-                    use_container_width=True,
+                    width="stretch",
                     key=f"dl_top_pdf_{rut}"
                 )
 
@@ -439,6 +440,7 @@ def render_client_management_ui():
 
                     telefono_val = str(prospect.telefono).strip() if prospect.telefono and str(prospect.telefono).strip().lower() not in ["none", "nan", "sin tel", ""] else ""
                     email_val = str(prospect.email).strip() if prospect.email and str(prospect.email).strip().lower() not in ["none", "nan", ""] else ""
+                    direccion_val = str(prospect.direccion).strip() if getattr(prospect, "direccion", None) and str(prospect.direccion).strip().lower() not in ["none", "nan", ""] else ""
 
                 db.close()
 
@@ -470,6 +472,7 @@ def render_client_management_ui():
                 st.session_state[f"{rut}_materno"] = materno_val
                 st.session_state[f"{rut}_telefono"] = telefono_val
                 st.session_state[f"{rut}_email"] = email_val
+                st.session_state[f"{rut}_direccion"] = direccion_val
                 st.session_state[f"{rut}_perfil"] = perfil_val
                 st.session_state[f"{rut}_objetivo"] = objetivo_val
                 
@@ -514,6 +517,106 @@ def render_client_management_ui():
             missing_polizas = st.session_state[k_poliza].empty
 
             st.markdown("---")
+            
+            # --- RADIOGRAFÍA PATRIMONIAL 360 ---
+            st.markdown("### 📊 Radiografía Patrimonial 360°")
+            
+            has_360_data = False
+            masa_patrimonial = 0
+            flujo_neto_inmobiliario = 0
+            brecha = 0
+            
+            db_360 = SessionLocal()
+            try:
+                clean_rut_360 = rut.replace(".", "").replace("-", "").strip()
+                p_360 = db_360.query(Prospect).filter(Prospect.rut.contains(clean_rut_360) | (Prospect.rut == rut)).first()
+                if p_360:
+                    try:
+                        from src.osint.indicadores import get_uf_today
+                        uf_val = float(get_uf_today())
+                        if uf_val <= 0: uf_val = 38000
+                    except:
+                        uf_val = 38000
+
+                    total_inmuebles = sum([safe_float(p.valor_comercial_estimado)*uf_val for p in p_360.properties])
+                    total_inversiones = sum([safe_float(inv.monto_original) for inv in p_360.portfolios])
+                    masa_patrimonial = total_inmuebles + total_inversiones
+                    
+                    for p in p_360.properties:
+                        flujo_neto_inmobiliario += (safe_float(p.arriendo_mensual) - safe_float(p.dividendo_mensual) - safe_float(p.gastos_comunes) - safe_float(p.seguros) - (safe_float(p.contribuciones_anuales) / 3))
+                        
+                    if p_360.profile and p_360.profile.flujo_sucesorio:
+                        try:
+                            flujo_sucesorio_data = json.loads(p_360.profile.flujo_sucesorio)
+                            brecha = flujo_sucesorio_data.get('brecha_mensual', 0)
+                            has_360_data = True
+                        except:
+                            pass
+                            
+                    if len(p_360.properties) > 0 or len(p_360.portfolios) > 0:
+                        has_360_data = True
+            finally:
+                db_360.close()
+
+            if has_360_data:
+                col_m1, col_m2, col_m3 = st.columns(3)
+                col_m1.metric("Masa Patrimonial Bruta", f"${masa_patrimonial:,.0f}")
+                col_m2.metric("Flujo Inm. Mensual", f"${flujo_neto_inmobiliario:,.0f}")
+                col_m3.metric("Brecha Sucesoria Mensual", f"${brecha:,.0f}")
+                
+                col_b1, col_b2, col_b3 = st.columns(3)
+                with col_b1:
+                    if st.button("📊 Abrir Reporte 360", key=f"btn_360_{rut}", width="stretch"):
+                        st.session_state.main_nav = "📑 Reporte Patrimonial 360"
+                        from src.web.report_generator_ui import load_client_data_to_session
+                        load_client_data_to_session(rut)
+                        st.rerun()
+                
+                with col_b2:
+                    if st.button("📄 Descargar 360 (PDF)", key=f"btn_360_pdf_{rut}", width="stretch"):
+                        with st.spinner("Generando PDF..."):
+                            from src.web.report_generator_ui import load_client_data_to_session, auto_generate_markdown
+                            from src.utils.pdf_generator import generate_reporte_360_from_markdown
+                            load_client_data_to_session(rut)
+                            texto = auto_generate_markdown({})
+                            pdf_bytes = generate_reporte_360_from_markdown(texto, "Reporte Patrimonial 360°")
+                            if pdf_bytes:
+                                st.session_state[f'dl_pdf_bytes_{rut}'] = pdf_bytes
+                                st.rerun()
+                    if st.session_state.get(f'dl_pdf_bytes_{rut}'):
+                        b = st.session_state[f'dl_pdf_bytes_{rut}']
+                        st.download_button("⬇️ Guardar PDF", data=b, file_name=f"Reporte_360_{rut.replace('.','').replace('-','')}.pdf", mime="application/pdf", key=f"dl_btn_pdf_{rut}", type="primary", width="stretch")
+                            
+                with col_b3:
+                    if st.button("📝 Descargar 360 (DOCX)", key=f"btn_360_docx_{rut}", width="stretch"):
+                        with st.spinner("Generando DOCX..."):
+                            from src.web.report_generator_ui import load_client_data_to_session
+                            from src.utils.docx_generator_macro import generar_docx_reporte_360
+                            import tempfile
+                            load_client_data_to_session(rut)
+                            data_360 = st.session_state.get('reporte_360_data', {})
+                            path = os.path.join(tempfile.gettempdir(), f"Reporte_360_{rut.replace('.','').replace('-','')}.docx")
+                            generar_docx_reporte_360(data_360, path)
+                            
+                            with open(path, "rb") as f:
+                                b = f.read()
+                            os.remove(path)
+                            st.session_state[f'dl_docx_bytes_{rut}'] = b
+                            st.rerun()
+                    if st.session_state.get(f'dl_docx_bytes_{rut}'):
+                        b = st.session_state[f'dl_docx_bytes_{rut}']
+                        st.download_button("⬇️ Guardar DOCX", data=b, file_name=f"Reporte_360_{rut.replace('.','').replace('-','')}.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", key=f"dl_btn_docx_{rut}", type="primary", width="stretch")
+                            
+            else:
+                st.info("Sin planificación 360 configurada")
+                st.warning("Configure activos antes de exportar")
+                if st.button("➕ Configurar Planificación 360", key=f"btn_360_empty_{rut}"):
+                    st.session_state.main_nav = "📑 Reporte Patrimonial 360"
+                    from src.web.report_generator_ui import load_client_data_to_session
+                    load_client_data_to_session(rut)
+                    st.rerun()
+            
+            st.markdown("---")
         
             # --- TABLAS DINÁMICAS ---
             if st.session_state.get(k_tipo_persona, "PN") == "PN":
@@ -534,6 +637,8 @@ def render_client_management_ui():
                         st.text_input("Teléfono", key=f"{rut}_telefono")
                     with col_dp3:
                         st.text_input("Email", key=f"{rut}_email")
+                    
+                    st.text_input("Dirección", key=f"{rut}_direccion")
                     
                     col_dp4, col_dp5 = st.columns(2)
                     
@@ -629,6 +734,7 @@ def render_client_management_ui():
                         st.session_state[k_test] = st.checkbox("Existe Testamento Vigente", value=st.session_state[k_test], help="Si hay testamento, los cálculos legales asumen que solo se debe garantizar la Mitad Legitimaria (50%) a los herederos forzosos.")
                     with col_fam3:
                         st.session_state[f"{rut}_patrimonio"] = st.number_input("Patrimonio Neto a Repartir (UF)", value=st.session_state.get(f"{rut}_patrimonio", 0.0), min_value=0.0, step=1000.0, format="%.2f", help="Ingresa un estimado para calcular el impuesto a la herencia y liquidez por heredero.")
+                        st.caption("ℹ️ Recuerda sumar manualmente el total de Inversiones, Bienes Raíces e **Inventario Adicional (Vehículos/Arte)**.")
                 
                     edited_herederos = st.session_state[k_hered]
             
@@ -644,7 +750,7 @@ def render_client_management_ui():
                         edited_herederos = st.data_editor(
                             st.session_state[k_hered], 
                             num_rows="dynamic", 
-                            use_container_width=True, 
+                            width="stretch", 
                             key=f"editor_herederos_{rut}",
                             column_config={
                                 "Relación": st.column_config.SelectboxColumn(
@@ -708,7 +814,8 @@ def render_client_management_ui():
                         # Botón para descargar Reporte Sucesorio Completo PDF
                         from src.utils.pdf_generator import generate_succession_report_pdf
                         try:
-                            pdf_suc_bytes = generate_succession_report_pdf(prospect.id) if prospect else None
+                            report_type_sec = st.radio("Tipo de Reporte Sucesorio", ["Ejecutivo (Resumen de Alto Impacto)", "Detallado (Análisis Completo)"], horizontal=True, key=f"rep_type_sec_{rut}")
+                            pdf_suc_bytes = generate_succession_report_pdf(prospect.id, "Ejecutivo" if "Ejecutivo" in report_type_sec else "Detallado") if prospect else None
                         except:
                             pdf_suc_bytes = None
 
@@ -719,7 +826,7 @@ def render_client_management_ui():
                                 file_name=f"Informe_Sucesorio_Legal_{rut}.pdf",
                                 mime="application/pdf",
                                 type="primary",
-                                use_container_width=True,
+                                width="stretch",
                                 key=f"dl_suc_pdf_{rut}"
                             )
             else:
@@ -770,10 +877,10 @@ def render_client_management_ui():
                         st.session_state[k_fecha_vig] = st.date_input("Última Vigencia", value=st.session_state[k_fecha_vig] if isinstance(st.session_state[k_fecha_vig], datetime.date) else None)
 
                     st.markdown("##### Accionistas / Socios")
-                    edited_socios = st.data_editor(st.session_state[k_socios], num_rows="dynamic", use_container_width=True, key=f"ed_socios_{rut}")
+                    edited_socios = st.data_editor(st.session_state[k_socios], num_rows="dynamic", width="stretch", key=f"ed_socios_{rut}")
 
                     st.markdown("##### Representantes Legales / Apoderados")
-                    edited_repres = st.data_editor(st.session_state[k_repres], num_rows="dynamic", use_container_width=True, key=f"ed_repres_{rut}")
+                    edited_repres = st.data_editor(st.session_state[k_repres], num_rows="dynamic", width="stretch", key=f"ed_repres_{rut}")
 
 
             with st.expander("🏢 (2) Perfil Tributario y Sociedades (SII)"):
@@ -873,12 +980,49 @@ def render_client_management_ui():
                         if current_df['Incorporación'].astype(str).str.contains(r'Falta Fecha|None', regex=True, case=False).any() or current_df['Incorporación'].isnull().any():
                             st.warning("⚠️ **Información Incompleta:** Algunas sociedades cruzadas desde el CRM no tienen fecha de incorporación. Por favor, edita la celda correspondiente para completarla o sube una carpeta tributaria.")
 
-                    edited_sociedades = st.data_editor(
-                        current_df,
-                        num_rows="dynamic",
-                        use_container_width=True,
-                        key=f"editor_sociedades_{rut}"
-                    )
+                    
+                    edited_sociedades_rows = []
+                    # Initialize columns if missing
+                    if "Valor Estimado ($)" not in current_df.columns:
+                        current_df["Valor Estimado ($)"] = 0.0
+                    if "¿Posee Bienes Raíces?" not in current_df.columns:
+                        current_df["¿Posee Bienes Raíces?"] = False
+
+                    for idx, row in current_df.iterrows():
+                        with st.expander(f"🏢 Sociedad: {row.get('Razon Social', row.get('Razón Social', 'Sin Nombre'))} ({row.get('RUT Empresa', '')})"):
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                rut_emp = st.text_input("RUT Empresa", value=str(row.get("RUT Empresa", "")), key=f"emp_rut_{rut}_{idx}")
+                                razon = st.text_input("Razón Social", value=str(row.get("Razón Social", row.get("Razon Social", ""))), key=f"emp_rs_{rut}_{idx}")
+                            with col2:
+                                incorp = st.text_input("Incorporación", value=str(row.get("Incorporación", "")), key=f"emp_inc_{rut}_{idx}")
+                                cap = st.text_input("% Capital", value=str(row.get("% Capital", "")), key=f"emp_cap_{rut}_{idx}")
+                                util = st.text_input("% Utilidades", value=str(row.get("% Utilidades", "")), key=f"emp_util_{rut}_{idx}")
+                            with col3:
+                                st.markdown("**Valorización (VPP)**")
+                                val_est = st.number_input("Valor Estimado de la Sociedad ($)", value=float(row.get("Valor Estimado ($)") or 0.0), key=f"emp_val_{rut}_{idx}")
+                                bienes = st.checkbox("¿Posee Bienes Raíces?", value=bool(row.get("¿Posee Bienes Raíces?", False)), key=f"emp_bienes_{rut}_{idx}")
+                            
+                            new_row = row.copy()
+                            new_row["RUT Empresa"] = rut_emp
+                            new_row["Razón Social"] = razon
+                            new_row["Incorporación"] = incorp
+                            new_row["% Capital"] = cap
+                            new_row["% Utilidades"] = util
+                            new_row["Valor Estimado ($)"] = val_est
+                            new_row["¿Posee Bienes Raíces?"] = bienes
+                            edited_sociedades_rows.append(new_row)
+
+                    if st.button("➕ Añadir Sociedad Manual", key=f"add_soc_{rut}"):
+                        empty_row = {c: "" for c in current_df.columns}
+                        empty_row["Valor Estimado ($)"] = 0.0
+                        empty_row["¿Posee Bienes Raíces?"] = False
+                        edited_sociedades_rows.append(empty_row)
+                        st.session_state[k_comp] = pd.DataFrame(edited_sociedades_rows)
+                        st.rerun()
+
+                    edited_sociedades = pd.DataFrame(edited_sociedades_rows) if edited_sociedades_rows else current_df
+
 
             with st.expander("🏠 (3) Cartera Inmobiliaria"):
                 st.session_state[f"omit_{rut}_inmobiliaria"] = st.checkbox("Omitir sección", value=st.session_state.get(f"omit_{rut}_inmobiliaria", False), key=f"cb_omit_{rut}_inmobiliaria")
@@ -888,7 +1032,7 @@ def render_client_management_ui():
                     st.info("ℹ️ Detalle de bienes raíces, avalúos, créditos hipotecarios y cálculos de rentabilidad inmobiliaria.")
         
                     # BOTÓN DE AUDITORÍA Y BÚSQUEDA AUTOMÁTICA POR RUT / CATASTRO NACIONAL (dequienes.cl / SII)
-                    if st.button("🏢 Auditar / Consultar Propiedades por RUT (Catastro Nacional)", key=f"btn_lookup_prop_{rut}", use_container_width=True):
+                    if st.button("🏢 Auditar / Consultar Propiedades por RUT (Catastro Nacional)", key=f"btn_lookup_prop_{rut}", width="stretch"):
                         try:
                             from src.osint.property_lookup_engine import PropertyLookupEngine
                             engine_prop = PropertyLookupEngine()
@@ -1095,50 +1239,73 @@ def render_client_management_ui():
                         cols.insert(idx + 1, "Dividendo (CLP)")
                         df_display = df_display[cols]
 
-                    edited_propiedades = st.data_editor(
-                        df_display, 
-                        num_rows="dynamic", 
-                        use_container_width=True, 
-                        hide_index=True,
-                        key=f"editor_propiedades_{rut}_v2",
-                        column_config={
-                            "N°": st.column_config.NumberColumn("N°", format="%d", disabled=True),
-                            "Deuda Hipotecaria": st.column_config.CheckboxColumn("¿Tiene Deuda?", default=False),
-                            "Arrendada": st.column_config.CheckboxColumn("¿Arrendada?", default=False),
-                            "Monto Arriendo": st.column_config.NumberColumn(format="$ %,d", min_value=0.0),
-                            "Moneda Arriendo": None,
-                            "Fecha Contrato Arriendo": st.column_config.DateColumn("Fecha Contrato", format="DD/MM/YYYY", min_value=datetime.date(1950, 1, 1), max_value=datetime.date.today()),
-                            "Meses Reajuste Arriendo": st.column_config.NumberColumn("Meses Reajuste", min_value=1, max_value=60, step=1),
-                            "Cuota Actual": st.column_config.NumberColumn(min_value=0, step=1),
-                            "Total Cuotas": st.column_config.NumberColumn(min_value=0, step=1),
-                            "Avalúo Fiscal (CLP)": st.column_config.NumberColumn(format="$ %,d"),
-                            "Factor Estimación": st.column_config.TextColumn("Factor AI", help="Multiplicador asignado por Comuna y Destino"),
-                            "Valor Sugerido AI (UF)": st.column_config.NumberColumn("Sugerido AI (UF)", format="%.2f UF", help="Estimación calculada por la IA según Avalúo Fiscal"),
-                            "Valor Com. (UF)": st.column_config.NumberColumn("Valor Comercial / Tasación (UF)", format="%.2f UF", help="Valor usado para el Informe 360°. Puedes sobreescribirlo con tu tasación real (ej: 10.000 UF)"),
-                            "Origen Tasación": st.column_config.SelectboxColumn("Origen Valor", options=["Sugerida por AI", "Tasación Real / Cliente"]),
-                            "Monto Inicial (UF)": st.column_config.NumberColumn(format="%.2f UF"),
-                            "Saldo Actual (UF)": st.column_config.NumberColumn(format="%.2f UF"),
-                            "Monto Asegurado (UF)": st.column_config.NumberColumn(format="%.2f UF"),
-                            "Tasación (UF)": st.column_config.NumberColumn(format="%.2f UF"),
-                            "Tasa Interés (%)": st.column_config.NumberColumn(format="%.2f%%"),
-                            "Tipo Tasa": st.column_config.SelectboxColumn("Tipo Tasa", options=["Fija", "Variable", "Mixta"]),
-                            "Fecha Escritura": st.column_config.DateColumn("Fecha Escritura", format="DD/MM/YYYY", min_value=datetime.date(1950, 1, 1), max_value=datetime.date.today()),
-                            "Dividendo": st.column_config.NumberColumn("Dividendo (UF)", format="%.2f UF"),
-                            "Año": st.column_config.NumberColumn("Año", format="%d", step=1),
-                            "Contribuciones Trim.": st.column_config.NumberColumn(format="$ %,d"),
-                            "Gastos Comunes Mensuales": st.column_config.NumberColumn(format="$ %,d"),
-                            "Mantención Anual (CLP)": st.column_config.NumberColumn(format="$ %,d"),
-                            "Plusvalía Esperada (%)": st.column_config.NumberColumn(format="%.2f%%", min_value=0.0, max_value=100.0),
-                            "% de Derecho": st.column_config.NumberColumn(format="%.2f%%", min_value=0.0, max_value=100.0),
-                            "Rentabilidad S/Deuda (Cap Rate %)": st.column_config.NumberColumn("Cap Rate (%)", format="%.2f%%", disabled=True, help="Rentabilidad de la propiedad asumiendo compra al contado.\n\nFórmula: (Ingreso Operativo Anual / Valor Comercial) * 100\nObjetivo: Evaluar el rendimiento puro del activo inmobiliario sin considerar el apalancamiento bancario."),
-                            "Retorno C/Deuda (ROE %)": st.column_config.NumberColumn("ROE (%)", format="%.2f%%", disabled=True, help="Retorno sobre el Patrimonio (Return on Equity).\n\nFórmula: (Flujo de Caja Anual / Patrimonio Inmovilizado) * 100\nObjetivo: Medir la rentabilidad real de la porción que ya has pagado, maximizando el uso del apalancamiento."),
-                            "Flujo Caja Anual (CLP)": st.column_config.NumberColumn("Flujo Caja Anual", format="$ %,d", disabled=True, help="Dinero real (liquidez) que produce la propiedad anualmente.\n\nFórmula: Ingresos por Arriendo - (Gastos Operativos + Dividendos Hipotecarios)\nObjetivo: Conocer cuánto dinero líquido te deja (o te cuesta) mantener la propiedad al año."),
-                            "Retorno Total (%)": st.column_config.NumberColumn("Retorno Total", format="%.2f%%", disabled=True, help="Ganancia consolidada de la propiedad.\n\nFórmula: ROE (o Cap Rate si no hay deuda) + Plusvalía Esperada Anual\nObjetivo: Visión completa de la creación de riqueza de la propiedad a través del tiempo."),
-                            "Dividendo (CLP)": st.column_config.NumberColumn("Dividendo (CLP)", format="$ %,d", disabled=True),
-                            "__fecha_act_cuota": None  # Ocultar columna interna
-                        }
-                    )
-        
+                                        # --- NUEVO RENDERIZADO VERTICAL DE PROPIEDADES (HITO 1) ---
+                    edited_rows = []
+                    for idx, row in df_display.iterrows():
+                        with st.expander(f"🏠 Propiedad {row.get('N°', idx+1)}: {row.get('Dirección', 'Sin Dirección')} ({row.get('Comuna', '')})", expanded=False):
+                            col1, col2, col3, col4 = st.columns(4)
+                            with col1:
+                                rol = st.text_input("ROL", value=str(row.get("ROL", "")), key=f"rol_{rut}_{idx}")
+                                direccion = st.text_input("Dirección", value=str(row.get("Dirección", "")), key=f"dir_{rut}_{idx}")
+                                comuna = st.text_input("Comuna", value=str(row.get("Comuna", "")), key=f"com_{rut}_{idx}")
+                                destino = st.text_input("Destino", value=str(row.get("Destino", "HABITACIONAL")), key=f"dest_{rut}_{idx}")
+                            with col2:
+                                avaluo = st.number_input("Avalúo Fiscal ($)", value=float(row.get("Avalúo Fiscal (CLP)") or 0.0), key=f"avaluo_{rut}_{idx}")
+                                val_com = st.number_input("Valor Comercial (UF)", value=float(row.get("Valor Com. (UF)") or 0.0), key=f"valcom_{rut}_{idx}")
+                                origen = st.selectbox("Origen Valor", ["Sugerida por AI", "Tasación Real / Cliente"], index=0 if row.get("Origen Tasación", "") == "Sugerida por AI" else 1, key=f"orig_{rut}_{idx}")
+                                pct_derecho = st.number_input("% de Derecho", value=float(row.get("% de Derecho") or 100.0), max_value=100.0, key=f"pct_{rut}_{idx}")
+                            with col3:
+                                tiene_deuda = st.checkbox("¿Tiene Deuda?", value=bool(row.get("Deuda Hipotecaria", False)), key=f"deuda_{rut}_{idx}")
+                                monto_ini = st.number_input("Monto Inicial (UF)", value=float(row.get("Monto Inicial (UF)") or 0.0), key=f"mini_{rut}_{idx}")
+                                saldo_act = st.number_input("Saldo Actual (UF)", value=float(row.get("Saldo Actual (UF)") or 0.0), key=f"sact_{rut}_{idx}")
+                                dividendo = st.number_input("Dividendo (UF)", value=float(row.get("Dividendo") or 0.0), key=f"div_{rut}_{idx}")
+                            with col4:
+                                arrendada = st.checkbox("¿Arrendada?", value=bool(row.get("Arrendada", False)), key=f"arren_{rut}_{idx}")
+                                monto_arr = st.number_input("Monto Arriendo ($)", value=float(row.get("Monto Arriendo") or 0.0), key=f"marr_{rut}_{idx}")
+                                cap_rate = st.number_input("Cap Rate (%)", value=float(row.get("Rentabilidad S/Deuda (Cap Rate %)") or 0.0), disabled=True, key=f"cap_{rut}_{idx}")
+                                roe = st.number_input("ROE (%)", value=float(row.get("Retorno C/Deuda (ROE %)") or 0.0), disabled=True, key=f"roe_{rut}_{idx}")
+                            
+                            st.markdown("###### 💸 Gastos Operativos y Plusvalía")
+                            c1, c2, c3, c4 = st.columns(4)
+                            with c1:
+                                contrib = st.number_input("Contribuciones Trim. ($)", value=float(row.get("Contribuciones Trim.") or 0.0), key=f"cont_{rut}_{idx}")
+                            with c2:
+                                gastos_com = st.number_input("Gastos Comunes Mes ($)", value=float(row.get("Gastos Comunes Mensuales") or 0.0), key=f"gcom_{rut}_{idx}")
+                            with c3:
+                                mantencion = st.number_input("Mantención Anual ($)", value=float(row.get("Mantención Anual (CLP)") or 0.0), key=f"man_{rut}_{idx}")
+                            with c4:
+                                plusvalia = st.number_input("Plusvalía Anual (%)", value=float(row.get("Plusvalía Esperada (%)") or 0.0), key=f"plu_{rut}_{idx}")
+                            
+                            new_row = row.copy()
+                            new_row["ROL"] = rol
+                            new_row["Dirección"] = direccion
+                            new_row["Comuna"] = comuna
+                            new_row["Destino"] = destino
+                            new_row["Avalúo Fiscal (CLP)"] = avaluo
+                            new_row["Valor Com. (UF)"] = val_com
+                            new_row["Origen Tasación"] = origen
+                            new_row["% de Derecho"] = pct_derecho
+                            new_row["Deuda Hipotecaria"] = tiene_deuda
+                            new_row["Monto Inicial (UF)"] = monto_ini
+                            new_row["Saldo Actual (UF)"] = saldo_act
+                            new_row["Dividendo"] = dividendo
+                            new_row["Arrendada"] = arrendada
+                            new_row["Monto Arriendo"] = monto_arr
+                            new_row["Contribuciones Trim."] = contrib
+                            new_row["Gastos Comunes Mensuales"] = gastos_com
+                            new_row["Mantención Anual (CLP)"] = mantencion
+                            new_row["Plusvalía Esperada (%)"] = plusvalia
+                            edited_rows.append(new_row)
+
+                    if st.button("➕ Añadir Propiedad Manual", key=f"add_prop_{rut}"):
+                        empty_row = {c: 0.0 if "UF" in c or "CLP" in c or "%" in c else "" for c in df_display.columns}
+                        empty_row["N°"] = len(edited_rows) + 1
+                        edited_rows.append(empty_row)
+                        st.session_state[k_prop] = pd.DataFrame(edited_rows)
+                        st.rerun()
+
+                    edited_propiedades = pd.DataFrame(edited_rows) if edited_rows else df_display
+
                     # --- CÁLCULO DE MÉTRICAS INMOBILIARIAS EN VIVO ---
                     from src.osint.indicadores import get_uf_today
                     uf_hoy = get_uf_today()
@@ -1198,6 +1365,53 @@ def render_client_management_ui():
                     if needs_rerun:
                         st.session_state[k_prop] = edited_propiedades
                         st.rerun()
+
+            with st.expander("🚗 (3.5) Inventario Adicional (Vehículos, Colecciones y Otros)"):
+                st.session_state[f"omit_{rut}_inventario"] = st.checkbox("Omitir sección", value=st.session_state.get(f"omit_{rut}_inventario", False), key=f"cb_omit_{rut}_inventario")
+                if st.session_state[f"omit_{rut}_inventario"]:
+                    st.info("⚠️ La sección de Inventario Adicional fue omitida intencionalmente.")
+                else:
+                    st.info("ℹ️ Registro de Vehículos, Colecciones, Obras de Arte y otros activos físicos con impacto patrimonial/sucesorio.")
+                    
+                    k_inv_add = f"df_inv_add_{rut}"
+                    if k_inv_add not in st.session_state:
+                        # Load from DB
+                        local_db = SessionLocal()
+                        clean_rut_search = rut.replace(".", "").replace("-", "").strip()
+                        local_prospect = local_db.query(Prospect).filter(Prospect.rut.contains(clean_rut_search) | (Prospect.rut == rut)).first()
+                        db_inv = []
+                        if local_prospect:
+                            db_inv = local_db.query(ClientInventory).filter(ClientInventory.prospect_id == local_prospect.id).all()
+                        local_db.close()
+                        if db_inv:
+                            df_inv_add = pd.DataFrame([{
+                                "Categoría": i.categoria,
+                                "Descripción": i.descripcion,
+                                "Valor Comercial ($)": i.valor_comercial,
+                                "Deuda Asociada ($)": i.deuda_asociada,
+                                "Observaciones (Sucesión)": i.observaciones
+                            } for i in db_inv])
+                        else:
+                            df_inv_add = pd.DataFrame(columns=[
+                                "Categoría", "Descripción", "Valor Comercial ($)", "Deuda Asociada ($)", "Observaciones (Sucesión)"
+                            ])
+                        st.session_state[k_inv_add] = df_inv_add
+
+                    edited_inv_add = st.data_editor(
+                        st.session_state[k_inv_add],
+                        num_rows="dynamic",
+                        column_config={
+                            "Categoría": st.column_config.SelectboxColumn("Categoría", options=["Vehículos", "Arte/Joyas", "Colecciones", "Otro"], required=True),
+                            "Valor Comercial ($)": st.column_config.NumberColumn(format="$ %d"),
+                            "Deuda Asociada ($)": st.column_config.NumberColumn(format="$ %d")
+                        },
+                        width="stretch",
+                        key=f"editor_inv_add_{rut}"
+                    )
+                    
+                    if not edited_inv_add.equals(st.session_state[k_inv_add]):
+                        st.session_state[k_inv_add] = edited_inv_add
+                        # We don't force a rerun here unless we need to calculate totals, but let's do it on Save.
 
             with st.expander("🛡️ (4) Pólizas y Seguros"):
                 st.session_state[f"omit_{rut}_seguros"] = st.checkbox("Omitir sección", value=st.session_state.get(f"omit_{rut}_seguros", False), key=f"cb_omit_{rut}_seguros")
@@ -1271,30 +1485,111 @@ def render_client_management_ui():
                                 st.success("¡Análisis IA completado! Revisa la columna de 'Análisis IA' para el diagnóstico.")
                                 st.rerun()
 
-                    edited_polizas = st.data_editor(
-                        st.session_state[k_poliza], 
-                        num_rows="dynamic", 
-                        use_container_width=True, 
-                        key=f"editor_polizas_{rut}",
-                        column_config={
-                            "Aseguradora": st.column_config.TextColumn("Aseguradora"),
-                            "Asegurado": st.column_config.TextColumn("Asegurado"),
-                            "Contratante": st.column_config.TextColumn("Contratante"),
-                            "Tipo": st.column_config.TextColumn("Bien Asegurado (Tipo)"),
-                            "N° Póliza": st.column_config.TextColumn("N° Póliza / Código"),
-                            "Colectivo / Individual": st.column_config.TextColumn("Colectivo / Individual"),
-                            "Alias / Patente": st.column_config.TextColumn("Alias / Patente"),
-                            "Monto (UF)": st.column_config.NumberColumn(format="%d UF"),
-                            "Prima": st.column_config.NumberColumn(),
-                            "Medio de Pago": st.column_config.TextColumn("Medio de Pago"),
-                            "Fecha Contratación": st.column_config.TextColumn("Fecha Contratación (DD/MM/YYYY)", help="Pólizas Post-04/02/2022 están afectas a impuesto a la herencia según Ley 21.420 y Circular 20 SII"),
-                            "¿APV Póliza?": st.column_config.CheckboxColumn("¿APV Póliza?", help="Pólizas de APV acogidas al Art. 42 LIR (exentas de impuesto a la herencia)"),
-                            "Coberturas": st.column_config.TextColumn("Coberturas (Letra Chica)", width="large"),
-                            "Análisis IA": st.column_config.TextColumn("💡 Análisis IA Comercial", width="large")
-                        }
-                    )
+                    
+                    # --- NUEVO RENDERIZADO VERTICAL DE PÓLIZAS (HITO 3) ---
+                    edited_polizas_rows = []
+                    current_polizas = st.session_state[k_poliza]
+                    
+                    for idx, row in current_polizas.iterrows():
+                        with st.expander(f"📄 Póliza: {row.get('Aseguradora', 'Sin Aseguradora')} - {row.get('Tipo', 'Sin Tipo')} ({row.get('N° Póliza', '')})", expanded=False):
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                aseguradora = st.text_input("Aseguradora", value=str(row.get("Aseguradora", "")), key=f"pol_aseg_{rut}_{idx}")
+                                asegurado = st.text_input("Asegurado", value=str(row.get("Asegurado", "")), key=f"pol_asedo_{rut}_{idx}")
+                                contratante = st.text_input("Contratante", value=str(row.get("Contratante", "")), key=f"pol_cont_{rut}_{idx}")
+                                tipo = st.text_input("Bien Asegurado (Tipo)", value=str(row.get("Tipo", "")), key=f"pol_tipo_{rut}_{idx}")
+                            with col2:
+                                n_pol = st.text_input("N° Póliza / Código", value=str(row.get("N° Póliza", "")), key=f"pol_num_{rut}_{idx}")
+                                col_ind = st.text_input("Colectivo / Individual", value=str(row.get("Colectivo / Individual", "")), key=f"pol_col_{rut}_{idx}")
+                                alias = st.text_input("Alias / Patente", value=str(row.get("Alias / Patente", "")), key=f"pol_alias_{rut}_{idx}")
+                                f_cont = st.text_input("Fecha Contratación (DD/MM/YYYY)", value=str(row.get("Fecha Contratación", "")), help="Pólizas Post-04/02/2022 están afectas a impuesto a la herencia según Ley 21.420", key=f"pol_fcont_{rut}_{idx}")
+                            with col3:
+                                monto = st.number_input("Monto (UF)", value=float(row.get("Monto (UF)") or 0.0), key=f"pol_monto_{rut}_{idx}")
+                                prima = st.number_input("Prima", value=float(row.get("Prima") or 0.0), key=f"pol_prima_{rut}_{idx}")
+                                medio_pago = st.text_input("Medio de Pago", value=str(row.get("Medio de Pago", "")), key=f"pol_pago_{rut}_{idx}")
+                                is_apv = st.checkbox("¿APV Póliza?", value=bool(row.get("¿APV Póliza?", False)), help="Pólizas de APV acogidas al Art. 42 LIR", key=f"pol_apv_{rut}_{idx}")
+                            
+                            st.markdown("**Coberturas (Letra Chica)**")
+                            coberturas = st.text_area("Detalle de coberturas", value=str(row.get("Coberturas", "")), height=100, key=f"pol_cob_{rut}_{idx}")
+                            st.markdown("**💡 Análisis IA Comercial**")
+                            analisis_ia = st.text_area("Diagnóstico IA", value=str(row.get("Análisis IA", "")), height=100, disabled=True, key=f"pol_ia_{rut}_{idx}")
+                            
+                            new_row = row.copy()
+                            new_row["Aseguradora"] = aseguradora
+                            new_row["Asegurado"] = asegurado
+                            new_row["Contratante"] = contratante
+                            new_row["Tipo"] = tipo
+                            new_row["N° Póliza"] = n_pol
+                            new_row["Colectivo / Individual"] = col_ind
+                            new_row["Alias / Patente"] = alias
+                            new_row["Fecha Contratación"] = f_cont
+                            new_row["Monto (UF)"] = monto
+                            new_row["Prima"] = prima
+                            new_row["Medio de Pago"] = medio_pago
+                            new_row["¿APV Póliza?"] = is_apv
+                            new_row["Coberturas"] = coberturas
+                            new_row["Análisis IA"] = analisis_ia
+                            edited_polizas_rows.append(new_row)
+
+                    if st.button("➕ Añadir Póliza Manual", key=f"add_poliza_{rut}"):
+                        empty_row = {c: "" for c in current_polizas.columns}
+                        if "Monto (UF)" in empty_row: empty_row["Monto (UF)"] = 0.0
+                        if "Prima" in empty_row: empty_row["Prima"] = 0.0
+                        if "¿APV Póliza?" in empty_row: empty_row["¿APV Póliza?"] = False
+                        edited_polizas_rows.append(empty_row)
+                        st.session_state[k_poliza] = pd.DataFrame(edited_polizas_rows)
+                        st.rerun()
+
+                    edited_polizas = pd.DataFrame(edited_polizas_rows) if edited_polizas_rows else current_polizas
+
         
                     st.info("💡 **Sugerencia:** Para obtener mayores detalles sobre el medio de pago, beneficiarios designados o el mandato exacto, te recomendamos visitar la 'Sucursal Virtual' de la aseguradora correspondiente.")
+
+            with st.expander("🛡️ (4.5) Auditoría Patrimonial de Seguros"):
+                st.info("Auditoría técnica que evalúa las pólizas vigentes, detecta descalces frente a pasivos (deudas hipotecarias y brecha sucesoria) y recomienda estructuras de protección y ahorro en PRINCIPAL.")
+                if st.button("🔍 Ejecutar Auditoría de Seguros", type="primary", key=f"btn_audit_seguros_{rut}"):
+                    with st.spinner("Auditando pólizas y calculando brechas..."):
+                        from src.intelligence.insurance_analyzer import auditar_polizas_cliente
+                        db_audit = SessionLocal()
+                        try:
+                            clean_rut_audit = rut.replace(".", "").replace("-", "").strip()
+                            prospect_audit = db_audit.query(Prospect).filter(Prospect.rut.contains(clean_rut_audit) | (Prospect.rut == rut)).first()
+                            if prospect_audit:
+                                audit_result = auditar_polizas_cliente(prospect_audit.id, db_audit)
+                                if audit_result:
+                                    st.session_state[f"audit_seguros_{rut}"] = audit_result
+                                else:
+                                    st.warning("No se pudo realizar la auditoría o el cliente no tiene datos suficientes.")
+                        finally:
+                            db_audit.close()
+                            
+                audit_data = st.session_state.get(f"audit_seguros_{rut}")
+                if audit_data:
+                    st.markdown("### Tabla Ejecutiva Clasificada")
+                    if audit_data["polizas"]:
+                        df_audit_polizas = pd.DataFrame(audit_data["polizas"])[["compania", "contratante", "tipo", "destino_beneficio"]]
+                        df_audit_polizas.columns = ["Compañía", "Contratante", "Tipo de Cobertura", "Destino del Beneficio"]
+                        st.dataframe(df_audit_polizas, use_container_width=True, hide_index=True)
+                    else:
+                        st.warning("No se encontraron pólizas vigentes.")
+                
+                    st.markdown("---")
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric("Capital Líquido Familiar", f"{audit_data['liquidez_familiar_uf']:,.0f} UF")
+                    c2.metric("Brecha Sucesoria Proyectada", f"{audit_data['brecha_sucesoria_uf']:,.0f} UF")
+                    
+                    if audit_data['tiene_deficit']:
+                        c3.metric("Déficit Sucesorio", f"-{audit_data['deficit_sucesorio_uf']:,.0f} UF", delta="Descalce", delta_color="inverse")
+                        
+                        st.error(f"🚨 **Riesgo de Liquidez Sucesoria:** {audit_data['diag_proteccion']}")
+                        if audit_data.get('diag_duplicidad') and "No se detecta" not in audit_data['diag_duplicidad']:
+                            st.warning(f"🔍 **Duplicidad y Dispersión:** {audit_data['diag_duplicidad']}")
+                            
+                        st.info(f"💼 **Cuadro de Acción Comercial (PRINCIPAL):** {audit_data['dictamen']}")
+                    else:
+                        c3.metric("Déficit Sucesorio", "0 UF", delta="Cobertura Total", delta_color="normal")
+                        st.success(f"✅ **Protección Familiar:** {audit_data['diag_proteccion']}")
+                        st.info(f"💼 **Cuadro de Acción Comercial (PRINCIPAL):** {audit_data['dictamen']}")
 
             with st.expander("💳 (5) Mapa de Deudas (CMF)"):
                 st.session_state[f"omit_{rut}_deudas"] = st.checkbox("Omitir sección", value=st.session_state.get(f"omit_{rut}_deudas", False), key=f"cb_omit_{rut}_deudas")
@@ -1346,7 +1641,7 @@ def render_client_management_ui():
                     edited_deudas = st.data_editor(
                         st.session_state[k_debt],
                         num_rows="dynamic",
-                        use_container_width=True,
+                        width="stretch",
                         key=f"editor_deudas_{rut}",
                         column_config={
                             "Institucion": st.column_config.TextColumn("Institución"),
@@ -1358,6 +1653,51 @@ def render_client_management_ui():
                             "Observaciones": st.column_config.TextColumn("Observaciones / Propiedad", width="large")
                         }
                     )
+
+            with st.expander("💳 (5.5) Egresos, Deducciones y Flujo Recurrente"):
+                st.info("ℹ️ Egresos regulares anualizados y beneficios tributarios (Gastos y Retenciones).")
+                
+                col_g1, col_g2 = st.columns(2)
+                with col_g1:
+                    v_gastos = st.number_input(
+                        "Gastos Recurrentes (Costo Vida Familiar) Anualizado",
+                        min_value=0.0,
+                        value=float(st.session_state.get(f"{rut}_gastos_recurrentes", 0.0)),
+                        format="%.0f",
+                        key=f"ui_{rut}_gastos"
+                    )
+                    st.session_state[f"{rut}_gastos_recurrentes"] = v_gastos
+                    
+                    v_reten = st.number_input(
+                        "Retenciones 2da Categoría Anual (CLP)",
+                        min_value=0.0,
+                        value=float(st.session_state.get(f"{rut}_retenciones_2da_cat", 0.0)),
+                        format="%.0f",
+                        key=f"ui_{rut}_reten"
+                    )
+                    st.session_state[f"{rut}_retenciones_2da_cat"] = v_reten
+                    
+                with col_g2:
+                    v_hipo = st.number_input(
+                        "Intereses Hipotecarios (Art. 55 bis LIR) Anual (CLP)",
+                        min_value=0.0,
+                        value=float(st.session_state.get(f"{rut}_intereses_hipotecario", 0.0)),
+                        format="%.0f",
+                        key=f"ui_{rut}_hipo"
+                    )
+                    st.session_state[f"{rut}_intereses_hipotecario"] = v_hipo
+                    
+                    v_edu = st.number_input(
+                        "Gastos en Educación (Art. 55 ter) Anual (CLP)",
+                        min_value=0.0,
+                        value=float(st.session_state.get(f"{rut}_gastos_educacion", 0.0)),
+                        format="%.0f",
+                        key=f"ui_{rut}_edu"
+                    )
+                    st.session_state[f"{rut}_gastos_educacion"] = v_edu
+                
+                gasto_mensual = v_gastos / 12 if v_gastos > 0 else 0
+                st.metric("Gasto Mensual Estimado", f"$ {gasto_mensual:,.0f}".replace(",", "."))
 
             with st.expander("📈 (6) Inversiones Consolidadas"):
                 st.session_state[f"omit_{rut}_inversiones"] = st.checkbox("Omitir sección", value=st.session_state.get(f"omit_{rut}_inversiones", False), key=f"cb_omit_{rut}_inversiones")
@@ -1393,7 +1733,7 @@ def render_client_management_ui():
                     edited_inv = st.data_editor(
                         st.session_state[k_inv],
                         num_rows="dynamic",
-                        use_container_width=True,
+                        width="stretch",
                         key=f"editor_inversiones_{rut}",
                         column_config={
                             "Institucion": st.column_config.TextColumn("Institución", width="medium"),
@@ -1419,13 +1759,76 @@ def render_client_management_ui():
                             with col1:
                                 fig1 = px.pie(df_plot, values="Monto CLP", names="Institucion", title="Por Institución", hole=0.4, color_discrete_sequence=px.colors.sequential.Teal)
                                 fig1.update_traces(textposition='inside', textinfo='percent+label')
-                                st.plotly_chart(fig1, use_container_width=True)
+                                st.plotly_chart(fig1, width="stretch")
                             with col2:
                                 fig2 = px.pie(df_plot, values="Monto CLP", names="Tipo", title="Por Tipo de Activo", hole=0.4, color_discrete_sequence=px.colors.sequential.Burg)
                                 fig2.update_traces(textposition='inside', textinfo='percent+label')
-                                st.plotly_chart(fig2, use_container_width=True)
+                                st.plotly_chart(fig2, width="stretch")
                         else:
                             st.info("Ingresa montos válidos en CLP para visualizar la distribución.")
+                          
+                        # [HITO 4] Cálculo de Rentabilidad y Perfil de Riesgo
+                        st.markdown("##### 📈 Perfil de Riesgo y Asset Allocation")
+                        riesgo_map = {
+                            "Depósito a Plazo": ("Muy conservador", 0.04),
+                            "Cotización Obligatoria": ("Moderado", 0.06),
+                            "APV-A": ("Muy conservador", 0.04),
+                            "APV-B": ("Decidido", 0.08),
+                            "APV con Póliza": ("Conservador", 0.05),
+                            "Depósito Convenido (DC-R)": ("Moderado", 0.06),
+                            "Depósito Convenido (DC-L)": ("Moderado", 0.06),
+                            "Cuenta 2": ("Moderado", 0.06),
+                            "Fondo Mutuo": ("Moderado", 0.06),
+                            "Acciones": ("Agresivo", 0.12),
+                            "Otro": ("Moderado", 0.06)
+                        }
+                        
+                        total_inv = df_plot["Monto CLP"].sum()
+                        roi_ponderado = 0.0
+                        score_riesgo = 0.0
+                        
+                        perfil_score_map = {
+                            "Muy conservador": 1,
+                            "Conservador": 2,
+                            "Cauteloso": 3,
+                            "Moderado": 4,
+                            "Decidido": 5,
+                            "Agresivo": 6
+                        }
+                        
+                        for _, row_inv in df_plot.iterrows():
+                            tipo = row_inv.get("Tipo", "Otro")
+                            monto = float(row_inv.get("Monto CLP", 0.0))
+                            peso = monto / total_inv if total_inv > 0 else 0.0
+                            perfil, ret_est = riesgo_map.get(tipo, ("Moderado", 0.06))
+                            
+                            roi_ponderado += peso * ret_est
+                            score_riesgo += peso * perfil_score_map.get(perfil, 4)
+                            
+                        if score_riesgo < 1.5:
+                            perfil_final = "Muy conservador (0% Renta variable)"
+                        elif score_riesgo < 2.5:
+                            perfil_final = "Conservador (10% Máxima exposición RV)"
+                        elif score_riesgo < 3.5:
+                            perfil_final = "Cauteloso (25% Máxima exposición RV)"
+                        elif score_riesgo < 4.5:
+                            perfil_final = "Moderado (50% Máxima exposición RV)"
+                        elif score_riesgo < 5.5:
+                            perfil_final = "Decidido (75% Máxima exposición RV)"
+                        else:
+                            perfil_final = "Agresivo (100% Máxima exposición RV)"
+                        
+                        col_r1, col_r2 = st.columns(2)
+                        with col_r1:
+                            st.metric("Perfil de Riesgo Estimado", perfil_final.split(" (")[0], help="Calculado en base a la ponderación de activos.")
+                        with col_r2:
+                            st.metric("TIR Histórica Esperada (ROI anual)", f"{roi_ponderado*100:.1f}%", help="Estimación conservadora basada en promedios históricos por tipo de activo.")
+                        
+                        if score_riesgo < 2.5 and total_inv > 100000000:
+                            st.info("💡 **Oportunidad Altus:** El portafolio es muy conservador para su volumen patrimonial. Podría beneficiarse de instrumentos de mayor alfa o activos alternativos (Private Equity / Deuda Privada).")
+                        elif score_riesgo >= 5.5:
+                            st.warning("⚠️ **Alerta de Volatilidad:** El portafolio tiene alta exposición a renta variable. Se recomienda revisar horizontes de liquidez a corto plazo.")
+
                     
 
             with st.expander("🚨 (7) Alertas y Pendientes"):
@@ -1558,6 +1961,94 @@ def render_client_management_ui():
                 st.markdown("#### 📜 Informe Ejecutivo Consolidated 360° & Planificación Sucesoria")
                 st.caption("Contiene el mapa integral de activos (propiedades, inversiones, seguros, deudas CMF), cálculo de herencia, exenciones (Cuenta 2 Art. 72, Ley 21.420), extinción por desgravamen y matriz legal por artículo.")
                 
+                # --- NUEVO: Acuerdo de Confidencialidad (NDA) ---
+                st.markdown("##### 🔐 Acuerdo de Confidencialidad (NDA)")
+                st.info("Por estándar de la industria MFO, se requiere firmar un NDA antes de emitir informes que contengan la consolidación total del patrimonio familiar.")
+                
+                nda_path = os.path.join(os.getcwd(), "assets", "docs", "NDA_AltusCore_Estandar.md")
+                if os.path.exists(nda_path):
+                    with open(nda_path, "r", encoding="utf-8") as f_nda:
+                        nda_text = f_nda.read()
+                        
+                    # Extraer datos reales del cliente
+                    db_nda = SessionLocal()
+                    clean_rut_nda = rut.replace(".", "").replace("-", "").strip()
+                    prospect_nda = db_nda.query(Prospect).filter(Prospect.rut.contains(clean_rut_nda) | (Prospect.rut == rut)).first()
+                    
+                    c_nombre = prospect_nda.nombre if prospect_nda and prospect_nda.nombre else st.session_state.get("current_client_name", "Cliente MFO")
+                    c_rut = prospect_nda.rut if prospect_nda and prospect_nda.rut else rut
+                    
+                    dir_cliente = st.session_state.get(f"{rut}_direccion", getattr(prospect_nda, "direccion", ""))
+                    if not dir_cliente or str(dir_cliente).strip() == "":
+                        dir_cliente = "___________________________"
+                        
+                    db_nda.close()
+                    
+                    # Reemplazar placeholders para visualización en pantalla
+                    nda_text = nda_text.replace("[NOMBRE DEL CLIENTE]", c_nombre)
+                    nda_text = nda_text.replace("[RUT DEL CLIENTE]", c_rut)
+                    nda_text = nda_text.replace("[Dirección del Cliente]", dir_cliente)
+                    nda_text = nda_text.replace("XX.XXX.XXX-X", "78.491.305-8")
+                    
+                    with st.expander("Ver Plantilla Estándar de NDA (Formato Legal MFO)"):
+                        st.markdown(nda_text)
+                    
+                    # Generar el PDF dinámico con los datos del cliente real
+                    import src.utils.pdf_generator
+                    import importlib
+                    importlib.reload(src.utils.pdf_generator)
+                    from src.utils.pdf_generator import generate_nda_pdf
+                    pdf_nda_bytes = generate_nda_pdf(cliente_nombre=c_nombre, cliente_rut=c_rut, cliente_direccion=dir_cliente)
+                    
+                    st.download_button(
+                        label="⬇️ Descargar NDA Listo para Firma (PDF)",
+                        data=pdf_nda_bytes,
+                        file_name=f"NDA_AltusCore_{rut}.pdf",
+                        mime="application/pdf",
+                        type="secondary"
+                    )
+                    
+                    with st.expander("✉️ Generar Correo para Envío de NDA al Cliente"):
+                        st.markdown("**Asunto Sugerido:**")
+                        st.code("Acuerdo Marco de Confidencialidad (NDA Institucional) - FV Asesorías e Inversiones SpA", language="text")
+                        
+                        cuerpo_correo = f"""Estimado/a {c_nombre},
+
+Junto con saludar, y como paso previo para dar inicio formal a nuestros servicios de estructuración patrimonial y análisis financiero (Multi-Family Office), adjunto a este correo el Acuerdo Marco de Confidencialidad y No Divulgación.
+
+Este documento garantiza formalmente que toda la información que nos proporciones será tratada bajo los más estrictos estándares de secreto corporativo y ciberseguridad, resguardando en todo momento tu privacidad.
+
+Para proceder con la firma electrónica del acuerdo (conforme a la Ley N° 19.799), basta con que respondas a este mismo correo indicando "Acepto los términos del NDA adjunto".
+
+Quedo atento a tu respuesta para dar inicio oficial a nuestra fase de recopilación y análisis patrimonial.
+
+Saludos cordiales,
+"""
+                        st.markdown("**Cuerpo del Correo:** *(Puedes copiarlo con el botón que aparece en la esquina superior derecha del cuadro)*")
+                        st.code(cuerpo_correo, language="text")
+                        import urllib.parse
+                        asunto_enc = urllib.parse.quote("Acuerdo Marco de Confidencialidad (NDA Institucional) - FV Asesorías e Inversiones SpA")
+                        cuerpo_enc = urllib.parse.quote(cuerpo_correo)
+                        
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            st.link_button("📧 Abrir en Aplicación de Correo (Outlook)", f"mailto:?subject={asunto_enc}&body={cuerpo_enc}", width="stretch")
+                        with col2:
+                            st.link_button("🌐 Abrir en Gmail Web (Recomendado)", f"https://mail.google.com/mail/?view=cm&fs=1&su={asunto_enc}&body={cuerpo_enc}", width="stretch")
+                            
+                        st.caption("💡 *Tip: No olvides adjuntar el archivo PDF que descargaste en el botón de arriba.*")
+                else:
+                    st.warning("El archivo de plantilla NDA no se encuentra.")
+                
+                nda_firmado = st.checkbox("✅ El cliente ha firmado o aceptado el Acuerdo de Confidencialidad (NDA)", key=f"nda_{rut}")
+                
+                # --- File Uploader para resguardo digital ---
+                if nda_firmado:
+                    st.file_uploader("Subir copia digital del NDA firmado (PDF/Docx)", type=["pdf", "docx", "jpg", "png"], key=f"nda_upload_{rut}", help="Sube aquí el documento firmado digitalmente (Ej. DocuSign) o escaneado físicamente. Se almacenará en la bóveda cifrada del cliente.")
+                
+                if not nda_firmado:
+                    st.warning("⚠️ Debes confirmar el NDA para habilitar la descarga del Reporte 360°.")
+                
                 if pdf_top_bytes:
                     st.download_button(
                         label="📜 Descargar Informe Executive Total 360° (PDF)",
@@ -1565,8 +2056,9 @@ def render_client_management_ui():
                         file_name=f"Reporte_Consolidado_360_{rut}.pdf",
                         mime="application/pdf",
                         type="primary",
-                        use_container_width=True,
-                        key=f"dl_sec9_pdf_{rut}"
+                        width="stretch",
+                        key=f"dl_sec9_pdf_{rut}",
+                        disabled=not nda_firmado
                     )
                 else:
                     st.warning("⚠️ No se pudo generar el informe PDF para este cliente.")
@@ -1590,11 +2082,11 @@ def render_client_management_ui():
                             data=pdf_bytes,
                             file_name=f"Manual_KYC_{rut}.pdf",
                             mime="application/pdf",
-                            use_container_width=True,
+                            width="stretch",
                             key=f"dl_kyc_pdf_{rut}"
                         )
                     else:
-                        st.button("📥 Manual no disponible", disabled=True, use_container_width=True)
+                        st.button("📥 Manual no disponible", disabled=True, width="stretch")
             
                     # Generar Excel solo con lo que falta
                     req_fields = []
@@ -1649,20 +2141,27 @@ def render_client_management_ui():
                         data=val,
                         file_name=file_out_name,
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True
+                        width="stretch"
                     )
                     
                     with st.expander("✉️ Ver y Copiar Texto de Correo (Sin Asteriscos para Outlook) & WhatsApp", expanded=False):
                         st.markdown(f"**Asunto Sugerido:** `{comm['asunto']}`")
                         st.markdown("##### 📩 Texto del Correo Electrónico (Listo para pegar en Outlook):")
                         st.code(comm['cuerpo_email'], language="text")
+                        
+                        import urllib.parse
+                        asunto_enc = urllib.parse.quote(comm['asunto'])
+                        cuerpo_enc = urllib.parse.quote(comm['cuerpo_email'])
+                        st.link_button("📧 Abrir en Outlook / Mail y Enviar", f"mailto:?subject={asunto_enc}&body={cuerpo_enc}", width="stretch")
+                        st.caption("💡 *Tip: Asegúrate de adjuntar el Excel KYC descargado arriba.*")
+
                         st.markdown("##### 📱 Mensaje Corto para WhatsApp:")
                         st.code(comm['mensaje_whatsapp'], language="text")
                 
                 with c_form2:
                     uploaded_form = st.file_uploader("📤 Subir Excel/PDF completado por el cliente", type=["xlsx", "xls", "pdf"])
                     if uploaded_form:
-                        if st.button("Procesar Archivo y Actualizar Base de Datos", use_container_width=True):
+                        if st.button("Procesar Archivo y Actualizar Base de Datos", width="stretch"):
                             with st.spinner("El Agente IA está extrayendo los datos de las tablas del documento..."):
                                 try:
                                     file_bytes = uploaded_form.read()
@@ -1696,10 +2195,30 @@ def render_client_management_ui():
                                         for k_del in [f"editor_polizas_{rut}", f"editor_polizas_{rut}_v2"]:
                                             if k_del in st.session_state: del st.session_state[k_del]
                                             
+                                    # 4. Inventario Adicional
+                                    if extracted.get("inventarios"):
+                                        k_inv = f"inventarios_{rut}"
+                                        df_inv_new = pd.DataFrame(extracted["inventarios"])
+                                        if k_inv in st.session_state and not st.session_state[k_inv].empty:
+                                            st.session_state[k_inv] = pd.concat([st.session_state[k_inv], df_inv_new], ignore_index=True)
+                                        else:
+                                            st.session_state[k_inv] = df_inv_new
+                                        for k_del in [f"editor_inventario_{rut}", f"editor_inventario_{rut}_v2"]:
+                                            if k_del in st.session_state: del st.session_state[k_del]
+                                            
+                                    # 5. Datos Financieros y Tributarios
+                                    if extracted.get("datos_financieros"):
+                                        dfin = extracted["datos_financieros"]
+                                        st.session_state[f"{rut}_gastos_recurrentes"] = dfin.get("gastos_recurrentes", 0.0)
+                                        st.session_state[f"{rut}_retenciones_2da_cat"] = dfin.get("retenciones_2da_cat", 0.0)
+                                        st.session_state[f"{rut}_intereses_hipotecario"] = dfin.get("intereses_hipotecario", 0.0)
+                                        st.session_state[f"{rut}_gastos_educacion"] = dfin.get("gastos_educacion", 0.0)
+                                            
                                     h_cnt = len(extracted.get("herederos", []))
                                     p_cnt = len(extracted.get("propiedades", []))
                                     pol_cnt = len(extracted.get("polizas", []))
-                                    st.success(f"✅ **Extracción IA Exitosa:** Se capturaron **{h_cnt} herederos**, **{p_cnt} propiedades** y **{pol_cnt} declaraciones de seguros/APV** del Excel cargado.")
+                                    inv_cnt = len(extracted.get("inventarios", []))
+                                    st.success(f"✅ **Extracción IA Exitosa:** Se capturaron **{h_cnt} herederos**, **{p_cnt} propiedades**, **{pol_cnt} pólizas/APV** y **{inv_cnt} bienes del inventario adicional**, además de los gastos y retenciones del Excel.")
                                     st.rerun()
                                 except Exception as e_proc:
                                     st.error(f"Error al procesar archivo Excel: {e_proc}")
@@ -1713,12 +2232,12 @@ def render_client_management_ui():
                         data=pdf_top_bytes,
                         file_name=f"Reporte_Consolidado_360_{rut}.pdf",
                         mime="application/pdf",
-                        use_container_width=True,
+                        width="stretch",
                         key=f"dl_foot_pdf_{rut}"
                     )
             
             with col_save1:
-                btn_guardar_click = st.button("💾 Guardar y Actualizar Perfil Integral", type="primary", use_container_width=True)
+                btn_guardar_click = st.button("💾 Guardar y Actualizar Perfil Integral", type="primary", width="stretch")
 
             if btn_guardar_click:
                 # Sincronizamos la base de datos con las ediciones finales
@@ -1754,6 +2273,7 @@ def render_client_management_ui():
                     "nombre": full_name_concat,
                     "telefono": st.session_state.get(f"{rut}_telefono"),
                     "email": st.session_state.get(f"{rut}_email"),
+                    "direccion": st.session_state.get(f"{rut}_direccion"),
                     "perfil": st.session_state.get(f"{rut}_perfil"),
                     "objetivo": st.session_state.get(f"{rut}_objetivo"),
                     "estado_prev": st.session_state.get(f"{rut}_estado_prev"),
@@ -1795,6 +2315,7 @@ def render_client_management_ui():
                         prospect.profile.apellido_materno = materno_in
                         prospect.telefono = st.session_state.get(f"{rut}_telefono", prospect.telefono)
                         prospect.email = st.session_state.get(f"{rut}_email", prospect.email)
+                        prospect.direccion = st.session_state.get(f"{rut}_direccion", getattr(prospect, "direccion", ""))
                         
                         prospect.profile.cantidad_herederos = len(st.session_state[k_hered]) if k_hered in st.session_state and not st.session_state.get(k_na) else 0
                         prospect.profile.notas_neuroventas = st.session_state.get(k_nota)
@@ -1804,6 +2325,14 @@ def render_client_management_ui():
                         prospect.profile.objetivo_inversion = st.session_state.get(f"{rut}_objetivo", prospect.profile.objetivo_inversion)
                         prospect.estado_previsional = st.session_state.get(f"{rut}_estado_prev", getattr(prospect, "estado_previsional", ""))
                         prospect.periodo_garantizado_rv_meses = safe_int(st.session_state.get(f"{rut}_rv_anios", 0), default=0) * 12
+                        
+                        try:
+                            prospect.gastos_recurrentes = float(st.session_state.get(f"{rut}_gastos_recurrentes", prospect.gastos_recurrentes) or 0.0)
+                            prospect.retenciones_2da_cat = float(st.session_state.get(f"{rut}_retenciones_2da_cat", prospect.retenciones_2da_cat) or 0.0)
+                            prospect.intereses_hipotecario = float(st.session_state.get(f"{rut}_intereses_hipotecario", prospect.intereses_hipotecario) or 0.0)
+                            prospect.gastos_educacion = float(st.session_state.get(f"{rut}_gastos_educacion", prospect.gastos_educacion) or 0.0)
+                        except ValueError:
+                            pass
                         
                         omit_list = []
                         if st.session_state.get(f"omit_{rut}_sii"): omit_list.append("sii")
@@ -1986,6 +2515,8 @@ def render_client_management_ui():
                                     porcentaje_capital=cap,
                                     porcentaje_utilidades=ut
                                 )
+                                nueva_sociedad.valor_estimado = float(row.get("Valor Estimado ($)", 0.0))
+                                nueva_sociedad.posee_bienes_raices = bool(row.get("¿Posee Bienes Raíces?", False))
                                 db.add(nueva_sociedad)
                         # 7. Inversiones (Persistencia garantizada)
                         df_inv_to_save = None
@@ -2012,6 +2543,27 @@ def render_client_management_ui():
                                     "monto_clp": safe_float(row.get("Monto CLP"))
                                 }
                                 db.add(ClientPortfolio(**kwargs))
+
+                        # 7.5 Inventario Adicional (Persistencia garantizada)
+                        df_inv_add_to_save = None
+                        if "edited_inv_add" in locals() and isinstance(edited_inv_add, pd.DataFrame):
+                            df_inv_add_to_save = edited_inv_add
+                            st.session_state[k_inv_add] = edited_inv_add
+                        elif k_inv_add in st.session_state and isinstance(st.session_state[k_inv_add], pd.DataFrame):
+                            df_inv_add_to_save = st.session_state[k_inv_add]
+
+                        if df_inv_add_to_save is not None:
+                            db.query(ClientInventory).filter(ClientInventory.prospect_id == prospect.id).delete()
+                            for _, row in df_inv_add_to_save.iterrows():
+                                if pd.notna(row.get("Categoría")) and row.get("Categoría") != "":
+                                    db.add(ClientInventory(
+                                        prospect_id=prospect.id,
+                                        categoria=str(row.get("Categoría", "")),
+                                        descripcion=str(row.get("Descripción", "")),
+                                        valor_comercial=safe_float(row.get("Valor Comercial ($)")),
+                                        deuda_asociada=safe_float(row.get("Deuda Asociada ($)")),
+                                        observaciones=str(row.get("Observaciones (Sucesión)", ""))
+                                    ))
 
 
                         # 7. Datos de Persona Jurídica (Socios y Representantes)
