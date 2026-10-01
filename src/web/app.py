@@ -67,7 +67,13 @@ for query in [
     "ALTER TABLE client_profiles ADD COLUMN notaria_constitucion VARCHAR(200)",
     "ALTER TABLE client_profiles ADD COLUMN repertorio_constitucion VARCHAR(100)",
     "ALTER TABLE client_profiles ADD COLUMN fecha_ultima_vigencia DATE",
-    "ALTER TABLE client_profiles ADD COLUMN documentos_legales_path VARCHAR(500)"
+    "ALTER TABLE client_profiles ADD COLUMN documentos_legales_path VARCHAR(500)",
+    "ALTER TABLE prospects ADD COLUMN estado_previsional VARCHAR(100)",
+    "ALTER TABLE prospects ADD COLUMN periodo_garantizado_rv_meses INTEGER DEFAULT 0",
+    "ALTER TABLE prospects ADD COLUMN gastos_recurrentes FLOAT DEFAULT 0.0",
+    "ALTER TABLE prospects ADD COLUMN retenciones_2da_cat FLOAT DEFAULT 0.0",
+    "ALTER TABLE prospects ADD COLUMN intereses_hipotecario FLOAT DEFAULT 0.0",
+    "ALTER TABLE prospects ADD COLUMN gastos_educacion FLOAT DEFAULT 0.0"
 ]:
     try:
         with engine.connect() as con:
