@@ -79,9 +79,29 @@ def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/c
             except Exception as e:
                 logger.error(f"Fallo verificando integridad de la descarga, pero se continuará: {e}")
 
-            # 4. Reemplazo Atómico
-            shutil.move(temp_path, destination_path)
-            
+            # 4. Reemplazo Atómico usando SQLite Backup (Thread-safe)
+            try:
+                conn_src = sqlite3.connect(temp_path)
+                conn_dst = sqlite3.connect(destination_path)
+                conn_src.backup(conn_dst)
+                conn_dst.close()
+                conn_src.close()
+                os.remove(temp_path)
+                logger.info(f"Restauración atómica (backup API) exitosa: {destination_path}")
+            except sqlite3.DatabaseError as db_err:
+                # Si el destino estaba corrupto ("file is not a database"), el backup falla.
+                # En este caso extremo, hacemos el reemplazo a nivel de sistema operativo.
+                try:
+                    conn_dst.close()
+                except:
+                    pass
+                try:
+                    conn_src.close()
+                except:
+                    pass
+                shutil.move(temp_path, destination_path)
+                logger.warning(f"Restauración por OS move (destino estaba corrupto): {db_err}")
+                
             # 5. Si estaba corrupto, forzar el rescate inmediatamente
             try:
                 from src.database.connection import force_recover_db

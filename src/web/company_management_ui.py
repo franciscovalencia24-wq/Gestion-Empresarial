@@ -122,14 +122,7 @@ def render_company_management_ui():
             if not has_error:
                 st.rerun()
 
-    # 0. DESCARGA AUTOMÁTICA DESDE GOOGLE CLOUD STORAGE EN NUBE (SAFE SYNC)
-    if "gcs_db_synced" not in st.session_state:
-        try:
-            from src.utils.gcs_sync import download_db_from_gcs
-            download_db_from_gcs()
-            st.session_state["gcs_db_synced"] = True
-        except Exception:
-            pass
+
 
     # 2. CARGA DE DATOS DESDE BASE DE DATOS Y AUTO-CREACIÓN DE TABLAS Y COLUMNAS SQLITE
     from sqlalchemy import text
