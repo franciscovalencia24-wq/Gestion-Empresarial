@@ -85,6 +85,8 @@ def render_company_management_ui():
         if sii_files and st.button("Procesar Archivos SII", type="primary"):
             from src.ingestion.sii_importer import process_sii_dataframe
             import io
+            import time
+            has_error = False
             for f in sii_files:
                 try:
                     # El SII suele usar codificación iso-8859-1 / latin-1 y separador ; o ,
@@ -97,8 +99,10 @@ def render_company_management_ui():
                         st.success(res["message"])
                     else:
                         st.error(res["message"])
+                        has_error = True
                 except Exception as e:
                     st.error(f"Error leyendo {f.name}: {str(e)}")
+                    has_error = True
             
             # Respaldar inmediatamente en la nube
             from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
@@ -107,10 +111,13 @@ def render_company_management_ui():
                     st.success("✅ Respaldo en la Bóveda exitoso.")
                 else:
                     st.error("⚠️ ERROR: El sistema guardó los datos en la pantalla, pero FALLÓ el respaldo en Google Cloud. Su archivo se perderá si cierra la página. Revise su internet e intente hacer otro cambio para forzar la sincronización.")
+                    has_error = True
             except Exception as e:
                 st.error(f"⚠️ ERROR CRÍTICO sincronizando con la Bóveda: {e}")
+                has_error = True
             
-            st.rerun()
+            if not has_error:
+                st.rerun()
 
     # 0. DESCARGA AUTOMÁTICA DESDE GOOGLE CLOUD STORAGE EN NUBE (SAFE SYNC)
     if "gcs_db_synced" not in st.session_state:
