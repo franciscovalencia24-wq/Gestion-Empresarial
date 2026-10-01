@@ -54,6 +54,21 @@ def render_company_management_ui():
     
     st.sidebar.markdown("**Opciones de Seguridad en Nube (Bóveda)**")
     
+    if st.sidebar.button("☁️ Forzar Restauración desde la Nube (GCS)"):
+        from src.utils.gcs_sync import download_db_from_gcs
+        with st.spinner("Descargando base de datos desde GCS..."):
+            try:
+                download_db_from_gcs()
+                st.session_state["gcs_db_synced"] = True
+                st.sidebar.success("¡Restauración exitosa! Recargando...")
+                import time
+                time.sleep(1)
+                st.rerun()
+            except Exception as e:
+                st.sidebar.error(f"Error: {e}")
+                
+    st.sidebar.markdown("---")
+    
     if st.sidebar.button("💾 Forzar Guardado Seguro en la Nube"):
         from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
         with st.spinner("Subiendo respaldo de seguridad a Google Cloud..."):
@@ -66,18 +81,6 @@ def render_company_management_ui():
                 st.sidebar.error(f"Error crítico: {e}")
                 
     st.sidebar.markdown("---")
-    
-    if st.sidebar.button("☁️ Forzar Restauración desde la Nube (GCS)"):
-        from src.utils.gcs_sync import download_db_from_gcs
-        with st.spinner("Descargando base de datos desde GCS..."):
-            try:
-                download_db_from_gcs()
-                st.session_state["gcs_db_synced"] = True
-                st.sidebar.success("¡Restauración exitosa! Recargando...")
-                time.sleep(1)
-                st.rerun()
-            except Exception as e:
-                st.sidebar.error(f"Error: {e}")
 
     with st.expander("📥 Importar Registro SII (Compras/Ventas)", expanded=False):
         st.caption("Sube los archivos CSV descargados desde el SII para ingresarlos automáticamente a la base de datos sin duplicarlos.")
