@@ -391,7 +391,9 @@ import json
 def load_client_data_to_session(rut):
     db = SessionLocal()
     try:
-        p = db.query(Prospect).filter_by(rut=rut).first()
+        clean_rut = rut.replace(".", "").replace("-", "").strip()
+        fmt_rut = clean_rut[:-1] + "-" + clean_rut[-1].upper() if len(clean_rut) > 1 else clean_rut
+        p = db.query(Prospect).filter((Prospect.rut == fmt_rut) | (Prospect.rut == clean_rut) | (Prospect.rut == rut)).first()
         if p:
             props = []
             for prop in p.properties:
@@ -468,7 +470,9 @@ def save_client_data_from_session():
     
     db = SessionLocal()
     try:
-        p = db.query(Prospect).filter_by(rut=rut).first()
+        clean_rut = rut.replace(".", "").replace("-", "").strip()
+        fmt_rut = clean_rut[:-1] + "-" + clean_rut[-1].upper() if len(clean_rut) > 1 else clean_rut
+        p = db.query(Prospect).filter((Prospect.rut == fmt_rut) | (Prospect.rut == clean_rut) | (Prospect.rut == rut)).first()
         if not p:
             st.error("El cliente ya no existe en la base de datos.")
             return

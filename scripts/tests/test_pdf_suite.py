@@ -56,7 +56,6 @@ def test_reporte_360():
     end = time.time()
     
     assert pdf_bytes is not None and len(pdf_bytes) > 0, "PDF vacío"
-    return len(pdf_bytes), end - start
 
 def test_apv_proposal():
     df_proy = pd.DataFrame([
@@ -81,10 +80,7 @@ def test_apv_proposal():
     end = time.time()
     
     assert os.path.exists(pdf_path), "No se generó el archivo de APV"
-    size = os.path.getsize(pdf_path)
     os.remove(pdf_path)
-    
-    return size, end - start
 
 def test_dpe_report():
     data = {
@@ -105,10 +101,7 @@ def test_dpe_report():
     end = time.time()
     
     assert os.path.exists(tmp_path), "No se generó el archivo de DPE"
-    size = os.path.getsize(tmp_path)
     os.remove(tmp_path)
-    
-    return size, end - start
 
 def test_reliquidacion_report():
     data = {
@@ -130,10 +123,7 @@ def test_reliquidacion_report():
     end = time.time()
     
     assert os.path.exists(tmp_path), "No se generó el archivo de Reliquidación"
-    size = os.path.getsize(tmp_path)
     os.remove(tmp_path)
-    
-    return size, end - start
 
 def test_cuenta2_report():
     data = {
@@ -157,10 +147,7 @@ def test_cuenta2_report():
     end = time.time()
     
     assert os.path.exists(tmp_path), "No se generó el archivo de Cuenta 2"
-    size = os.path.getsize(tmp_path)
     os.remove(tmp_path)
-    
-    return size, end - start
 
 def test_reporte_360_docx():
     data_360 = {
@@ -186,10 +173,7 @@ def test_reporte_360_docx():
     end = time.time()
     
     assert os.path.exists(res_path), "No se generó el archivo de DOCX 360"
-    size = os.path.getsize(res_path)
     os.remove(res_path)
-    
-    return size, end - start
 
 def run_suite():
     tests = [
@@ -211,10 +195,11 @@ def run_suite():
     
     for name, test_func in tests:
         try:
-            size_bytes, duration = test_func()
-            size_kb = f"{size_bytes / 1024:.1f} KB"
+            start_t = time.time()
+            test_func()
+            duration = time.time() - start_t
             time_str = f"{duration:.2f}s"
-            print(f"{name:<40} | [OK]   | {size_kb:<8} | {time_str}")
+            print(f"{name:<40} | [OK]   | -------- | {time_str}")
             success_count += 1
         except Exception as e:
             import traceback

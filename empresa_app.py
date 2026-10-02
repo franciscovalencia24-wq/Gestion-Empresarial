@@ -29,6 +29,21 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
+# DESCARGA ATÓMICA DE GCS (Global y Thread-safe para todo el contenedor)
+# -----------------------------------------------------------------------------
+@st.cache_resource(show_spinner="Sincronizando Bóveda de Seguridad (Global)...")
+def sync_gcs_on_boot_global():
+    try:
+        from src.utils.gcs_sync import download_db_from_gcs
+        download_db_from_gcs()
+    except Exception as e:
+        import logging
+        logging.error(f"Global GCS sync failed: {e}")
+    return True
+
+sync_gcs_on_boot_global()
+
+# -----------------------------------------------------------------------------
 # BASE DE DATOS Y CONEXIÓN CENTRALIZADA (data/crm_database.db)
 # -----------------------------------------------------------------------------
 sys.path.append(os.getcwd())

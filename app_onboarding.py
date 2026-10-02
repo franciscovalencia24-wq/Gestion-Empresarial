@@ -5,6 +5,21 @@ from src.web.b2b_onboarding_ui import render_b2b_onboarding
 from src.database.connection import get_db
 from src.database.models import EjecutivoB2B
 
+# -----------------------------------------------------------------------------
+# DESCARGA ATÓMICA DE GCS (Global y Thread-safe para todo el contenedor)
+# -----------------------------------------------------------------------------
+@st.cache_resource(show_spinner="Sincronizando Bóveda de Seguridad (Global)...")
+def sync_gcs_on_boot_global():
+    try:
+        from src.utils.gcs_sync import download_db_from_gcs
+        download_db_from_gcs()
+    except Exception as e:
+        import logging
+        logging.error(f"Global GCS sync failed: {e}")
+    return True
+
+sync_gcs_on_boot_global()
+
 st.set_page_config(page_title="Altus Core - Onboarding Corporativo", page_icon="🚀", layout="centered")
 
 def get_ejecutivo_by_token(token: str):

@@ -1,17 +1,17 @@
 import os
 import tempfile
 import json
-import google.generativeai as genai
+import google.genai as genai
 
 class DPESimulator:
     def __init__(self):
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
             # We don't raise an error here to prevent breaking if not using file parsing
-            self.model = None
+            self.client = None
         else:
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel('gemini-2.5-pro')
+            self.client = genai.Client(api_key=api_key)
+            self.model_name = 'gemini-2.5-pro'
 
     def calcular_beneficio_deposito_convenido(self, renta_bruta_mensual: float, valor_uf: float = 38000.0) -> dict:
         """
@@ -126,7 +126,7 @@ class DPESimulator:
                     logging.warning(f"Error en parseo nativo: {e}")
                 
                 if use_gemini:
-                    file_uri = genai.upload_file(tmp_path)
+                    file_uri = self.client.files.upload(file=tmp_path)
                     content_payload = [file_uri, prompt]
             elif ext in ['xlsx', 'xls']:
                 import io
@@ -144,9 +144,10 @@ class DPESimulator:
                 import concurrent.futures
                 
                 def call_model(temp):
-                    return self.model.generate_content(
-                        content_payload,
-                        generation_config=genai.types.GenerationConfig(
+                    return self.client.models.generate_content(
+                        model=self.model_name,
+                        contents=content_payload,
+                        config=genai.types.GenerateContentConfig(
                             response_mime_type="application/json",
                             temperature=temp
                         )
@@ -163,7 +164,7 @@ class DPESimulator:
                     raw_json_2 = raw_json
                 
                 if file_uri:
-                    genai.delete_file(file_uri.name)
+                    self.client.files.delete(name=file_uri.name)
             
             def parse_json_robust(text):
                 try:

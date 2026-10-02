@@ -69,14 +69,19 @@ def render_apv_simulator(uf_valor):
         )
         
         target_name = nombre_final.strip() if nombre_final else "Cliente"
+        cache_key_excel_sim = f"excel_sim_{target_name}_{solic_enfoque}"
         
         if "APV" in solic_enfoque:
-            val = excel_gen.generar_excel_apv_reliquidacion(client_name=target_name)
+            if cache_key_excel_sim not in st.session_state:
+                st.session_state[cache_key_excel_sim] = excel_gen.generar_excel_apv_reliquidacion(client_name=target_name)
+            val = st.session_state[cache_key_excel_sim]
             comm = email_gen.generar_comunicacion_apv_reliquidacion(client_name=target_name)
             f_name = f"Formulario_APV_Reliquidacion_{target_name.replace(' ', '_')}.xlsx"
             btn_txt = f"💾 Descargar Excel APV & Reliquidación para {target_name}"
         else:
-            val = excel_gen.generar_excel_kyc_corporativo(client_name=target_name)
+            if cache_key_excel_sim not in st.session_state:
+                st.session_state[cache_key_excel_sim] = excel_gen.generar_excel_kyc_corporativo(client_name=target_name)
+            val = st.session_state[cache_key_excel_sim]
             comm = email_gen.generar_comunicacion_kyc(client_name=target_name)
             f_name = f"Altus_KYC_{target_name.replace(' ', '_')}.xlsx"
             btn_txt = f"💾 Descargar Excel KYC Corporativo para {target_name}"

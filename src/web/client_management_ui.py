@@ -204,9 +204,15 @@ def render_client_management_ui():
                 # Buscar id prospect para PDF
                 db_top = SessionLocal()
                 clean_rut_top = rut.replace(".", "").replace("-", "").strip()
-                p_top = db_top.query(Prospect).filter(Prospect.rut.contains(clean_rut_top) | (Prospect.rut == rut)).first()
+                fmt_rut_top = clean_rut_top[:-1] + "-" + clean_rut_top[-1].upper() if len(clean_rut_top) > 1 else clean_rut_top
+                p_top = db_top.query(Prospect).filter((Prospect.rut == fmt_rut_top) | (Prospect.rut == clean_rut_top) | (Prospect.rut == rut)).first()
                 report_type = st.radio("Tipo de Reporte 360°", ["Ejecutivo (Resumen de Alto Impacto)", "Detallado (Análisis Completo)"], horizontal=True, key=f"rep_type_{rut}")
-                pdf_top_bytes = generate_succession_report_pdf(p_top.id, "Ejecutivo" if "Ejecutivo" in report_type else "Detallado") if p_top else None
+                
+                pdf_cache_key = f"pdf_top_cache_{rut}_{report_type}"
+                if pdf_cache_key not in st.session_state:
+                    st.session_state[pdf_cache_key] = generate_succession_report_pdf(p_top.id, "Ejecutivo" if "Ejecutivo" in report_type else "Detallado") if p_top else None
+                    
+                pdf_top_bytes = st.session_state[pdf_cache_key]
                 db_top.close()
             except:
                 pdf_top_bytes = None
@@ -225,7 +231,8 @@ def render_client_management_ui():
             if k_hered not in st.session_state:
                 db = SessionLocal()
                 clean_rut_search = rut.replace(".", "").replace("-", "").strip()
-                prospect = db.query(Prospect).filter(Prospect.rut.contains(clean_rut_search) | (Prospect.rut == rut)).first()
+                fmt_rut_search = clean_rut_search[:-1] + "-" + clean_rut_search[-1].upper() if len(clean_rut_search) > 1 else clean_rut_search
+                prospect = db.query(Prospect).filter((Prospect.rut == fmt_rut_search) | (Prospect.rut == clean_rut_search) | (Prospect.rut == rut)).first()
             
                 df_hered = pd.DataFrame(columns=["RUT", "Relación", "Nombre", "Fecha de Nacimiento", "% Asignación"])
                 df_prop = pd.DataFrame(columns=["Nombre/Alias", "Comuna", "ROL", "Dirección", "Destino", "Fojas", "Número", "Año", "% de Derecho", "Avalúo Fiscal (CLP)", "Valor Com. (UF)", "Deuda Hipotecaria", "Institución Hipoteca", "Monto Inicial (UF)", "Saldo Actual (UF)", "Monto Asegurado (UF)", "Tasación (UF)", "Tasa Interés (%)", "Tipo Tasa", "Fecha Escritura", "Dividendo", "Cuota Actual", "Total Cuotas", "Arrendada", "Monto Arriendo", "Moneda Arriendo", "Fecha Contrato Arriendo", "Meses Reajuste Arriendo", "Contribuciones Trim.", "Gastos Comunes Mensuales", "Mantención Anual (CLP)", "Plusvalía Esperada (%)", "__fecha_act_cuota"])
@@ -2262,7 +2269,8 @@ Saludos cordiales,
                 try:
                     db = SessionLocal()
                     clean_rut_save = rut.replace(".", "").replace("-", "").strip()
-                    prospect = db.query(Prospect).filter(Prospect.rut.contains(clean_rut_save) | (Prospect.rut == rut)).first()
+                    fmt_rut_save = clean_rut_save[:-1] + "-" + clean_rut_save[-1].upper() if len(clean_rut_save) > 1 else clean_rut_save
+                    prospect = db.query(Prospect).filter((Prospect.rut == fmt_rut_save) | (Prospect.rut == clean_rut_save) | (Prospect.rut == rut)).first()
                 
                     if prospect:
                         # 1. Perfil Base y Datos Personales
@@ -2588,6 +2596,12 @@ Saludos cordiales,
                             upload_db_to_gcs()
                         except Exception:
                             pass
+                            
+                        # Limpiar cache del PDF para que se regenere con los datos nuevos
+                        keys_to_delete = [k for k in st.session_state.keys() if k.startswith(f"pdf_top_cache_{rut}")]
+                        for k in keys_to_delete:
+                            del st.session_state[k]
+                            
                         st.success("¡Perfil integral guardado exitosamente en la base de datos permanente!")
                 except Exception as e:
                     st.error(f"Error guardando en base de datos: {e}")
@@ -2596,8 +2610,6 @@ Saludos cordiales,
                         db.close()
             
                 st.rerun()
-            
-            st.rerun()
             
             st.markdown("---")
             

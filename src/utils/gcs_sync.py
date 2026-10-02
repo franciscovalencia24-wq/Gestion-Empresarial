@@ -23,7 +23,10 @@ def get_gcs_client():
             pass # Si no hay st.secrets o falla, cae al entorno local
             
         # Fallback para desarrollo local
-        return storage.Client(project=PROJECT_ID)
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning, module="google.auth._default")
+            return storage.Client(project=PROJECT_ID)
     except Exception as e:
         logger.warning(f"No se pudo inicializar cliente de GCS: {e}")
         return None
