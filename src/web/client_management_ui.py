@@ -705,8 +705,49 @@ def render_client_management_ui():
                     with col_fam2:
                         st.session_state[k_test] = st.checkbox("Existe Testamento Vigente", value=st.session_state[k_test], help="Si hay testamento, los cálculos legales asumen que solo se debe garantizar la Mitad Legitimaria (50%) a los herederos forzosos.")
                     with col_fam3:
-                        st.session_state[f"{rut}_patrimonio"] = st.number_input("Patrimonio Neto a Repartir (UF)", value=st.session_state.get(f"{rut}_patrimonio", 0.0), min_value=0.0, step=1000.0, format="%.2f", help="Ingresa un estimado para calcular el impuesto a la herencia y liquidez por heredero.")
-                        st.caption("ℹ️ Recuerda sumar manualmente el total de Inversiones, Bienes Raíces e **Inventario Adicional (Vehículos/Arte)**.")
+                        # --- Auto-cálculo de Patrimonio Neto ---
+                        from src.osint.indicadores import get_uf_today
+                        uf_hoy = get_uf_today()
+                        auto_patrimonio = 0.0
+                        
+                        if uf_hoy > 0:
+                            if k_prop in st.session_state and isinstance(st.session_state[k_prop], pd.DataFrame) and not st.session_state[k_prop].empty:
+                                auto_patrimonio += pd.to_numeric(st.session_state[k_prop]["Valor Com. (UF)"], errors='coerce').sum()
+                            
+                            if k_inv in st.session_state and isinstance(st.session_state[k_inv], pd.DataFrame) and not st.session_state[k_inv].empty:
+                                inv_clp = pd.to_numeric(st.session_state[k_inv]["Monto CLP"], errors='coerce').sum()
+                                auto_patrimonio += inv_clp / uf_hoy
+                                
+                            k_inv_add_key = f"df_inv_add_{rut}"
+                            if k_inv_add_key in st.session_state and isinstance(st.session_state[k_inv_add_key], pd.DataFrame) and not st.session_state[k_inv_add_key].empty:
+                                inv_add_clp = pd.to_numeric(st.session_state[k_inv_add_key]["Valor Comercial ($)"], errors='coerce').sum()
+                                auto_patrimonio += inv_add_clp / uf_hoy
+                                
+                            if k_debt in st.session_state and isinstance(st.session_state[k_debt], pd.DataFrame) and not st.session_state[k_debt].empty:
+                                debt_clp = pd.to_numeric(st.session_state[k_debt]["Monto Actual"], errors='coerce').sum()
+                                auto_patrimonio -= debt_clp / uf_hoy
+                                
+                        auto_patrimonio = max(0.0, float(auto_patrimonio))
+                        
+                        current_val = st.session_state.get(f"{rut}_patrimonio", 0.0)
+                        
+                        # Pre-poblar si está en cero
+                        if current_val == 0.0 and auto_patrimonio > 0.0:
+                            st.session_state[f"{rut}_patrimonio"] = auto_patrimonio
+                            current_val = auto_patrimonio
+                            
+                        st.session_state[f"{rut}_patrimonio"] = st.number_input(
+                            "Patrimonio Neto a Repartir (UF)", 
+                            value=current_val, 
+                            min_value=0.0, step=1000.0, format="%.2f", 
+                            help="Puedes escribir un monto o usar el botón para calcular desde la plataforma."
+                        )
+                        
+                        if st.button("🔄 Calcular desde Plataforma", help="Suma propiedades, inversiones, inventario y resta deudas vigentes."):
+                            st.session_state[f"{rut}_patrimonio"] = auto_patrimonio
+                            st.rerun()
+                            
+                        st.caption(f"💡 Patrimonio Detectado Automáticamente: **{auto_patrimonio:,.2f} UF**")
                 
                     edited_herederos = st.session_state[k_hered]
             
