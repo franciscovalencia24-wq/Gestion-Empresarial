@@ -43,6 +43,22 @@ def sync_gcs_on_boot_global():
 
 sync_gcs_on_boot_global()
 
+# Inicialización por sesión (para que cada pestaña tenga la generación actual de GCS)
+if "gcs_session_initialized" not in st.session_state:
+    try:
+        from src.utils.gcs_sync import download_db_from_gcs, get_gcs_cloud_status
+        if not os.path.exists("data/crm_database.db"):
+            download_db_from_gcs()
+        else:
+            c_stat = get_gcs_cloud_status()
+            if c_stat.get("exists"):
+                st.session_state.gcs_db_generation = c_stat.get("generation")
+                st.session_state.gcs_last_sync_time = c_stat.get("updated_chile_str")
+        st.session_state["gcs_session_initialized"] = True
+    except Exception as e:
+        import logging
+        logging.warning(f"Session GCS init check: {e}")
+
 # -----------------------------------------------------------------------------
 # BASE DE DATOS Y CONEXIÓN CENTRALIZADA (data/crm_database.db)
 # -----------------------------------------------------------------------------

@@ -31,6 +31,42 @@ def get_gcs_client():
         logger.warning(f"No se pudo inicializar cliente de GCS: {e}")
         return None
 
+def get_gcs_cloud_status(db_filename="crm_database.db"):
+    """
+    Obtiene metadatos en vivo del archivo en Google Cloud Storage:
+    - exists (bool)
+    - generation (int)
+    - updated_utc (datetime)
+    - updated_chile_str (str con fecha y hora de Chile)
+    - size_mb (float)
+    """
+    try:
+        client = get_gcs_client()
+        if not client:
+            return {"exists": False, "error": "No hay conexión o credenciales a Google Cloud"}
+        bucket = client.bucket(BUCKET_NAME)
+        blob = bucket.blob(db_filename)
+        if not blob.exists():
+            return {"exists": False, "error": "El archivo no existe en el bucket GCS"}
+        blob.reload()
+
+        from datetime import timezone, timedelta
+        tz_chile = timezone(timedelta(hours=-3))
+        dt_chile = blob.updated.astimezone(tz_chile)
+        dt_str = dt_chile.strftime("%d/%m/%Y %H:%M:%S")
+
+        return {
+            "exists": True,
+            "generation": blob.generation,
+            "updated_utc": blob.updated,
+            "updated_chile_str": dt_str,
+            "size_mb": round(blob.size / (1024 * 1024), 2),
+            "size_bytes": blob.size
+        }
+    except Exception as e:
+        logger.warning(f"Error obteniendo estado de GCS: {e}")
+        return {"exists": False, "error": str(e)}
+
 def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/crm_database.db"):
     """
     Descarga la última versión de la base de datos desde Google Cloud Storage (GCS)
@@ -44,6 +80,7 @@ def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/c
         bucket = client.bucket(BUCKET_NAME)
         blob = bucket.blob(db_filename)
         if blob.exists():
+            blob.reload()
             import shutil
             import sqlite3
             try:
@@ -93,7 +130,6 @@ def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/c
                 logger.info(f"Restauración atómica (backup API) exitosa: {destination_path}")
             except sqlite3.DatabaseError as db_err:
                 # Si el destino estaba corrupto ("file is not a database"), el backup falla.
-                # En este caso extremo, hacemos el reemplazo a nivel de sistema operativo.
                 try:
                     conn_dst.close()
                 except:
@@ -113,10 +149,16 @@ def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/c
                 logger.error(f"Error invocando la rutina de rescate forzado: {rec_err}")
                 
             logger.info(f"DB descargada desde GCS: gs://{BUCKET_NAME}/{db_filename} -> {destination_path}")
-            # Guardamos la generación en session_state de streamlit si está disponible
+            
+            # Guardamos la generación y limpiamos cachés de Streamlit si está disponible
             try:
                 import streamlit as st
                 st.session_state.gcs_db_generation = blob.generation
+                from datetime import timezone, timedelta
+                tz_chile = timezone(timedelta(hours=-3))
+                dt_chile = blob.updated.astimezone(tz_chile)
+                st.session_state.gcs_last_sync_time = dt_chile.strftime("%d/%m/%Y %H:%M:%S")
+                st.cache_data.clear()
             except:
                 pass
             return True
@@ -142,14 +184,14 @@ def get_current_gcs_generation(db_filename="crm_database.db"):
         logger.warning(f"No se pudo obtener generación de GCS: {e}")
         return None
 
-def upload_db_to_gcs(source_path="data/crm_database.db", db_filename="crm_database.db", expected_generation=None):
+def upload_db_to_gcs(source_path="data/crm_database.db", db_filename="crm_database.db", expected_generation=None, force=False):
     """
     Sube la base de datos local a Google Cloud Storage (GCS)
     después de un guardado o actualización de clientes/movimientos,
     usando sqlite3.backup() para asegurar consistencia en caliente.
     
-    Si se proporciona expected_generation, la subida fallará (levantando PreconditionFailed)
-    si la nube fue modificada por alguien más en el intertanto.
+    Si force=True, sobreescribe incondicionalmente sin fallar por PreconditionFailed.
+    Si force=False y se proporciona expected_generation, fallará si hubo conflicto.
     """
     if not os.path.exists(source_path):
         return False
@@ -174,7 +216,7 @@ def upload_db_to_gcs(source_path="data/crm_database.db", db_filename="crm_databa
         blob = bucket.blob(db_filename)
         
         try:
-            if expected_generation is not None:
+            if not force and expected_generation is not None:
                 blob.upload_from_filename(backup_path, if_generation_match=expected_generation)
             else:
                 blob.upload_from_filename(backup_path)
@@ -199,6 +241,10 @@ def upload_db_to_gcs(source_path="data/crm_database.db", db_filename="crm_databa
             import streamlit as st
             blob.reload()
             st.session_state.gcs_db_generation = blob.generation
+            from datetime import timezone, timedelta
+            tz_chile = timezone(timedelta(hours=-3))
+            dt_chile = blob.updated.astimezone(tz_chile)
+            st.session_state.gcs_last_sync_time = dt_chile.strftime("%d/%m/%Y %H:%M:%S")
         except:
             pass
             
@@ -209,16 +255,19 @@ def upload_db_to_gcs(source_path="data/crm_database.db", db_filename="crm_databa
         logger.warning(f"Error subiendo DB a GCS: {e}")
         return False
 
-def safe_upload_with_streamlit_ui():
+def safe_upload_with_streamlit_ui(force=False):
     """
-    Wrapper para Streamlit: lee el session_state, intenta subir la Bóveda con if_generation_match,
-    y si falla por conflicto de concurrencia, muestra un st.error masivo y detiene la ejecución (st.stop).
-    Esto obliga al usuario a forzar la restauración desde GCS, impidiendo la sobreescritura accidental.
+    Wrapper para Streamlit: intenta subir la Bóveda a GCS.
+    Si force=True, sobreescribe sin chequear generación (para el botón 'Forzar Guardado').
+    Si falla por conflicto de concurrencia, muestra alerta clara.
     """
     import streamlit as st
-    expected = st.session_state.get('gcs_db_generation')
+    expected = None if force else st.session_state.get('gcs_db_generation')
     try:
-        return upload_db_to_gcs(expected_generation=expected)
+        res = upload_db_to_gcs(expected_generation=expected, force=force)
+        if not res:
+            st.error("⚠️ No se pudo completar la sincronización con Google Cloud Storage. Verifique sus credenciales o conexión.")
+        return res
     except Exception as e:
         if str(e) == "CONCURRENCY_CONFLICT":
             st.error("🚨 **ALERTA DE SEGURIDAD Y CONCURRENCIA** 🚨\n\n"
@@ -228,10 +277,11 @@ def safe_upload_with_streamlit_ui():
                      "intento de guardado de forma automática.\n\n"
                      "👉 **QUÉ DEBES HACER**: Ve a la barra lateral izquierda y presiona el botón "
                      "`☁️ Forzar Restauración desde la Nube (GCS)` para descargar los datos más recientes "
-                     "y luego vuelve a ingresar tu movimiento.")
+                     "o presiona `💾 Forzar Guardado Seguro` si estás seguro de sobreescribir.")
             st.stop()
         else:
-            raise e
+            st.error(f"⚠️ Error sincronizando con Google Cloud: {e}")
+            return False
 
 def upload_backup_zip_to_gcs(zip_path, destination_blob_name=None):
     """

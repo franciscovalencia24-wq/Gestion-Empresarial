@@ -23,17 +23,22 @@ def normalize_period(per_raw, fecha_dt=None):
     return None
 
 def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesorías SpA"):
-    if not os.path.exists(excel_path):
-        return {"status": "error", "message": f"El archivo {excel_path} no existe en la raíz del proyecto."}
+    # Si es ruta en disco, verificar existencia
+    if isinstance(excel_path, str):
+        if not os.path.exists(excel_path):
+            return {"status": "error", "message": f"El archivo '{excel_path}' no existe en la raíz del proyecto."}
 
     db = SessionLocal()
     try:
         try:
             xl = pd.ExcelFile(excel_path)
         except PermissionError:
-            temp_path = os.path.join(tempfile.gettempdir(), "temp_registro_facturas.xlsx")
-            subprocess.run(["powershell", "-Command", f"Copy-Item '{excel_path}' '{temp_path}' -Force"], check=True)
-            xl = pd.ExcelFile(temp_path)
+            if isinstance(excel_path, str):
+                temp_path = os.path.join(tempfile.gettempdir(), "temp_registro_facturas.xlsx")
+                subprocess.run(["powershell", "-Command", f"Copy-Item '{excel_path}' '{temp_path}' -Force"], check=True)
+                xl = pd.ExcelFile(temp_path)
+            else:
+                raise
 
         added_count = 0
 
@@ -203,13 +208,13 @@ def import_fv_excel(excel_path="REGISTRO FACTURAS.xlsx", company_name="FV Asesor
 
         db.commit()
         
-        # Respaldar automáticamente la BD en la nube (GCS)
+        # Respaldar automáticamente la BD en la nube (GCS) de manera forzada y definitiva
         try:
             from src.utils.gcs_sync import upload_db_to_gcs
-            if not upload_db_to_gcs():
+            if not upload_db_to_gcs(force=True):
                 return {
                     "status": "error",
-                    "message": "Los datos se procesaron en pantalla, pero OCURRIÓ UN ERROR GUARDANDO EN LA NUBE. Su internet puede haber fallado. Intente cargar los archivos nuevamente para asegurar el guardado."
+                    "message": "Los datos se procesaron en pantalla, pero OCURRIÓ UN ERROR GUARDANDO EN LA NUBE. Su internet o credenciales pueden haber fallado. Intente guardar manualmente en la barra lateral."
                 }
         except Exception as e:
             return {

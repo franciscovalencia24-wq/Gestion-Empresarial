@@ -51,35 +51,74 @@ def render_company_management_ui():
         show_new_form = st.checkbox("➕ Nuevo Movimiento", key="toggle_new_mov")
 
     st.sidebar.markdown("---")
-    
-    st.sidebar.markdown("**Opciones de Seguridad en Nube (Bóveda)**")
-    
-    if st.sidebar.button("☁️ Forzar Restauración desde la Nube (GCS)"):
-        from src.utils.gcs_sync import download_db_from_gcs
-        with st.spinner("Descargando base de datos desde GCS..."):
-            try:
-                download_db_from_gcs()
-                st.session_state["gcs_db_synced"] = True
-                st.sidebar.success("¡Restauración exitosa! Recargando...")
-                import time
-                time.sleep(1)
-                st.rerun()
-            except Exception as e:
-                st.sidebar.error(f"Error: {e}")
-                
-    st.sidebar.markdown("---")
-    
-    if st.sidebar.button("💾 Forzar Guardado Seguro en la Nube"):
-        from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
-        with st.spinner("Subiendo respaldo de seguridad a Google Cloud..."):
-            try:
-                if upload_db_to_gcs():
-                    st.sidebar.success("✅ Guardado en Bóveda confirmado. ¡Ya puede cerrar la ventana!")
+    st.sidebar.markdown("### ☁️ Bóveda en la Nube (GCS)")
+    from src.utils.gcs_sync import get_gcs_cloud_status, download_db_from_gcs, safe_upload_with_streamlit_ui
+    cloud_status = get_gcs_cloud_status()
+    if cloud_status.get("exists"):
+        st.sidebar.markdown(f"""
+        <div style='background-color: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155; font-size: 0.82rem; margin-bottom: 12px;'>
+            <div style='color: #22c55e; font-weight: bold; margin-bottom: 4px;'>● Conectado a Google Cloud</div>
+            <div style='color: #94a3b8;'>Último guardado en Nube:</div>
+            <div style='color: #f8fafc; font-weight: 700; font-size: 0.92rem; margin-top: 2px;'>{cloud_status.get("updated_chile_str")}</div>
+            <div style='color: #64748b; font-size: 0.72rem; margin-top: 4px;'>Tamaño: {cloud_status.get("size_mb")} MB | Gen: {cloud_status.get("generation")}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.sidebar.warning(f"⚠️ {cloud_status.get('error', 'Desconectado de la Nube')}")
+
+    col_bov1, col_bov2 = st.sidebar.columns(2)
+    with col_bov1:
+        if st.button("☁️ Restaurar", use_container_width=True, help="Descarga los datos más recientes desde Google Cloud Storage"):
+            with st.spinner("Descargando desde GCS..."):
+                if download_db_from_gcs():
+                    st.cache_data.clear()
+                    st.sidebar.success("¡Restauración exitosa!")
+                    import time
+                    time.sleep(1)
+                    st.rerun()
                 else:
-                    st.sidebar.error("⚠️ Error guardando en la Nube.")
-            except Exception as e:
-                st.sidebar.error(f"Error crítico: {e}")
-                
+                    st.sidebar.error("Error al descargar desde la nube.")
+
+    with col_bov2:
+        if st.button("💾 Guardar", use_container_width=True, type="primary", help="Guarda la base de datos actual en Google Cloud Storage"):
+            with st.spinner("Subiendo a Google Cloud..."):
+                try:
+                    if safe_upload_with_streamlit_ui(force=True):
+                        st.sidebar.success("✅ ¡Guardado seguro confirmado en la Nube!")
+                        import time
+                        time.sleep(1)
+                        st.rerun()
+                except Exception as e:
+                    st.sidebar.error(f"Error: {e}")
+
+    # Sincronizador de REGISTRO FACTURAS.xlsx en el Sidebar
+    with st.sidebar.expander("📊 Sincronizar REGISTRO FACTURAS.xlsx", expanded=False):
+        st.caption("Actualiza Abonos, Egresos y Socios desde la planilla oficial Excel.")
+        from src.ingestion.excel_importer_fv import import_fv_excel
+        if os.path.exists("REGISTRO FACTURAS.xlsx"):
+            if st.button("🔄 Importar Excel Local", use_container_width=True):
+                with st.spinner("Importando REGISTRO FACTURAS.xlsx y sincronizando con la Nube..."):
+                    res_xl = import_fv_excel("REGISTRO FACTURAS.xlsx", company_name=empresa_sel)
+                    if res_xl.get("status") == "success":
+                        st.sidebar.success(res_xl.get("message"))
+                        import time
+                        time.sleep(1)
+                        st.rerun()
+                    else:
+                        st.sidebar.error(res_xl.get("message"))
+
+        up_xlsx = st.file_uploader("O sube tu planilla Excel actualizada:", type=["xlsx", "xlsm"], key="up_excel_boveda_sync")
+        if up_xlsx and st.button("📥 Procesar Excel y Guardar en Nube", type="primary", use_container_width=True):
+            with st.spinner("Procesando Excel y subiendo a Google Cloud..."):
+                res_up = import_fv_excel(up_xlsx, company_name=empresa_sel)
+                if res_up.get("status") == "success":
+                    st.sidebar.success(res_up.get("message"))
+                    import time
+                    time.sleep(1)
+                    st.rerun()
+                else:
+                    st.sidebar.error(res_up.get("message"))
+
     st.sidebar.markdown("---")
 
     with st.expander("📥 Importar Registro SII (Compras/Ventas)", expanded=False):
@@ -311,11 +350,11 @@ def render_company_management_ui():
                     db.add(new_db_mov)
                     db.commit()
                     try:
-                        from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
-                        upload_db_to_gcs()
-                    except Exception:
-                        pass
-                    st.success(f"✅ Movimiento registrado exitosamente: {n_concepto} por {fmt_money(n_total)} en {n_cuenta}.")
+                        from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+                        safe_upload_with_streamlit_ui(force=True)
+                    except Exception as sync_e:
+                        st.warning(f"⚠️ Guardado en base de datos local, pero ocurrió un aviso sincronizando con la Nube: {sync_e}")
+                    st.success(f"✅ Movimiento registrado exitosamente y respaldado en la Bóveda: {n_concepto} por {fmt_money(n_total)} en {n_cuenta}.")
                     st.rerun()
 
         # 3. KPI METRICAS CONSOLIDADAS CON PRÉSTAMOS A SOCIOS Y SALDO BCI
@@ -644,11 +683,11 @@ def render_company_management_ui():
 
                 db.commit()
                 try:
-                    from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
-                    upload_db_to_gcs()
-                except Exception:
-                    pass
-                st.success("✅ Cambios en Ingresos guardados en la Base de Datos.")
+                    from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+                    safe_upload_with_streamlit_ui(force=True)
+                except Exception as sync_e:
+                    st.warning(f"⚠️ Guardado en base de datos local, pero ocurrió un aviso sincronizando con la Nube: {sync_e}")
+                st.success("✅ Cambios en Ingresos guardados en la Base de Datos y sincronizados con la Bóveda.")
                 st.rerun()
 
             with st.expander("🗑️ Eliminar un Ingreso Específico de la BD"):
@@ -663,10 +702,10 @@ def render_company_management_ui():
                             db.delete(mov_to_del)
                             db.commit()
                             try:
-                                from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
-                                upload_db_to_gcs()
-                            except Exception:
-                                pass
+                                from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+                                safe_upload_with_streamlit_ui(force=True)
+                            except Exception as sync_e:
+                                st.warning(f"⚠️ Eliminado localmente, pero ocurrió un aviso sincronizando con la Nube: {sync_e}")
                             st.success(f"✅ Ingreso ID {target_id} eliminado exitosamente.")
                             st.rerun()
                 else:
@@ -814,11 +853,11 @@ def render_company_management_ui():
 
                 db.commit()
                 try:
-                    from src.utils.gcs_sync import safe_upload_with_streamlit_ui as upload_db_to_gcs
-                    upload_db_to_gcs()
-                except Exception:
-                    pass
-                st.success("✅ Egresos y nuevos pagos (Arriendo/Gastos) guardados exitosamente.")
+                    from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+                    safe_upload_with_streamlit_ui(force=True)
+                except Exception as sync_e:
+                    st.warning(f"⚠️ Guardado en base de datos local, pero ocurrió un aviso sincronizando con la Nube: {sync_e}")
+                st.success("✅ Egresos y nuevos pagos guardados en Base de Datos y sincronizados con la Bóveda.")
                 st.rerun()
 
             with st.expander("🗑️ Eliminar un Egreso / Arriendo Específico de la BD"):
@@ -832,6 +871,11 @@ def render_company_management_ui():
                         if mov_to_del:
                             db.delete(mov_to_del)
                             db.commit()
+                            try:
+                                from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+                                safe_upload_with_streamlit_ui(force=True)
+                            except Exception as sync_e:
+                                st.warning(f"⚠️ Eliminado localmente, pero ocurrió un aviso sincronizando con la Nube: {sync_e}")
                             st.success(f"✅ Egreso ID {target_id} eliminado exitosamente.")
                             st.rerun()
                 else:
@@ -908,6 +952,30 @@ def render_company_management_ui():
                     </div>
                     """, unsafe_allow_html=True)
 
+                # Opción para eliminar movimientos de socio si hubo error
+                with st.expander("🗑️ Eliminar un Movimiento de Socio Específico de la BD", expanded=False):
+                    db_soc_movs = db.query(CompanyFinancialMovement).filter(
+                        CompanyFinancialMovement.empresa == empresa_sel,
+                        CompanyFinancialMovement.tipo_movimiento.in_(["PRESTAMO_SOCIO", "DEVOLUCION_SOCIO", "MOVIMIENTO_CTA_CTE"])
+                    ).order_by(CompanyFinancialMovement.id.desc()).all()
+                    if db_soc_movs:
+                        opts_del_soc = {f"ID {m.id} | {m.fecha} | {m.razon_social or 'Socio'} | {m.concepto or ''} | Total: {fmt_money(m.monto_total)}": m.id for m in db_soc_movs}
+                        sel_del_soc_str = st.selectbox("Seleccione el movimiento a eliminar:", list(opts_del_soc.keys()), key="sel_del_soc_opt")
+                        if st.button("🗑️ Confirmar y Eliminar Movimiento", key="btn_confirm_del_soc", type="primary"):
+                            target_id = opts_del_soc[sel_del_soc_str]
+                            mov_to_del = db.query(CompanyFinancialMovement).filter_by(id=target_id).first()
+                            if mov_to_del:
+                                db.delete(mov_to_del)
+                                db.commit()
+                                try:
+                                    from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+                                    safe_upload_with_streamlit_ui(force=True)
+                                except Exception as sync_e:
+                                    st.warning(f"⚠️ Eliminado localmente, pero ocurrió un aviso sincronizando con la Nube: {sync_e}")
+                                st.success(f"✅ Movimiento de Socio ID {target_id} eliminado exitosamente.")
+                                st.rerun()
+                    else:
+                        st.info("No hay movimientos de socios registrados para eliminar.")
             else:
                 st.info("Sin registros de préstamos o movimientos de cuenta corriente socio.")
 
