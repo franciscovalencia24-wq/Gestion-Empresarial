@@ -14,6 +14,10 @@ data/vector_db_local/
 db.sqlite3
 data/crm_database.db
 *.sqlite3
+*.db-wal
+*.db-shm
+data/*.db-wal
+data/*.db-shm
 
 # ─── Resguardos y Archivos Pesados (>100MB) ───────────────────────────────────
 backups/

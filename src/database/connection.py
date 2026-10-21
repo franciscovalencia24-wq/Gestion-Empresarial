@@ -60,18 +60,23 @@ def force_recover_db(db_abs):
                     with open(sql_path, "r", encoding="utf-8") as f:
                         conn_good.executescript(f.read())
                     conn_good.close()
-                    os.remove(sql_path)
                     logger.info("Rescate por Python iterdump completado.")
                 except Exception as e2:
                     logger.error(f"Fallo total en recuperación: {e2}")
+                    if not os.path.exists(db_abs) and os.path.exists(backup_path):
+                        import shutil
+                        shutil.copy2(backup_path, db_abs)
 
 if db_path:
     db_abs = os.path.abspath(db_path)
     force_recover_db(db_abs)
 
+from sqlalchemy.pool import NullPool
+
 engine = create_engine(
     DATABASE_URL, 
     echo=False, 
+    poolclass=NullPool if DATABASE_URL.startswith("sqlite") else None,
     connect_args={"timeout": 30} if DATABASE_URL.startswith("sqlite") else {}
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -89,6 +94,13 @@ def get_db():
 try:
     import src.database.models
     Base.metadata.create_all(bind=engine)
+    # Auto-migración defensiva para SQLite (las columnas añadidas no son creadas por create_all en tablas existentes)
+    from sqlalchemy import text
+    with engine.begin() as _conn:
+        try:
+            _conn.execute(text("ALTER TABLE client_profiles ADD COLUMN regimen_patrimonial VARCHAR(100) DEFAULT 'No Informado';"))
+        except Exception:
+            pass
 except Exception as e:
     import logging
     logging.getLogger("db_init").error(f"Error al inicializar esquemas: {e}")

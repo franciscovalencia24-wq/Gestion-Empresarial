@@ -141,12 +141,13 @@ def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/c
                 shutil.move(temp_path, destination_path)
                 logger.warning(f"Restauración por OS move (destino estaba corrupto): {db_err}")
                 
-            # 5. Si estaba corrupto, forzar el rescate inmediatamente
-            try:
-                from src.database.connection import force_recover_db
-                force_recover_db(os.path.abspath(destination_path))
-            except Exception as rec_err:
-                logger.error(f"Error invocando la rutina de rescate forzado: {rec_err}")
+            # 5. Si la descarga presentaba corrupción, invocar rescate de emergencia
+            if res and res[0] != "ok":
+                try:
+                    from src.database.connection import force_recover_db
+                    force_recover_db(os.path.abspath(destination_path))
+                except Exception as rec_err:
+                    logger.error(f"Error invocando la rutina de rescate forzado: {rec_err}")
                 
             logger.info(f"DB descargada desde GCS: gs://{BUCKET_NAME}/{db_filename} -> {destination_path}")
             
@@ -159,6 +160,7 @@ def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/c
                 dt_chile = blob.updated.astimezone(tz_chile)
                 st.session_state.gcs_last_sync_time = dt_chile.strftime("%d/%m/%Y %H:%M:%S")
                 st.cache_data.clear()
+                st.cache_resource.clear()
             except:
                 pass
             return True

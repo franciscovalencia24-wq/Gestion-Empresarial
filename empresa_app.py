@@ -47,13 +47,27 @@ sync_gcs_on_boot_global()
 if "gcs_session_initialized" not in st.session_state:
     try:
         from src.utils.gcs_sync import download_db_from_gcs, get_gcs_cloud_status
-        if not os.path.exists("data/crm_database.db"):
+        should_download = not os.path.exists("data/crm_database.db")
+        if not should_download:
+            try:
+                import sqlite3
+                conn_chk = sqlite3.connect("data/crm_database.db")
+                c_chk = conn_chk.cursor()
+                c_chk.execute("SELECT COUNT(*) FROM company_financial_movements")
+                cnt = c_chk.fetchone()[0]
+                conn_chk.close()
+                if cnt == 0:
+                    should_download = True
+            except Exception:
+                should_download = True
+
+        if should_download:
             download_db_from_gcs()
-        else:
-            c_stat = get_gcs_cloud_status()
-            if c_stat.get("exists"):
-                st.session_state.gcs_db_generation = c_stat.get("generation")
-                st.session_state.gcs_last_sync_time = c_stat.get("updated_chile_str")
+
+        c_stat = get_gcs_cloud_status()
+        if c_stat.get("exists"):
+            st.session_state.gcs_db_generation = c_stat.get("generation")
+            st.session_state.gcs_last_sync_time = c_stat.get("updated_chile_str")
         st.session_state["gcs_session_initialized"] = True
     except Exception as e:
         import logging
