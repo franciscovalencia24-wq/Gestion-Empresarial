@@ -9,7 +9,6 @@ from datetime import datetime
 sys.path.append(os.getcwd())
 from src.database.connection import SessionLocal
 from src.database.models import CompanyFinancialMovement, CompanyAccount
-from src.ingestion.excel_importer_fv import import_fv_excel
 
 def fmt_money(val):
     if val is None or pd.isna(val):
@@ -90,34 +89,6 @@ def render_company_management_ui():
                         st.rerun()
                 except Exception as e:
                     st.sidebar.error(f"Error: {e}")
-
-    # Sincronizador de REGISTRO FACTURAS.xlsx en el Sidebar
-    with st.sidebar.expander("📊 Sincronizar REGISTRO FACTURAS.xlsx", expanded=False):
-        st.caption("Actualiza Abonos, Egresos y Socios desde la planilla oficial Excel.")
-        from src.ingestion.excel_importer_fv import import_fv_excel
-        if os.path.exists("REGISTRO FACTURAS.xlsx"):
-            if st.button("🔄 Importar Excel Local", use_container_width=True):
-                with st.spinner("Importando REGISTRO FACTURAS.xlsx y sincronizando con la Nube..."):
-                    res_xl = import_fv_excel("REGISTRO FACTURAS.xlsx", company_name=empresa_sel)
-                    if res_xl.get("status") == "success":
-                        st.sidebar.success(res_xl.get("message"))
-                        import time
-                        time.sleep(1)
-                        st.rerun()
-                    else:
-                        st.sidebar.error(res_xl.get("message"))
-
-        up_xlsx = st.file_uploader("O sube tu planilla Excel actualizada:", type=["xlsx", "xlsm"], key="up_excel_boveda_sync")
-        if up_xlsx and st.button("📥 Procesar Excel y Guardar en Nube", type="primary", use_container_width=True):
-            with st.spinner("Procesando Excel y subiendo a Google Cloud..."):
-                res_up = import_fv_excel(up_xlsx, company_name=empresa_sel)
-                if res_up.get("status") == "success":
-                    st.sidebar.success(res_up.get("message"))
-                    import time
-                    time.sleep(1)
-                    st.rerun()
-                else:
-                    st.sidebar.error(res_up.get("message"))
 
     st.sidebar.markdown("---")
 
