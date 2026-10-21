@@ -71,7 +71,17 @@ def render_company_management_ui():
             with st.spinner("Descargando desde GCS..."):
                 if download_db_from_gcs():
                     st.cache_data.clear()
-                    st.sidebar.success("¡Restauración exitosa!")
+                    st.cache_resource.clear()
+                    try:
+                        import sqlite3
+                        conn_chk = sqlite3.connect("data/crm_database.db")
+                        c_chk = conn_chk.cursor()
+                        c_chk.execute("SELECT COUNT(*) FROM company_financial_movements")
+                        restored_count = c_chk.fetchone()[0]
+                        conn_chk.close()
+                        st.sidebar.success(f"¡Restauración exitosa! ({restored_count} movimientos)")
+                    except Exception:
+                        st.sidebar.success("¡Restauración exitosa!")
                     import time
                     time.sleep(1)
                     st.rerun()

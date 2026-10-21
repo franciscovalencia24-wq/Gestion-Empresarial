@@ -56,7 +56,7 @@ if "gcs_session_initialized" not in st.session_state:
                 c_chk.execute("SELECT COUNT(*) FROM company_financial_movements")
                 cnt = c_chk.fetchone()[0]
                 conn_chk.close()
-                if cnt == 0:
+                if cnt < 90:
                     should_download = True
             except Exception:
                 should_download = True
