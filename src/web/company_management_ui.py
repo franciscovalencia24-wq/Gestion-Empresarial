@@ -115,11 +115,15 @@ def render_company_management_ui():
                     if "editor_egresos_fv" in st.session_state and isinstance(st.session_state["editor_egresos_fv"], dict):
                         ed_diff_egr = st.session_state["editor_egresos_fv"].get("edited_rows", {})
                         if ed_diff_egr:
-                            movs_egr = db.query(CompanyFinancialMovement).filter(
-                                CompanyFinancialMovement.empresa.like("%FV%") if "FV" in empresa_sel else CompanyFinancialMovement.empresa.like("%ALTUS%"),
-                                CompanyFinancialMovement.tipo_movimiento == "EGRESO"
-                            ).order_by(CompanyFinancialMovement.fecha.desc()).all()
-                            id_map_egr = {i: m.id for i, m in enumerate(movs_egr)}
+                            view_ids_egr = st.session_state.get("current_egr_view_ids", [])
+                            if view_ids_egr:
+                                id_map_egr = {i: m_id for i, m_id in enumerate(view_ids_egr)}
+                            else:
+                                movs_egr = db.query(CompanyFinancialMovement).filter(
+                                    CompanyFinancialMovement.empresa.like("%FV%") if "FV" in empresa_sel else CompanyFinancialMovement.empresa.like("%ALTUS%"),
+                                    CompanyFinancialMovement.tipo_movimiento == "EGRESO"
+                                ).order_by(CompanyFinancialMovement.fecha.desc()).all()
+                                id_map_egr = {i: m.id for i, m in enumerate(movs_egr)}
                             for r_idx, diff_cols in ed_diff_egr.items():
                                 target_id = id_map_egr.get(int(r_idx))
                                 if target_id:
@@ -137,11 +141,15 @@ def render_company_management_ui():
                     if "editor_ingresos_fv" in st.session_state and isinstance(st.session_state["editor_ingresos_fv"], dict):
                         ed_diff_ing = st.session_state["editor_ingresos_fv"].get("edited_rows", {})
                         if ed_diff_ing:
-                            movs_ing = db.query(CompanyFinancialMovement).filter(
-                                CompanyFinancialMovement.empresa.like("%FV%") if "FV" in empresa_sel else CompanyFinancialMovement.empresa.like("%ALTUS%"),
-                                CompanyFinancialMovement.tipo_movimiento == "INGRESO"
-                            ).order_by(CompanyFinancialMovement.fecha.desc()).all()
-                            id_map_ing = {i: m.id for i, m in enumerate(movs_ing)}
+                            view_ids_ing = st.session_state.get("current_ing_view_ids", [])
+                            if view_ids_ing:
+                                id_map_ing = {i: m_id for i, m_id in enumerate(view_ids_ing)}
+                            else:
+                                movs_ing = db.query(CompanyFinancialMovement).filter(
+                                    CompanyFinancialMovement.empresa.like("%FV%") if "FV" in empresa_sel else CompanyFinancialMovement.empresa.like("%ALTUS%"),
+                                    CompanyFinancialMovement.tipo_movimiento == "INGRESO"
+                                ).order_by(CompanyFinancialMovement.fecha.desc()).all()
+                                id_map_ing = {i: m.id for i, m in enumerate(movs_ing)}
                             for r_idx, diff_cols in ed_diff_ing.items():
                                 target_id = id_map_ing.get(int(r_idx))
                                 if target_id:
@@ -740,14 +748,25 @@ def render_company_management_ui():
             with c_ingh2:
                 btn_save_ing_top = st.button("💾 Guardar Cambios en Ingresos", key="btn_save_ing_top", type="primary", use_container_width=True)
 
-            df_ing_view = df_ingresos.copy()
-            if not df_ing_view.empty:
-                cols_show = ["ID", "Fecha", "Período", "Folio", "Concepto / Detalle", "Monto Neto", "IVA", "Monto Total", "Cuenta Corriente", "Observaciones"]
-                df_ing_view = df_ing_view[cols_show]
-
-            cs1, cs2 = st.columns([2.5, 1.5])
-            with cs1:
-                sort_ing = st.selectbox("🔃 Ordenar Ingresos por:", [
+            # --- BARRA DE FILTROS Y BÚSQUEDA AVANZADA PARA INGRESOS ---
+            st.markdown("###### 🔍 Filtros y Búsqueda de Ingresos")
+            fi_c1, fi_c2, fi_c3 = st.columns([2.2, 1.3, 1.8])
+            with fi_c1:
+                search_ing_txt = st.text_input(
+                    "🔍 Buscar por Concepto / Folio / Obs:",
+                    placeholder="Concepto, Folio, Observación...",
+                    key="search_ing_txt"
+                )
+            with fi_c2:
+                available_ing_pers = sorted(list(df_ingresos["Período"].dropna().unique()), reverse=True) if not df_ingresos.empty and "Período" in df_ingresos.columns else []
+                filter_ing_pers = st.multiselect(
+                    "📅 Período:",
+                    options=available_ing_pers,
+                    placeholder="Todos los meses",
+                    key="filter_ing_pers"
+                )
+            with fi_c3:
+                sort_ing = st.selectbox("🔃 Ordenar por:", [
                     "Fecha (Más reciente primero)",
                     "Fecha (Más antigua primero)",
                     "Monto Total (Mayor a Menor)",
@@ -758,7 +777,25 @@ def render_company_management_ui():
                     "N° Factura / Folio (Menor a Mayor)"
                 ], key="sort_ing_sel")
 
+            df_ing_view = df_ingresos.copy()
             if not df_ing_view.empty:
+                cols_show = ["ID", "Fecha", "Período", "Folio", "Concepto / Detalle", "Monto Neto", "IVA", "Monto Total", "Cuenta Corriente", "Observaciones"]
+                df_ing_view = df_ing_view[cols_show]
+
+                # Aplicar filtro de búsqueda de texto libre
+                if search_ing_txt:
+                    s_term = search_ing_txt.strip().lower()
+                    mask = (
+                        df_ing_view["Concepto / Detalle"].fillna("").astype(str).str.lower().str.contains(s_term) |
+                        df_ing_view["Folio"].fillna("").astype(str).str.lower().str.contains(s_term) |
+                        df_ing_view["Observaciones"].fillna("").astype(str).str.lower().str.contains(s_term)
+                    )
+                    df_ing_view = df_ing_view[mask]
+
+                # Aplicar filtro de período
+                if filter_ing_pers:
+                    df_ing_view = df_ing_view[df_ing_view["Período"].isin(filter_ing_pers)]
+
                 if "Fecha (Más reciente" in sort_ing: df_ing_view = df_ing_view.sort_values(by="Fecha", ascending=False)
                 elif "Fecha (Más antigua" in sort_ing: df_ing_view = df_ing_view.sort_values(by="Fecha", ascending=True)
                 elif "Monto Total (Mayor a Menor)" in sort_ing: df_ing_view = df_ing_view.sort_values(by="Monto Total", ascending=False)
@@ -772,6 +809,18 @@ def render_company_management_ui():
                     df_ing_view["_folio_num"] = pd.to_numeric(df_ing_view["Folio"], errors="coerce").fillna(0)
                     df_ing_view = df_ing_view.sort_values(by="_folio_num", ascending=True).drop(columns=["_folio_num"])
 
+            tot_ing_filtrado = df_ing_view["Monto Total"].sum() if not df_ing_view.empty else 0
+            c_info_ing1, c_info_ing2 = st.columns([3, 1])
+            with c_info_ing1:
+                st.caption(f"Mostrando **{len(df_ing_view)}** de **{len(df_ingresos)}** ingresos | Facturado en vista: **{fmt_money(tot_ing_filtrado)}**")
+            with c_info_ing2:
+                if search_ing_txt or filter_ing_pers:
+                    if st.button("✖️ Limpiar Filtros", key="btn_clear_ing_filt", use_container_width=True):
+                        st.session_state["search_ing_txt"] = ""
+                        st.session_state["filter_ing_pers"] = []
+                        st.rerun()
+
+            st.session_state["current_ing_view_ids"] = list(df_ing_view["ID"]) if not df_ing_view.empty and "ID" in df_ing_view.columns else []
             df_ing_view = df_ing_view.reset_index(drop=True)
             edited_ing = st.data_editor(
                 df_ing_view,
@@ -901,24 +950,72 @@ def render_company_management_ui():
             with c_egrh2:
                 btn_save_egr_top = st.button("💾 Guardar Cambios en Egresos", key="btn_save_egr_top", type="primary", use_container_width=True)
 
+            # --- BARRA DE FILTROS Y BÚSQUEDA AVANZADA PARA EGRESOS ---
+            st.markdown("###### 🔍 Filtros y Búsqueda de Egresos")
+            fe_c1, fe_c2, fe_c3, fe_c4 = st.columns([2, 1.5, 1.5, 1.8])
+            
+            with fe_c1:
+                search_egr_txt = st.text_input(
+                    "🔍 Buscar por texto:",
+                    placeholder="Proveedor, RUT, Concepto...",
+                    key="search_egr_txt"
+                )
+            with fe_c2:
+                available_cats = sorted(list(df_egresos["Categoría"].dropna().unique())) if not df_egresos.empty and "Categoría" in df_egresos.columns else []
+                filter_egr_cats = st.multiselect(
+                    "📂 Categoría:",
+                    options=available_cats,
+                    placeholder="Todas las categorías",
+                    key="filter_egr_cats"
+                )
+            with fe_c3:
+                available_pers = sorted(list(df_egresos["Período"].dropna().unique()), reverse=True) if not df_egresos.empty and "Período" in df_egresos.columns else []
+                filter_egr_pers = st.multiselect(
+                    "📅 Período:",
+                    options=available_pers,
+                    placeholder="Todos los meses",
+                    key="filter_egr_pers"
+                )
+            with fe_c4:
+                sort_egr = st.selectbox(
+                    "🔃 Ordenar por:",
+                    [
+                        "Fecha (Más reciente primero)",
+                        "Fecha (Más antigua primero)",
+                        "Monto Total (Mayor a Menor)",
+                        "Monto Total (Menor a Mayor)",
+                        "Proveedor (A-Z)",
+                        "Proveedor (Z-A)",
+                        "Categoría (A-Z)"
+                    ],
+                    key="sort_egr_sel"
+                )
+
             df_egr_view = df_egresos.copy()
             if not df_egr_view.empty:
                 cols_show = ["ID", "Fecha", "Período", "Categoría", "RUT", "Razón Social / Proveedor", "Concepto / Detalle", "Monto Neto", "IVA", "Monto Total", "Cuenta Corriente", "Observaciones"]
                 df_egr_view = df_egr_view[cols_show]
 
-            cse1, cse2 = st.columns([2.5, 1.5])
-            with cse1:
-                sort_egr = st.selectbox("🔃 Ordenar Egresos por:", [
-                    "Fecha (Más reciente primero)",
-                    "Fecha (Más antigua primero)",
-                    "Monto Total (Mayor a Menor)",
-                    "Monto Total (Menor a Mayor)",
-                    "Proveedor (A-Z)",
-                    "Proveedor (Z-A)",
-                    "Categoría (A-Z)"
-                ], key="sort_egr_sel")
+                # Aplicar filtro de búsqueda de texto libre
+                if search_egr_txt:
+                    s_term = search_egr_txt.strip().lower()
+                    mask = (
+                        df_egr_view["Razón Social / Proveedor"].fillna("").astype(str).str.lower().str.contains(s_term) |
+                        df_egr_view["Concepto / Detalle"].fillna("").astype(str).str.lower().str.contains(s_term) |
+                        df_egr_view["RUT"].fillna("").astype(str).str.lower().str.contains(s_term) |
+                        df_egr_view["Observaciones"].fillna("").astype(str).str.lower().str.contains(s_term)
+                    )
+                    df_egr_view = df_egr_view[mask]
 
-            if not df_egr_view.empty:
+                # Aplicar filtro de categorías
+                if filter_egr_cats:
+                    df_egr_view = df_egr_view[df_egr_view["Categoría"].isin(filter_egr_cats)]
+
+                # Aplicar filtro de períodos
+                if filter_egr_pers:
+                    df_egr_view = df_egr_view[df_egr_view["Período"].isin(filter_egr_pers)]
+
+                # Ordenar
                 if "Fecha (Más reciente" in sort_egr: df_egr_view = df_egr_view.sort_values(by="Fecha", ascending=False)
                 elif "Fecha (Más antigua" in sort_egr: df_egr_view = df_egr_view.sort_values(by="Fecha", ascending=True)
                 elif "Monto Total (Mayor a Menor)" in sort_egr: df_egr_view = df_egr_view.sort_values(by="Monto Total", ascending=False)
@@ -927,6 +1024,20 @@ def render_company_management_ui():
                 elif "Proveedor (Z-A)" in sort_egr: df_egr_view = df_egr_view.sort_values(by="Razón Social / Proveedor", ascending=False)
                 elif "Categoría" in sort_egr: df_egr_view = df_egr_view.sort_values(by="Categoría", ascending=True)
 
+            tot_filtrado = df_egr_view["Monto Total"].sum() if not df_egr_view.empty else 0
+            
+            c_info_egr1, c_info_egr2 = st.columns([3, 1])
+            with c_info_egr1:
+                st.caption(f"Mostrando **{len(df_egr_view)}** de **{len(df_egresos)}** egresos | Total en vista: **{fmt_money(tot_filtrado)}**")
+            with c_info_egr2:
+                if search_egr_txt or filter_egr_cats or filter_egr_pers:
+                    if st.button("✖️ Limpiar Filtros", key="btn_clear_egr_filt", use_container_width=True):
+                        st.session_state["search_egr_txt"] = ""
+                        st.session_state["filter_egr_cats"] = []
+                        st.session_state["filter_egr_pers"] = []
+                        st.rerun()
+
+            st.session_state["current_egr_view_ids"] = list(df_egr_view["ID"]) if not df_egr_view.empty and "ID" in df_egr_view.columns else []
             df_egr_view = df_egr_view.reset_index(drop=True)
             edited_egr = st.data_editor(
                 df_egr_view,
