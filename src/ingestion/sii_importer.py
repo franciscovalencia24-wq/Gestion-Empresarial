@@ -11,9 +11,9 @@ from src.database.models import CompanyFinancialMovement
 logger = logging.getLogger("sii_importer")
 
 def auto_categorize_compra(razon_social: str) -> str:
-    """Aplica heurísticas a la razón social para deducir la categoría. Retorna ⚠️ CLASIFICAR GASTO si falla."""
+    """Aplica heurísticas a la razón social para deducir la categoría. Por defecto asigna GASTO / COMPRA."""
     if not razon_social:
-        return "⚠️ CLASIFICAR GASTO"
+        return "GASTO / COMPRA"
     
     razon = str(razon_social).upper()
     if "SUELDO" in razon: return "SUELDO"
@@ -22,7 +22,7 @@ def auto_categorize_compra(razon_social: str) -> str:
     if "ARRIENDO" in razon: return "ARRIENDO"
     if "HONORARIO" in razon or "BOLETA" in razon: return "HONORARIOS"
     
-    return "⚠️ CLASIFICAR GASTO"
+    return "GASTO / COMPRA"
 
 def process_sii_dataframe(df: pd.DataFrame, company_name: str, filename_context: str = ""):
     """

@@ -34,6 +34,25 @@ def render_company_management_ui():
     """, unsafe_allow_html=True)
 
 
+    # Inicialización de DB y auto-creación de tablas y columnas SQLite
+    from sqlalchemy import text
+    from src.database.connection import SessionLocal, engine, Base
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception:
+        pass
+
+    db = SessionLocal()
+    for col_sql in [
+        "ALTER TABLE company_financial_movements ADD COLUMN monto_exento FLOAT DEFAULT 0.0",
+        "ALTER TABLE company_financial_movements ADD COLUMN created_at DATETIME"
+    ]:
+        try:
+            db.execute(text(col_sql))
+            db.commit()
+        except Exception:
+            db.rollback()
+
     # 1. SELECCIÓN DE EMPRESA Y ACCIONES SUPERIORES
     col_emp, col_btn_new = st.columns([3, 1.5])
 
@@ -92,6 +111,49 @@ def render_company_management_ui():
         if st.button("💾 Guardar", use_container_width=True, type="primary", help="Guarda la base de datos actual en Google Cloud Storage"):
             with st.spinner("Subiendo a Google Cloud..."):
                 try:
+                    # Persistir cualquier cambio pendiente en session_state de egresos
+                    if "editor_egresos_fv" in st.session_state and isinstance(st.session_state["editor_egresos_fv"], dict):
+                        ed_diff_egr = st.session_state["editor_egresos_fv"].get("edited_rows", {})
+                        if ed_diff_egr:
+                            movs_egr = db.query(CompanyFinancialMovement).filter(
+                                CompanyFinancialMovement.empresa.like("%FV%") if "FV" in empresa_sel else CompanyFinancialMovement.empresa.like("%ALTUS%"),
+                                CompanyFinancialMovement.tipo_movimiento == "EGRESO"
+                            ).order_by(CompanyFinancialMovement.fecha.desc()).all()
+                            id_map_egr = {i: m.id for i, m in enumerate(movs_egr)}
+                            for r_idx, diff_cols in ed_diff_egr.items():
+                                target_id = id_map_egr.get(int(r_idx))
+                                if target_id:
+                                    target_mov = db.query(CompanyFinancialMovement).filter_by(id=target_id).first()
+                                    if target_mov:
+                                        if "Categoría" in diff_cols: target_mov.categoria = str(diff_cols["Categoría"]).strip()
+                                        if "Cuenta Corriente" in diff_cols: target_mov.cuenta_corriente = str(diff_cols["Cuenta Corriente"]).strip()
+                                        if "Concepto / Detalle" in diff_cols: target_mov.concepto = str(diff_cols["Concepto / Detalle"]).strip()
+                                        if "Razón Social / Proveedor" in diff_cols: target_mov.razon_social = str(diff_cols["Razón Social / Proveedor"]).strip()
+                                        if "Monto Total" in diff_cols: target_mov.monto_total = float(diff_cols["Monto Total"] or 0)
+                            db.commit()
+                            del st.session_state["editor_egresos_fv"]
+
+                    # Persistir cualquier cambio pendiente en session_state de ingresos
+                    if "editor_ingresos_fv" in st.session_state and isinstance(st.session_state["editor_ingresos_fv"], dict):
+                        ed_diff_ing = st.session_state["editor_ingresos_fv"].get("edited_rows", {})
+                        if ed_diff_ing:
+                            movs_ing = db.query(CompanyFinancialMovement).filter(
+                                CompanyFinancialMovement.empresa.like("%FV%") if "FV" in empresa_sel else CompanyFinancialMovement.empresa.like("%ALTUS%"),
+                                CompanyFinancialMovement.tipo_movimiento == "INGRESO"
+                            ).order_by(CompanyFinancialMovement.fecha.desc()).all()
+                            id_map_ing = {i: m.id for i, m in enumerate(movs_ing)}
+                            for r_idx, diff_cols in ed_diff_ing.items():
+                                target_id = id_map_ing.get(int(r_idx))
+                                if target_id:
+                                    target_mov = db.query(CompanyFinancialMovement).filter_by(id=target_id).first()
+                                    if target_mov:
+                                        if "Folio" in diff_cols: target_mov.folio_factura = str(diff_cols["Folio"]).strip()
+                                        if "Concepto / Detalle" in diff_cols: target_mov.concepto = str(diff_cols["Concepto / Detalle"]).strip()
+                                        if "Cuenta Corriente" in diff_cols: target_mov.cuenta_corriente = str(diff_cols["Cuenta Corriente"]).strip()
+                                        if "Monto Total" in diff_cols: target_mov.monto_total = float(diff_cols["Monto Total"] or 0)
+                            db.commit()
+                            del st.session_state["editor_ingresos_fv"]
+
                     if safe_upload_with_streamlit_ui(force=True):
                         st.sidebar.success("✅ ¡Guardado seguro confirmado en la Nube!")
                         import time
@@ -144,25 +206,7 @@ def render_company_management_ui():
 
 
 
-    # 2. CARGA DE DATOS DESDE BASE DE DATOS Y AUTO-CREACIÓN DE TABLAS Y COLUMNAS SQLITE
-    from sqlalchemy import text
-    from src.database.connection import SessionLocal, engine, Base
-    
-    try:
-        Base.metadata.create_all(bind=engine)
-    except Exception:
-        pass
-
-    db = SessionLocal()
-    for col_sql in [
-        "ALTER TABLE company_financial_movements ADD COLUMN monto_exento FLOAT DEFAULT 0.0",
-        "ALTER TABLE company_financial_movements ADD COLUMN created_at DATETIME"
-    ]:
-        try:
-            db.execute(text(col_sql))
-            db.commit()
-        except Exception:
-            db.rollback()
+    # 2. CARGA DE DATOS DESDE BASE DE DATOS
 
     # Auto-asegurar que el préstamo de $2.500.000 a Natalia Tapia (28.07.2026) exista siempre en la BD
     try:
@@ -527,7 +571,159 @@ def render_company_management_ui():
 
         st.markdown("---")
 
-        # 5. TABLAS EDITABLES CON ST.DATA_EDITOR
+        # 5. FUNCIONES CENTRALIZADAS DE PERSISTENCIA PARA TABLAS EDITABLES
+        def save_table_changes_ingresos(db_session, edited_df, original_df, empresa_nombre):
+            orig_ids = set()
+            if original_df is not None and not original_df.empty and "ID" in original_df.columns:
+                orig_ids = set(original_df["ID"].dropna().astype(int))
+
+            current_ids = set()
+            for idx, row in edited_df.iterrows():
+                m_id = row.get("ID")
+                if pd.notna(m_id) and str(m_id).strip() != "" and str(m_id).strip() != "nan":
+                    m_int = int(m_id)
+                    current_ids.add(m_int)
+                    mov_db = db_session.query(CompanyFinancialMovement).filter_by(id=m_int).first()
+                    if mov_db:
+                        f_val = row.get("Fecha")
+                        if pd.notna(f_val):
+                            try:
+                                if isinstance(f_val, str): f_dt = datetime.strptime(f_val, "%Y-%m-%d").date()
+                                elif hasattr(f_val, "date"): f_dt = f_val.date()
+                                else: f_dt = f_val
+                                if pd.isna(f_dt): f_dt = datetime.today().date()
+                                mov_db.fecha = f_dt
+                                mov_db.periodo = f_dt.strftime("%Y-%m")
+                            except: pass
+                        mov_db.concepto = str(row.get("Concepto / Detalle") or "")
+                        mov_db.folio_factura = str(row.get("Folio") or "")
+                        mov_db.monto_neto = float(row.get("Monto Neto", 0.0) or 0.0)
+                        mov_db.monto_iva = float(row.get("IVA", 0.0) or 0.0)
+                        tot_c = float(row.get("Monto Total", 0.0) or 0.0)
+                        if tot_c == 0: tot_c = mov_db.monto_neto + mov_db.monto_iva
+                        mov_db.monto_total = tot_c
+                        mov_db.cuenta_corriente = str(row.get("Cuenta Corriente") or "CTA. CTE. BCI: FV ASESORIAS")
+                        mov_db.observaciones = str(row.get("Observaciones") or "")
+                else:
+                    neto_val = float(row.get("Monto Neto", 0.0) or 0.0)
+                    iva_val = float(row.get("IVA", 0.0) or 0.0)
+                    tot_val = float(row.get("Monto Total", 0.0) or 0.0)
+                    if tot_val == 0.0: tot_val = neto_val + iva_val
+
+                    if tot_val > 0 or row.get("Concepto / Detalle"):
+                        f_val = row.get("Fecha")
+                        try:
+                            if isinstance(f_val, str): f_dt = datetime.strptime(f_val, "%Y-%m-%d").date()
+                            elif hasattr(f_val, "date"): f_dt = f_val.date()
+                            else: f_dt = datetime.today().date()
+                        except:
+                            f_dt = datetime.today().date()
+
+                        new_mov = CompanyFinancialMovement(
+                            empresa=empresa_nombre,
+                            tipo_movimiento="INGRESO",
+                            categoria="FACTURACION / ABONO",
+                            fecha=f_dt,
+                            periodo=f_dt.strftime("%Y-%m"),
+                            folio_factura=str(row.get("Folio") or ""),
+                            concepto=str(row.get("Concepto / Detalle") or ""),
+                            monto_neto=neto_val,
+                            monto_iva=iva_val,
+                            monto_total=tot_val,
+                            cuenta_corriente=str(row.get("Cuenta Corriente") or "CTA. CTE. BCI: FV ASESORIAS"),
+                            observaciones=str(row.get("Observaciones") or "Agregado en tabla editable")
+                        )
+                        db_session.add(new_mov)
+
+            for d_id in (orig_ids - current_ids):
+                del_mov = db_session.query(CompanyFinancialMovement).filter_by(id=d_id).first()
+                if del_mov: db_session.delete(del_mov)
+
+            db_session.commit()
+            if "editor_ingresos_fv" in st.session_state:
+                del st.session_state["editor_ingresos_fv"]
+
+        def save_table_changes_egresos(db_session, edited_df, original_df, empresa_nombre):
+            orig_ids = set()
+            if original_df is not None and not original_df.empty and "ID" in original_df.columns:
+                orig_ids = set(original_df["ID"].dropna().astype(int))
+
+            current_ids = set()
+            for idx, row in edited_df.iterrows():
+                m_id = row.get("ID")
+                if pd.notna(m_id) and str(m_id).strip() != "" and str(m_id).strip() != "nan":
+                    m_int = int(m_id)
+                    current_ids.add(m_int)
+                    mov_db = db_session.query(CompanyFinancialMovement).filter_by(id=m_int).first()
+                    if mov_db:
+                        f_val = row.get("Fecha")
+                        if pd.notna(f_val):
+                            try:
+                                if isinstance(f_val, str): f_dt = datetime.strptime(f_val, "%Y-%m-%d").date()
+                                elif hasattr(f_val, "date"): f_dt = f_val.date()
+                                else: f_dt = f_val
+                                if pd.isna(f_dt): f_dt = datetime.today().date()
+                                mov_db.fecha = f_dt
+                                mov_db.periodo = f_dt.strftime("%Y-%m")
+                            except: pass
+                        mov_db.razon_social = str(row.get("Razón Social / Proveedor") or "")
+                        mov_db.concepto = str(row.get("Concepto / Detalle") or "")
+                        mov_db.categoria = str(row.get("Categoría") or "GASTO / COMPRA").strip()
+                        mov_db.rut_contraparte = str(row.get("RUT") or "")
+                        mov_db.monto_neto = float(row.get("Monto Neto", 0.0) or 0.0)
+                        mov_db.monto_iva = float(row.get("IVA", 0.0) or 0.0)
+                        tot_c = float(row.get("Monto Total", 0.0) or 0.0)
+                        if tot_c == 0: tot_c = mov_db.monto_neto + mov_db.monto_iva
+                        mov_db.monto_total = tot_c
+                        mov_db.cuenta_corriente = str(row.get("Cuenta Corriente") or "CTA. CTE. BCI: FV ASESORIAS")
+                        mov_db.observaciones = str(row.get("Observaciones") or "")
+                else:
+                    neto_val = float(row.get("Monto Neto", 0.0) or 0.0)
+                    iva_val = float(row.get("IVA", 0.0) or 0.0)
+                    tot_val = float(row.get("Monto Total", 0.0) or 0.0)
+                    if tot_val == 0.0: tot_val = neto_val + iva_val
+
+                    if tot_val > 0 or row.get("Concepto / Detalle") or row.get("Razón Social / Proveedor"):
+                        f_val = row.get("Fecha")
+                        f_dt = datetime.today().date()
+                        if pd.notna(f_val):
+                            try:
+                                if isinstance(f_val, str): f_dt = datetime.strptime(f_val, "%Y-%m-%d").date()
+                                elif hasattr(f_val, "date"): f_dt = f_val.date()
+                                else: f_dt = f_val
+                            except:
+                                pass
+                        
+                        if pd.isna(f_dt):
+                            f_dt = datetime.today().date()
+
+                        cat_val = str(row.get("Categoría") or "ARRIENDO").strip() or "ARRIENDO"
+                        new_mov = CompanyFinancialMovement(
+                            empresa=empresa_nombre,
+                            tipo_movimiento="EGRESO",
+                            categoria=cat_val,
+                            fecha=f_dt,
+                            periodo=f_dt.strftime("%Y-%m"),
+                            rut_contraparte=str(row.get("RUT") or ""),
+                            razon_social=str(row.get("Razón Social / Proveedor") or "Inmobiliaria / Arriendo"),
+                            concepto=str(row.get("Concepto / Detalle") or "Pago de Arriendo Oficina"),
+                            monto_neto=neto_val,
+                            monto_iva=iva_val,
+                            monto_total=tot_val,
+                            cuenta_corriente=str(row.get("Cuenta Corriente") or "CTA. CTE. BCI: FV ASESORIAS"),
+                            observaciones=str(row.get("Observaciones") or "Registrado en tabla editable")
+                        )
+                        db_session.add(new_mov)
+
+            for d_id in (orig_ids - current_ids):
+                del_mov = db_session.query(CompanyFinancialMovement).filter_by(id=d_id).first()
+                if del_mov: db_session.delete(del_mov)
+
+            db_session.commit()
+            if "editor_egresos_fv" in st.session_state:
+                del st.session_state["editor_egresos_fv"]
+
+        # 6. TABLAS EDITABLES CON ST.DATA_EDITOR
         tab1, tab2, tab3, tab4, tab5 = st.tabs([
             "🟢 Facturas Emitidas / Abonos",
             "🔴 Facturas de Compra / Gastos",
@@ -537,8 +733,12 @@ def render_company_management_ui():
         ])
 
         with tab1:
-            st.markdown("##### 🟢 Registro de Facturación Emitida e Ingresos")
-            st.caption("Edita directamente los valores o agrégale observaciones. Presiona 'Guardar Cambios' para sincronizar con la BD.")
+            c_ingh1, c_ingh2 = st.columns([3, 1.5])
+            with c_ingh1:
+                st.markdown("##### 🟢 Registro de Facturación Emitida e Ingresos")
+                st.caption("Edita directamente los valores o agrégale observaciones. Presiona 'Guardar Cambios' para sincronizar con la BD y la Nube.")
+            with c_ingh2:
+                btn_save_ing_top = st.button("💾 Guardar Cambios en Ingresos", key="btn_save_ing_top", type="primary", use_container_width=True)
 
             df_ing_view = df_ingresos.copy()
             if not df_ing_view.empty:
@@ -594,81 +794,17 @@ def render_company_management_ui():
                 }
             )
 
-            if st.button("💾 Guardar Cambios en Ingresos", key="btn_save_ing", type="primary"):
-                orig_ids_ing = set()
-                if not df_ing_view.empty and "ID" in df_ing_view.columns:
-                    orig_ids_ing = set(df_ing_view["ID"].dropna().astype(int))
+            btn_save_ing_bottom = st.button("💾 Guardar Cambios en Ingresos", key="btn_save_ing_bottom", type="primary")
 
-                current_ids_ing = set()
-                for idx, row in edited_ing.iterrows():
-                    m_id = row.get("ID")
-                    if pd.notna(m_id) and str(m_id).strip() != "" and str(m_id).strip() != "nan":
-                        m_int = int(m_id)
-                        current_ids_ing.add(m_int)
-                        mov_db = db.query(CompanyFinancialMovement).filter_by(id=m_int).first()
-                        if mov_db:
-                            f_val = row.get("Fecha")
-                            if f_val:
-                                try:
-                                    if isinstance(f_val, str): f_dt = datetime.strptime(f_val, "%Y-%m-%d").date()
-                                    elif hasattr(f_val, "date"): f_dt = f_val.date()
-                                    else: f_dt = f_val
-                                    mov_db.fecha = f_dt
-                                    mov_db.periodo = f_dt.strftime("%Y-%m")
-                                except: pass
-                            mov_db.concepto = str(row.get("Concepto / Detalle", ""))
-                            mov_db.folio_factura = str(row.get("Folio", ""))
-                            mov_db.monto_neto = float(row.get("Monto Neto", 0.0) or 0.0)
-                            mov_db.monto_iva = float(row.get("IVA", 0.0) or 0.0)
-                            tot_c = float(row.get("Monto Total", 0.0) or 0.0)
-                            if tot_c == 0: tot_c = mov_db.monto_neto + mov_db.monto_iva
-                            mov_db.monto_total = tot_c
-                            mov_db.cuenta_corriente = str(row.get("Cuenta Corriente", ""))
-                            mov_db.observaciones = str(row.get("Observaciones", ""))
-                    else:
-                        # NUEVO INGRESO AGREGADO DINÁMICAMENTE EN TABLA
-                        neto_val = float(row.get("Monto Neto", 0.0) or 0.0)
-                        iva_val = float(row.get("IVA", 0.0) or 0.0)
-                        tot_val = float(row.get("Monto Total", 0.0) or 0.0)
-                        if tot_val == 0.0: tot_val = neto_val + iva_val
-
-                        if tot_val > 0 or row.get("Concepto / Detalle"):
-                            f_val = row.get("Fecha")
-                            try:
-                                if isinstance(f_val, str): f_dt = datetime.strptime(f_val, "%Y-%m-%d").date()
-                                elif hasattr(f_val, "date"): f_dt = f_val.date()
-                                else: f_dt = datetime.today().date()
-                            except:
-                                f_dt = datetime.today().date()
-
-                            new_mov = CompanyFinancialMovement(
-                                empresa=empresa_sel,
-                                tipo_movimiento="INGRESO",
-                                categoria="FACTURACION / ABONO",
-                                fecha=f_dt,
-                                periodo=f_dt.strftime("%Y-%m"),
-                                folio_factura=str(row.get("Folio") or ""),
-                                concepto=str(row.get("Concepto / Detalle") or ""),
-                                monto_neto=neto_val,
-                                monto_iva=iva_val,
-                                monto_total=tot_val,
-                                cuenta_corriente=str(row.get("Cuenta Corriente") or "CTA. CTE. BCI: FV ASESORIAS"),
-                                observaciones=str(row.get("Observaciones") or "Agregado en tabla editable")
-                            )
-                            db.add(new_mov)
-
-                # Eliminar de BD filas borradas en la tabla por el usuario
-                for d_id in (orig_ids_ing - current_ids_ing):
-                    del_mov = db.query(CompanyFinancialMovement).filter_by(id=d_id).first()
-                    if del_mov: db.delete(del_mov)
-
-                db.commit()
+            if btn_save_ing_top or btn_save_ing_bottom:
+                save_table_changes_ingresos(db, edited_ing, df_ing_view, empresa_sel)
                 try:
                     from src.utils.gcs_sync import safe_upload_with_streamlit_ui
                     safe_upload_with_streamlit_ui(force=True)
                 except Exception as sync_e:
                     st.warning(f"⚠️ Guardado en base de datos local, pero ocurrió un aviso sincronizando con la Nube: {sync_e}")
                 st.success("✅ Cambios en Ingresos guardados en la Base de Datos y sincronizados con la Bóveda.")
+                time.sleep(1)
                 st.rerun()
 
             with st.expander("🗑️ Eliminar un Ingreso Específico de la BD"):
@@ -693,8 +829,77 @@ def render_company_management_ui():
                     st.info("No hay ingresos registrados para eliminar.")
 
         with tab2:
-            st.markdown("##### 🔴 Registro de Facturas de Compra, Gastos y Arriendos")
-            st.caption("Puedes agregar nuevas filas al final de la tabla (ej: Arriendo), editar campos directamente o borrar filas. Presiona 'Guardar Cambios en Egresos' para persistir.")
+            # 1. CLASIFICADOR RÁPIDO PARA GASTOS PENDIENTES
+            unclass_egr = df_egresos[df_egresos["Categoría"] == "⚠️ CLASIFICAR GASTO"] if not df_egresos.empty else pd.DataFrame()
+            if not unclass_egr.empty:
+                num_unclass = len(unclass_egr)
+                with st.expander(f"⚡ Clasificador Rápido: {num_unclass} Gastos Pendientes de Clasificar", expanded=True):
+                    st.info("💡 **Selecciona la categoría para cada gasto y pincha en 'Guardar y Aplicar Categorías'.** Tus elecciones se guardarán de inmediato en la Base de Datos y en la Bóveda en la Nube sin perderse.")
+                    
+                    cat_opts = [
+                        "GASTO / COMPRA",
+                        "ARRIENDO",
+                        "SERVICIOS",
+                        "PAGO SUELDOS SOCIO",
+                        "IMPUESTOS F29",
+                        "REEMBOLSO GASTO / COMPRA SOCIO",
+                        "SUELDO",
+                        "PREVIRED",
+                        "HONORARIOS",
+                        "OTROS",
+                        "⚠️ CLASIFICAR GASTO"
+                    ]
+                    
+                    quick_cats_map = {}
+                    for _, u_row in unclass_egr.iterrows():
+                        u_id = int(u_row["ID"])
+                        c1, c2, c3, c4 = st.columns([1.2, 2.8, 1.2, 1.8])
+                        with c1:
+                            st.markdown(f"**ID {u_id}**<br/><small>{u_row['Fecha']}</small>", unsafe_allow_html=True)
+                        with c2:
+                            st.markdown(f"🏢 **{u_row['Razón Social / Proveedor']}**<br/><small>{u_row['Concepto / Detalle']}</small>", unsafe_allow_html=True)
+                        with c3:
+                            st.markdown(f"💰 **{fmt_money(u_row['Monto Total'])}**")
+                        with c4:
+                            prov_text = (str(u_row['Razón Social / Proveedor']) + " " + str(u_row['Concepto / Detalle'])).upper()
+                            def_idx = 0 # GASTO / COMPRA
+                            if "ARRIENDO" in prov_text: def_idx = 1
+                            elif any(k in prov_text for k in ["ENTEL", "CLARO", "WOM", "ENEL", "AGUAS", "CHILQUINTA"]): def_idx = 2
+                            elif "SUELDO" in prov_text: def_idx = 3
+                            elif "IMPUESTO" in prov_text: def_idx = 4
+                            
+                            quick_cats_map[u_id] = st.selectbox(
+                                f"Categoría ID {u_id}",
+                                cat_opts,
+                                index=def_idx,
+                                key=f"qcat_{u_id}",
+                                label_visibility="collapsed"
+                            )
+                        st.markdown("<hr style='margin: 4px 0;'/>", unsafe_allow_html=True)
+
+                    if st.button("💾 Guardar y Aplicar Categorías Clasificadas", key="btn_apply_quick_cats", type="primary", use_container_width=True):
+                        for m_id, n_cat in quick_cats_map.items():
+                            m_obj = db.query(CompanyFinancialMovement).filter_by(id=m_id).first()
+                            if m_obj:
+                                m_obj.categoria = str(n_cat).strip()
+                        db.commit()
+                        if "editor_egresos_fv" in st.session_state:
+                            del st.session_state["editor_egresos_fv"]
+                        try:
+                            from src.utils.gcs_sync import safe_upload_with_streamlit_ui
+                            safe_upload_with_streamlit_ui(force=True)
+                        except Exception as sync_e:
+                            st.warning(f"Aviso de sincronización con la Nube: {sync_e}")
+                        st.success(f"✅ ¡{len(quick_cats_map)} gastos clasificados correctamente y guardados en la Nube!")
+                        time.sleep(1)
+                        st.rerun()
+
+            c_egrh1, c_egrh2 = st.columns([3, 1.5])
+            with c_egrh1:
+                st.markdown("##### 🔴 Registro Completo de Facturas de Compra, Gastos y Arriendos")
+                st.caption("Puedes agregar nuevas filas al final de la tabla (ej: Arriendo), editar campos directamente o borrar filas. Presiona 'Guardar Cambios en Egresos' para persistir.")
+            with c_egrh2:
+                btn_save_egr_top = st.button("💾 Guardar Cambios en Egresos", key="btn_save_egr_top", type="primary", use_container_width=True)
 
             df_egr_view = df_egresos.copy()
             if not df_egr_view.empty:
@@ -751,94 +956,17 @@ def render_company_management_ui():
                 }
             )
 
-            if st.button("💾 Guardar Cambios en Egresos (Incluye Arriendos/Gastos Nuevos)", key="btn_save_egr", type="primary"):
-                orig_ids_egr = set()
-                if not df_egr_view.empty and "ID" in df_egr_view.columns:
-                    orig_ids_egr = set(df_egr_view["ID"].dropna().astype(int))
+            btn_save_egr_bottom = st.button("💾 Guardar Cambios en Egresos (Incluye Arriendos/Gastos Nuevos)", key="btn_save_egr_bottom", type="primary")
 
-                current_ids_egr = set()
-                for idx, row in edited_egr.iterrows():
-                    m_id = row.get("ID")
-                    if pd.notna(m_id) and str(m_id).strip() != "" and str(m_id).strip() != "nan":
-                        m_int = int(m_id)
-                        current_ids_egr.add(m_int)
-                        mov_db = db.query(CompanyFinancialMovement).filter_by(id=m_int).first()
-                        if mov_db:
-                            f_val = row.get("Fecha")
-                            if pd.notna(f_val):
-                                try:
-                                    if isinstance(f_val, str): f_dt = datetime.strptime(f_val, "%Y-%m-%d").date()
-                                    elif hasattr(f_val, "date"): f_dt = f_val.date()
-                                    else: f_dt = f_val
-                                    
-                                    if pd.isna(f_dt): 
-                                        f_dt = datetime.today().date()
-                                        
-                                    mov_db.fecha = f_dt
-                                    mov_db.periodo = f_dt.strftime("%Y-%m")
-                                except: pass
-                            mov_db.razon_social = str(row.get("Razón Social / Proveedor", ""))
-                            mov_db.concepto = str(row.get("Concepto / Detalle", ""))
-                            mov_db.categoria = str(row.get("Categoría", "ARRIENDO"))
-                            mov_db.rut_contraparte = str(row.get("RUT", ""))
-                            mov_db.monto_neto = float(row.get("Monto Neto", 0.0) or 0.0)
-                            mov_db.monto_iva = float(row.get("IVA", 0.0) or 0.0)
-                            tot_c = float(row.get("Monto Total", 0.0) or 0.0)
-                            if tot_c == 0: tot_c = mov_db.monto_neto + mov_db.monto_iva
-                            mov_db.monto_total = tot_c
-                            mov_db.cuenta_corriente = str(row.get("Cuenta Corriente", ""))
-                            mov_db.observaciones = str(row.get("Observaciones", ""))
-                    else:
-                        # NUEVO EGRESO / ARRIENDO AGREGADO DINÁMICAMENTE
-                        neto_val = float(row.get("Monto Neto", 0.0) or 0.0)
-                        iva_val = float(row.get("IVA", 0.0) or 0.0)
-                        tot_val = float(row.get("Monto Total", 0.0) or 0.0)
-                        if tot_val == 0.0: tot_val = neto_val + iva_val
-
-                        if tot_val > 0 or row.get("Concepto / Detalle") or row.get("Razón Social / Proveedor"):
-                            f_val = row.get("Fecha")
-                            f_dt = datetime.today().date()
-                            if pd.notna(f_val):
-                                try:
-                                    if isinstance(f_val, str): f_dt = datetime.strptime(f_val, "%Y-%m-%d").date()
-                                    elif hasattr(f_val, "date"): f_dt = f_val.date()
-                                    else: f_dt = f_val
-                                except:
-                                    pass
-                            
-                            if pd.isna(f_dt):
-                                f_dt = datetime.today().date()
-
-                            cat_val = str(row.get("Categoría", "ARRIENDO")).strip() or "ARRIENDO"
-                            new_mov = CompanyFinancialMovement(
-                                empresa=empresa_sel,
-                                tipo_movimiento="EGRESO",
-                                categoria=cat_val,
-                                fecha=f_dt,
-                                periodo=f_dt.strftime("%Y-%m"),
-                                rut_contraparte=str(row.get("RUT") or ""),
-                                razon_social=str(row.get("Razón Social / Proveedor") or "Inmobiliaria / Arriendo"),
-                                concepto=str(row.get("Concepto / Detalle") or "Pago de Arriendo Oficina"),
-                                monto_neto=neto_val,
-                                monto_iva=iva_val,
-                                monto_total=tot_val,
-                                cuenta_corriente=str(row.get("Cuenta Corriente") or "CTA. CTE. BCI: FV ASESORIAS"),
-                                observaciones=str(row.get("Observaciones") or "Registrado en tabla editable")
-                            )
-                            db.add(new_mov)
-
-                # Eliminar de BD filas borradas en la tabla por el usuario
-                for d_id in (orig_ids_egr - current_ids_egr):
-                    del_mov = db.query(CompanyFinancialMovement).filter_by(id=d_id).first()
-                    if del_mov: db.delete(del_mov)
-
-                db.commit()
+            if btn_save_egr_top or btn_save_egr_bottom:
+                save_table_changes_egresos(db, edited_egr, df_egr_view, empresa_sel)
                 try:
                     from src.utils.gcs_sync import safe_upload_with_streamlit_ui
                     safe_upload_with_streamlit_ui(force=True)
                 except Exception as sync_e:
                     st.warning(f"⚠️ Guardado en base de datos local, pero ocurrió un aviso sincronizando con la Nube: {sync_e}")
                 st.success("✅ Egresos y nuevos pagos guardados en Base de Datos y sincronizados con la Bóveda.")
+                time.sleep(1)
                 st.rerun()
 
             with st.expander("🗑️ Eliminar un Egreso / Arriendo Específico de la BD"):
