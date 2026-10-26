@@ -25,11 +25,18 @@ if root_path not in sys.path:
     sys.path.append(root_path)
 
 # DESCARGA ATÓMICA DE GCS (Global y Thread-safe para todo el contenedor)
-@st.cache_resource(show_spinner="Sincronizando Bóveda de Seguridad (Global)...")
+@st.cache_resource(show_spinner=False)
 def sync_gcs_on_boot_global():
+    db_path = "data/crm_database.db"
+    # Si la base de datos local YA EXISTE y tiene contenido válido (> 500 KB), NO bloqueamos el arranque
+    # de la aplicación descargando 25MB innecesariamente. La aplicación carga al instante.
+    if os.path.exists(db_path) and os.path.getsize(db_path) > 500000:
+        return True
+
+    # Si NO existe la base (ej: contenedor nuevo en la nube), se descarga desde GCS con timeout seguro.
     try:
         from src.utils.gcs_sync import download_db_from_gcs
-        download_db_from_gcs()
+        download_db_from_gcs(timeout=20)
     except Exception as e:
         import logging
         logging.error(f"Global GCS sync failed: {e}")
@@ -68,6 +75,7 @@ for query in [
     "ALTER TABLE client_profiles ADD COLUMN repertorio_constitucion VARCHAR(100)",
     "ALTER TABLE client_profiles ADD COLUMN fecha_ultima_vigencia DATE",
     "ALTER TABLE client_profiles ADD COLUMN documentos_legales_path VARCHAR(500)",
+    "ALTER TABLE client_profiles ADD COLUMN regimen_patrimonial VARCHAR(100) DEFAULT 'No Informado'",
     "ALTER TABLE prospects ADD COLUMN estado_previsional VARCHAR(100)",
     "ALTER TABLE prospects ADD COLUMN periodo_garantizado_rv_meses INTEGER DEFAULT 0",
     "ALTER TABLE prospects ADD COLUMN gastos_recurrentes FLOAT DEFAULT 0.0",
@@ -1668,6 +1676,36 @@ def main():
         render_b2b_employee_portal(token)
         return  # Detiene la carga del CRM principal
 
+    # --- BARRERA DE SEGURIDAD (LOGIN) ---
+    if not st.session_state.get('authenticated', False):
+        st.markdown("""
+            <style>
+            [data-testid="stSidebar"] { display: none; }
+            </style>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("<h1 style='text-align: center; color: #1f2937; margin-top: 50px;'>🔒 Acceso Restringido</h1>", unsafe_allow_html=True)
+        st.markdown("<p style='text-align: center; color: #6b7280;'>Ingrese sus credenciales para acceder a Altus Core.</p>", unsafe_allow_html=True)
+        
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            with st.container(border=True):
+                with st.form("login_form"):
+                    from src.core.config import ADMIN_USERNAME, ADMIN_PASSWORD_HASH
+                    from src.security.encryption import verify_password
+                    
+                    username = st.text_input("Usuario")
+                    password = st.text_input("Contraseña", type="password")
+                    submit = st.form_submit_button("Ingresar", use_container_width=True)
+                    
+                    if submit:
+                        if username == ADMIN_USERNAME and verify_password(password, ADMIN_PASSWORD_HASH):
+                            st.session_state.authenticated = True
+                            st.rerun()
+                        else:
+                            st.error("❌ Credenciales inválidas")
+        st.stop()
+
     st.markdown("""
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
@@ -1721,6 +1759,9 @@ def main():
         "💼 3. Gestión Comercial",
         "📥 4. Ingesta de Datos",
         "⚖️ 5. Radar Legal (OSINT)",
+        "🎯 6. Prospección B2B (Outbound)",
+        "🎙️ 7. Minutas e Inteligencia de Reuniones",
+        "🏛️ 8. Dashboard Ejecutivo de Mando",
         "📑 Reporte Patrimonial 360"
     ], key="main_nav")
     
@@ -2013,11 +2054,32 @@ def main():
         render_radar_legal()
 
     # ----------------------------------------------------
+    # 🎯 6. PROSPECCIÓN B2B (OUTBOUND)
+    # ----------------------------------------------------
+    elif nav == "🎯 6. Prospección B2B (Outbound)":
+        from src.web.prospecting_b2b_ui import render_prospecting_b2b
+        render_prospecting_b2b()
+
+    # ----------------------------------------------------
+    # 🎙️ 7. MINUTAS E INTELIGENCIA DE REUNIONES
+    # ----------------------------------------------------
+    elif nav == "🎙️ 7. Minutas e Inteligencia de Reuniones":
+        from src.web.meeting_intelligence_ui import render_meeting_intelligence
+        render_meeting_intelligence()
+
+    # ----------------------------------------------------
     # 📑 6. REPORTE PATRIMONIAL 360
     # ----------------------------------------------------
     elif nav == "📑 Reporte Patrimonial 360":
         from src.web.report_generator_ui import render_report_generator_ui
         render_report_generator_ui()
+
+    # ----------------------------------------------------
+    # 🏛️ 8. DASHBOARD EJECUTIVO DE MANDO
+    # ----------------------------------------------------
+    elif nav == "🏛️ 8. Dashboard Ejecutivo de Mando":
+        from src.web.board_ui import render as render_board_ui
+        render_board_ui()
 
     # ----------------------------------------------------
     # 🌟 SHOWCASE COMERCIAL (CATÁLOGO DE SOLUCIONES)
@@ -2030,6 +2092,11 @@ def main():
 
     # Pie de página en sidebar
     st.sidebar.markdown("---")
+    
+    if st.sidebar.button("🚪 Cerrar Sesión", use_container_width=True):
+        st.session_state.authenticated = False
+        st.rerun()
+        
     import datetime
     st.sidebar.markdown(f"v4.1.0 | Metodología Activa | Sincronizado: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}")
 

@@ -67,7 +67,7 @@ def get_gcs_cloud_status(db_filename="crm_database.db"):
         logger.warning(f"Error obteniendo estado de GCS: {e}")
         return {"exists": False, "error": str(e)}
 
-def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/crm_database.db"):
+def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/crm_database.db", timeout=30):
     """
     Descarga la última versión de la base de datos desde Google Cloud Storage (GCS)
     al iniciar la aplicación web en la nube, usando una descarga atómica para evitar corrupción.
@@ -79,8 +79,8 @@ def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/c
         
         bucket = client.bucket(BUCKET_NAME)
         blob = bucket.blob(db_filename)
-        if blob.exists():
-            blob.reload()
+        if blob.exists(timeout=min(10, timeout)):
+            blob.reload(timeout=min(10, timeout))
             import shutil
             import sqlite3
             try:
@@ -104,8 +104,8 @@ def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/c
             
             temp_path = destination_path + ".download.tmp"
             
-            # 2. Descargar a un archivo temporal primero
-            blob.download_to_filename(temp_path)
+            # 2. Descargar a un archivo temporal primero con timeout controlado
+            blob.download_to_filename(temp_path, timeout=timeout)
             
             # 3. Validar integridad del archivo descargado
             try:
