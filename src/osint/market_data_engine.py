@@ -47,7 +47,7 @@ class MarketDataEngine:
             ("USA", "^NDX", "NASDAQ 100"),
             ("MÉXICO", "^MXX", "IPC"),
             ("BRASIL", "^BVSP", "BOVESPA"),
-            ("CHILE", "^IPSA", "IPSA"),
+            ("CHILE", "MXIPSAGC.SN", "IPSA"),
             ("EUROPA", "^STOXX50E", "EURO STOXX 50"),
             ("EUROPA", "^GDAXI", "DAX 40"),
             ("EUROPA", "^FTSE", "FTSE 100"),
@@ -61,35 +61,6 @@ class MarketDataEngine:
         
         for region, symbol, name in tickers_info:
             try:
-                if name == "IPSA":
-                    import requests
-                    from bs4 import BeautifulSoup
-                    url_df = 'https://www.df.cl/mercados/bolsa-santiago'
-                    headers = {'User-Agent': 'Mozilla/5.0'}
-                    r = requests.get(url_df, headers=headers, timeout=10)
-                    soup = BeautifulSoup(r.text, 'html.parser')
-                    val_str = "N/D"
-                    efecto = "NEUTRAL"
-                    for group in soup.find_all('li', class_='indicadores__group'):
-                        name_tag = group.find('p', class_='indicadores__name')
-                        if name_tag and 'IPSA' in name_tag.text:
-                            val_tag = group.find('p', class_='indicadores__number')
-                            if val_tag:
-                                val_str = val_tag.text.strip()
-                                cls = val_tag.get('class', [])
-                                efecto = "ALZA" if "indicadores__number--green" in cls else "BAJA" if "indicadores__number--red" in cls else "NEUTRAL"
-                                break
-                    if val_str == "N/D":
-                        raise Exception("No se encontró el IPSA en DF.cl")
-                    
-                    results_by_region[region].append({
-                        "nombre": name,
-                        "valor": val_str,
-                        "efecto": efecto,
-                        "relevancia": "MODERADA"
-                    })
-                    continue
-
                 t = yf.Ticker(symbol)
                 data = t.history(period="5d")
                 
@@ -100,8 +71,14 @@ class MarketDataEngine:
                     close_today = float(data['Close'].iloc[-1])
                     close_yesterday = float(t.info.get('previousClose', close_today))
                 else:
-                    results_by_region[region].append({"nombre": name, "valor": "N/D", "efecto": "NEUTRAL"})
-                    continue
+                    fast_price = getattr(t.fast_info, 'last_price', None)
+                    fast_prev = getattr(t.fast_info, 'previous_close', None)
+                    if fast_price is not None and fast_prev is not None:
+                        close_today = float(fast_price)
+                        close_yesterday = float(fast_prev)
+                    else:
+                        results_by_region[region].append({"nombre": name, "valor": "N/D", "efecto": "NEUTRAL", "relevancia": "LEVE"})
+                        continue
                     
                 delta_pct = ((close_today - close_yesterday) / close_yesterday) * 100 if close_yesterday else 0
                 efecto = "ALZA" if delta_pct > 0 else "BAJA" if delta_pct < 0 else "NEUTRAL"
@@ -570,7 +547,7 @@ class MarketDataEngine:
             for idx in indices:
                 if "IPSA" in str(idx.get("nombre", "")).upper():
                     ipsa_val = str(idx.get("valor", "")).strip()
-                    if ipsa_val and ipsa_val != "N/D" and ipsa_val != "6.582,40":
+                    if ipsa_val and ipsa_val != "N/D":
                         ipsa_str = ipsa_val
                         
         ipsa_instruction = f"- IPSA: Si se menciona, indicar que cotiza en la zona de {ipsa_str} puntos." if ipsa_str else ""
@@ -625,7 +602,7 @@ class MarketDataEngine:
                 "post_linkedin": "El post completo para RRSS para LinkedIn. DEBE comenzar con un Titular Periodístico de Impacto en Mayúsculas seguido de los hallazgos clave de forma ágil y concisa. Finaliza EXACTAMENTE con este bloque literal:\n\n¿Qué podría significar esto para tus ahorros e inversiones?\nDescubre cómo preparar tu portafolio ante estos nuevos desafíos. Escríbenos para una asesoría patrimonial integral y optimiza tu estrategia de inversión.\n\n📧 contacto@fv-inversiones.com | 📱 WhatsApp: +56966779662\n\nAgrega hashtags relevantes.",
                 "explicacion_interna": "Una explicación detallada del análisis para uso interno.",
                 "explicacion_multifondos": "N/A",
-                "imagen_keyword_ingles": "1 o 2 palabras clave EN INGLÉS que describan visualmente el tema principal para buscar una fotografía (ej: 'oil rig', 'european central bank', 'wheat field').",
+                "imagen_keyword_ingles": "Término en inglés de 2 a 4 palabras para buscar una fotografía fotorrealista y dinámica en Unsplash para Wealth Management (ej: 'oil rig offshore', 'stock market trading screens', 'copper mining heavy machinery', 'container ship port'). EVITA fachadas de edificios estáticos como 'central bank' o 'building facade'.",
                 "impacto_local": {{}}
             }}
             """
@@ -651,7 +628,7 @@ class MarketDataEngine:
             "post_linkedin": "El post completo para RRSS para LinkedIn. REQUISITO DE TITULARES Y EXTENSIÓN ÁGIL: El post DEBE comenzar con un Titular Periodístico de Impacto en Mayúsculas (ej: 🚨 WALL STREET EN EXPECTATIVA ANTE LA FED) seguido de 3 párrafos concisos y ágiles (entre 1.100 y 1.400 caracteres brutos en total). Integra datos oficiales y estadísticas clave para diferenciarte de la competencia. Separa con dobles saltos de línea (\\n\\n). Finaliza EXACTAMENTE con este bloque literal:\n\n¿Qué podría significar esto para tus ahorros e inversiones?\nDescubre cómo preparar tu portafolio ante estos nuevos desafíos. Escríbenos para una asesoría patrimonial integral y optimiza tu estrategia de inversión.\n\n📧 contacto@fv-inversiones.com | 📱 WhatsApp: +56966779662\n\nAgrega de 3 a 5 HASHTAGS únicos e hiper-relevantes a la temática específica de la noticia (ej. empresas o commodities específicos mencionados). Tienes estrictamente prohibido usar hashtags genéricos repetitivos como #Inversiones, #Mercados, #MercadosFinancieros, #WallStreet o #Chile.",
             "explicacion_interna": "Una explicación detallada (dirigida a los asesores de FV) de la lógica económica/financiera detrás de la noticia elegida y cómo fundamenta de forma causal los impactos (alzas y bajas) predichos en los commodities e índices. Sirve para responder dudas de clientes.",
             "explicacion_multifondos": "Un texto explicativo de unas 3-4 líneas (para clientes) justificando los movimientos proyectados (ALZA o BAJA) específicos de los Multifondos chilenos en base a la noticia y los mercados globales. Se incluirá en la presentación.",
-            "imagen_keyword_ingles": "1 a 3 palabras clave EN INGLÉS que describan visualmente el sujeto principal de la noticia para buscar una fotografía fotorrealista (ej: 'european central bank', 'oil rig', 'container ship', 'natural gas', 'wall street'). NO uses palabras genéricas como 'finance' o 'economy'.",
+            "imagen_keyword_ingles": "Término en inglés de 2 a 4 palabras para buscar una fotografía fotorrealista y dinámica en Unsplash para Wealth Management (ej: 'stock market trading screens', 'artificial intelligence tech financial market', 'candlestick chart display', 'wall street trading floor', 'bond market investment', 'copper mining machinery'). EVITA fachadas de edificios estáticos como 'central bank' o 'building facade'.",
             "impacto_local": {{
                 "fondos_mutuos": [
                     {{"nombre": "GLOBAL", "efecto": "<EVALUAR>", "relevancia": "<EVALUAR>"}},
@@ -762,58 +739,99 @@ class MarketDataEngine:
             is_bullish = any(k in headline_upper for k in bullish_keywords)
             is_bearish = any(k in headline_upper for k in bearish_keywords) and not is_bullish
             
-            search_query = "finance stock market"
-            if imagen_keyword_ingles and len(imagen_keyword_ingles) > 2:
-                # Usar la keyword específica generada por la IA para mayor contexto
-                search_query = f"{imagen_keyword_ingles}"
-            elif is_bullish:
-                search_query = "finance bull market green growth"
-            elif is_bearish:
-                search_query = "finance crisis red market down"
+            # Sanitizar y enriquecer la búsqueda para evitar fachadas o edificios estáticos aburridos
+            edificios_o_instituciones = ['IMF', 'FED', 'CENTRAL BANK', 'FONDOS', 'GOBIERNO', 'BANCO', 'MINISTRY', 'BUILDING', 'FACADE']
+            has_boring_term = any(term in (imagen_keyword_ingles or "").upper() for term in edificios_o_instituciones)
+            
+            # Prioridad 1: Usar el concepto temático específico generado por Gemini para esta noticia
+            if imagen_keyword_ingles and len(imagen_keyword_ingles.strip()) >= 3 and not has_boring_term:
+                search_query = imagen_keyword_ingles.strip()
+            else:
+                # Prioridad 2: Detección semántica por palabras completas (usando regex para evitar que palabras como 'DIPLOMACIA', 'ECONOMIA' matcheen 'IA')
+                import re
+                headline_tokens = set(re.findall(r'\b[A-ZÁÉÍÓÚÑa-záéíóúñ]+\b', headline_upper))
+                
+                # Petróleo / Energía / Geopolítica
+                if any(w in headline_tokens for w in ['PETROLEO', 'PETRÓLEO', 'CRUDE', 'OIL', 'OPEP', 'BRENT', 'WTI', 'IRAN', 'IRÁN', 'ORIENTE', 'ENERGIA', 'ENERGÍA', 'COMBUSTIBLE']):
+                    search_query = "crude oil refinery barrels energy"
+                # Cobre / Minería
+                elif any(w in headline_tokens for w in ['COBRE', 'COPPER', 'MINERIA', 'MINERÍA', 'COCHILCO', 'LME', 'MINING']):
+                    search_query = "copper mining heavy machinery"
+                # Oro / Metales
+                elif any(w in headline_tokens for w in ['ORO', 'GOLD', 'PLATA', 'SILVER', 'METALES']):
+                    search_query = "gold bullion vault investment"
+                # Dólar / Tipo de Cambio / Forex
+                elif any(w in headline_tokens for w in ['DOLAR', 'DÓLAR', 'USD', 'DIVISAS', 'FOREX', 'MONEDA']):
+                    search_query = "foreign exchange currency trading forex"
+                # Inflación / Tasas / Bancos Centrales
+                elif any(w in headline_tokens for w in ['INFLACION', 'INFLACIÓN', 'IPC', 'PRECIOS', 'COSTO']):
+                    search_query = "economy inflation grocery market"
+                # Inteligencia Artificial / Tecnología REAL (palabra completa, no subcadena)
+                elif bool(re.search(r'\b(IA|AI|TECH|TECNOLOGÍA|TECNOLOGIA|SEMICONDUCTORES|CHIPS|NVIDIA|OPENAI)\b', headline_upper)) or "INTELIGENCIA ARTIFICIAL" in headline_upper:
+                    search_query = "artificial intelligence financial stock market"
+                elif is_bearish:
+                    search_query = "stock market candlestick chart dark screen"
+                elif is_bullish:
+                    search_query = "stock market trading screens data"
+                else:
+                    search_query = "financial markets trading screens stock data"
                 
             final_image_url = None
             unsplash_key = os.getenv("UNSPLASH_ACCESS_KEY")
             
             if unsplash_key:
                 try:
-                    unsplash_api_url = f"https://api.unsplash.com/search/photos?query={search_query}&orientation=landscape&per_page=30"
+                    unsplash_api_url = f"https://api.unsplash.com/search/photos?query={urllib.parse.quote(search_query)}&orientation=landscape&per_page=15"
                     headers = {"Authorization": f"Client-ID {unsplash_key}"}
                     response = requests.get(unsplash_api_url, headers=headers, timeout=5)
                     
                     if response.status_code == 200:
                         results = response.json().get('results', [])
                         if results:
-                            # Evitar elegir siempre los primeros para no repetir
-                            chosen = random.choice(results)
-                            final_image_url = chosen['urls']['raw'] + "&w=1200&q=80&fm=jpg&crop=entropy&fit=crop"
+                            # Filtrar fotos para evitar las que tengan tags de 'facade', 'building', 'architecture' si hay alternativas
+                            valid_results = [
+                                r for r in results 
+                                if not any(bad in (r.get('alt_description') or '').lower() for bad in ['building', 'facade', 'roof', 'architecture'])
+                            ]
+                            candidates = valid_results if valid_results else results
+                            # Elegir entre el Top 5 más relevante para asegurar máxima calidad visual
+                            top_candidates = candidates[:min(5, len(candidates))]
+                            chosen = random.choice(top_candidates)
+                            final_image_url = chosen['urls']['raw'] + "&w=1200&q=85&fm=jpg&crop=entropy&fit=crop"
                 except Exception as e:
                     logging.warning(f"Fallo en API de Unsplash: {e}")
                     
             if not final_image_url:
+                oil_catalog = ["1518709268805-4e9042af9f23", "1581094288338-2314dddb7ece", "1545239351-ef35f43d514b"]
+                copper_catalog = ["1578328819058-b69f3a3b0f6b", "1589939705384-5185137a7f0f"]
                 bullish_catalog = [
-                    "1611974789855-9c2a0a7236a3", "1590283603385-17ffb3a7f29f", "1642543492481-44e81e3914a7", 
-                    "1579226905147-1521626f21bc", "1600880292203-757bb62b4baf", "1559526324-4f879b880191",
+                    "1611974789855-9c2a0a7236a3", "1590283603385-17ffb3a7f29f", "1651341050677-24dba59ce0fd", 
+                    "1560221328-12fe60f83ab8", "1600880292203-757bb62b4baf", "1559526324-4f879b880191",
                     "1612015900986-4c4d017d1648", "1460925895917-afdab827c52f", "1526304640581-d334cdbbf45e"
                 ]
                 bearish_catalog = [
-                    "1640340434855-6084b1f4901c", "1535320903710-d993d3d77d29", "1512359403239-165b6b8f36c5",
-                    "1611974789855-9c2a0a7236a3", "1526304640581-d334cdbbf45e", "1633158829585-23ba8dc1c11a",
+                    "1640340434855-6084b1f4901c", "1535320903710-d993d3d77d29", "1651341050677-24dba59ce0fd",
+                    "1611974789855-9c2a0a7236a3", "1590283603385-17ffb3a7f29f", "1560221328-12fe60f83ab8",
                     "1507679622140-5e0031175069", "1611974789855-9c2a0a7236a3", "1535320903710-d993d3d77d29"
                 ]
                 neutral_catalog = [
-                    "1526304640581-d334cdbbf45e", "1486406146926-c627a92ad1ab", "1444653614773-995cb1ef9efa",
+                    "1651341050677-24dba59ce0fd", "1590283603385-17ffb3a7f29f", "1560221328-12fe60f83ab8",
                     "1611974789855-9c2a0a7236a3", "1507679622140-5e0031175069", "1460925895917-afdab827c52f",
                     "1612015900986-4c4d017d1648", "1642543492481-44e81e3914a7", "1559526324-4f879b880191"
                 ]
                 
-                if is_bullish:
+                if "oil" in search_query or "refinery" in search_query or "petrol" in search_query:
+                    selected_id = random.choice(oil_catalog)
+                elif "copper" in search_query or "mining" in search_query:
+                    selected_id = random.choice(copper_catalog)
+                elif is_bullish:
                     selected_id = random.choice(bullish_catalog)
                 elif is_bearish:
                     selected_id = random.choice(bearish_catalog)
                 else:
                     selected_id = random.choice(neutral_catalog)
                     
-                final_image_url = f"https://images.unsplash.com/photo-{selected_id}?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+                final_image_url = f"https://images.unsplash.com/photo-{selected_id}?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=85"
             
             data['imagen_noticia'] = final_image_url
             data['imagen_fallback'] = final_image_url
@@ -1045,7 +1063,7 @@ class MarketDataEngine:
         
         if mode in ["weekly", "audio"]:
             # Captura 4K simétrica de 1200px (40px padding a la izquierda y 40px a la derecha)
-            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 1840))
+            hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 2400))
         else:
             # Captura 4K simétrica de 1200px (40px padding a la izquierda y 40px a la derecha)
             hti.screenshot(html_file=html_path, save_as=img_name, size=(1200, 3400))
@@ -1329,10 +1347,46 @@ class MarketDataEngine:
                 
             logging.info(f"ÉXITO: Reportes generados en {out_dir}/")
             
-            # Intento de publicación automatizada (Opción 2)
-            self.publish_to_linkedin(f"linkedin_posts/{img_file}", post_linkedin_formatted)
-            
+            self.last_ai_data = ai_data
+            self.last_global_stats = global_stats
+            self.last_commodity_stats = commodity_stats
+            self.last_mode = mode
+
             return post_linkedin_formatted, img_file
+
+    def re_render_with_custom_image(self, new_image_b64_or_url=None, new_query=None, ai_data=None, global_stats=None, commodity_stats=None, mode="auto"):
+        """
+        Permite re-renderizar la infografía al instante con una nueva imagen (b64/url) o un nuevo término de búsqueda.
+        """
+        ai_data = ai_data or getattr(self, 'last_ai_data', None)
+        global_stats = global_stats or getattr(self, 'last_global_stats', None) or self.fetch_global_stats()
+        commodity_stats = commodity_stats or getattr(self, 'last_commodity_stats', None) or self.fetch_commodities_stats()
+        
+        if not ai_data:
+            logging.error("No hay ai_data disponible para re-renderizar.")
+            return None
+            
+        if new_image_b64_or_url:
+            ai_data['imagen_noticia'] = new_image_b64_or_url
+            ai_data['news_img_b64'] = new_image_b64_or_url
+        elif new_query:
+            unsplash_key = os.getenv("UNSPLASH_ACCESS_KEY")
+            if unsplash_key:
+                try:
+                    unsplash_api_url = f"https://api.unsplash.com/search/photos?query={urllib.parse.quote(new_query)}&orientation=landscape&per_page=15"
+                    headers = {"Authorization": f"Client-ID {unsplash_key}"}
+                    response = requests.get(unsplash_api_url, headers=headers, timeout=5)
+                    if response.status_code == 200:
+                        results = response.json().get('results', [])
+                        if results:
+                            # Priorizar fotos que no sean fachadas
+                            valid = [r for r in results if not any(b in (r.get('alt_description') or '').lower() for b in ['building', 'facade', 'roof'])]
+                            chosen = valid[0] if valid else results[0]
+                            ai_data['imagen_noticia'] = chosen['urls']['raw'] + "&w=1200&q=85&fm=jpg&crop=entropy&fit=crop"
+                except Exception as e:
+                    logging.warning(f"Error buscando en Unsplash para re-render: {e}")
+                    
+        return self.render_infographic(global_stats, commodity_stats, ai_data, mode)
 
 if __name__ == "__main__":
     engine = MarketDataEngine()
