@@ -748,7 +748,6 @@ class MarketDataEngine:
                 search_query = imagen_keyword_ingles.strip()
             else:
                 # Prioridad 2: Detección semántica por palabras completas (usando regex para evitar que palabras como 'DIPLOMACIA', 'ECONOMIA' matcheen 'IA')
-                import re
                 headline_tokens = set(re.findall(r'\b[A-ZÁÉÍÓÚÑa-záéíóúñ]+\b', headline_upper))
                 
                 # Petróleo / Energía / Geopolítica
@@ -1353,6 +1352,8 @@ class MarketDataEngine:
             self.last_mode = mode
 
             return post_linkedin_formatted, img_file
+        else:
+            raise RuntimeError("El modelo de Inteligencia Artificial no pudo procesar la noticia en este momento. Por favor reintenta la generación.")
 
     def re_render_with_custom_image(self, new_image_b64_or_url=None, new_query=None, ai_data=None, global_stats=None, commodity_stats=None, mode="auto"):
         """
