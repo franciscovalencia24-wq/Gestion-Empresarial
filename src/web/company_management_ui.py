@@ -16,6 +16,7 @@ def fmt_money(val):
     return f"$ {val:,.0f}".replace(",", ".")
 
 def render_company_management_ui():
+    import time
     st.markdown("""
     <div style='background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); padding: 25px; border-radius: 16px; margin-bottom: 25px; color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.3); border: 1px solid #334155;'>
         <div style='display: flex; align-items: center; justify-content: space-between;'>
@@ -101,7 +102,6 @@ def render_company_management_ui():
                         st.sidebar.success(f"¡Restauración exitosa! ({restored_count} movimientos)")
                     except Exception:
                         st.sidebar.success("¡Restauración exitosa!")
-                    import time
                     time.sleep(1)
                     st.rerun()
                 else:
@@ -164,7 +164,6 @@ def render_company_management_ui():
 
                     if safe_upload_with_streamlit_ui(force=True):
                         st.sidebar.success("✅ ¡Guardado seguro confirmado en la Nube!")
-                        import time
                         time.sleep(1)
                         st.rerun()
                 except Exception as e:
@@ -178,7 +177,6 @@ def render_company_management_ui():
         if sii_files and st.button("Procesar Archivos SII", type="primary"):
             from src.ingestion.sii_importer import process_sii_dataframe
             import io
-            import time
             has_error = False
             for f in sii_files:
                 try:
