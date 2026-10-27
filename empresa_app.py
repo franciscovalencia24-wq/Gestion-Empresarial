@@ -29,40 +29,15 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# DESCARGA ATÓMICA DE GCS (Global y Thread-safe para todo el contenedor)
+# SINCRONIZACIÓN AUTOMÁTICA CON LA NUBE (Google Cloud Storage)
 # -----------------------------------------------------------------------------
-@st.cache_resource(show_spinner="Sincronizando Bóveda de Seguridad (Global)...")
-def sync_gcs_on_boot_global():
-    try:
-        from src.utils.gcs_sync import download_db_from_gcs
-        download_db_from_gcs()
-    except Exception as e:
-        import logging
-        logging.error(f"Global GCS sync failed: {e}")
-    return True
-
-sync_gcs_on_boot_global()
-
-# Inicialización por sesión (para que cada pestaña tenga la generación actual de GCS)
+# Cada vez que se abre la app o inicia una sesión, se verifica con GCS
+# que la base de datos local sea idéntica a la última generación de la Bóveda.
+# Si la Nube tiene una versión más nueva, se descarga automáticamente.
 if "gcs_session_initialized" not in st.session_state:
     try:
-        from src.utils.gcs_sync import download_db_from_gcs, get_gcs_cloud_status
-        should_download = not os.path.exists("data/crm_database.db")
-        if not should_download:
-            try:
-                import sqlite3
-                conn_chk = sqlite3.connect("data/crm_database.db")
-                c_chk = conn_chk.cursor()
-                c_chk.execute("SELECT COUNT(*) FROM company_financial_movements")
-                cnt = c_chk.fetchone()[0]
-                conn_chk.close()
-                if cnt < 90:
-                    should_download = True
-            except Exception:
-                should_download = True
-
-        if should_download:
-            download_db_from_gcs()
+        from src.utils.gcs_sync import ensure_latest_database_from_gcs, get_gcs_cloud_status
+        ensure_latest_database_from_gcs()
 
         c_stat = get_gcs_cloud_status()
         if c_stat.get("exists"):

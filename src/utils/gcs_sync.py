@@ -151,7 +151,14 @@ def download_db_from_gcs(db_filename="crm_database.db", destination_path="data/c
                 
             logger.info(f"DB descargada desde GCS: gs://{BUCKET_NAME}/{db_filename} -> {destination_path}")
             
-            # Guardamos la generación y limpiamos cachés de Streamlit si está disponible
+            # Guardamos la generación localmente en disco y en session_state
+            gen_file = os.path.join(os.path.dirname(destination_path), ".gcs_local_generation")
+            try:
+                with open(gen_file, "w") as gf:
+                    gf.write(str(blob.generation))
+            except Exception as ge:
+                logger.warning(f"No se pudo guardar archivo de generacion local: {ge}")
+
             try:
                 import streamlit as st
                 st.session_state.gcs_db_generation = blob.generation
@@ -185,6 +192,42 @@ def get_current_gcs_generation(db_filename="crm_database.db"):
     except Exception as e:
         logger.warning(f"No se pudo obtener generación de GCS: {e}")
         return None
+
+def ensure_latest_database_from_gcs(db_filename="crm_database.db", destination_path="data/crm_database.db"):
+    """
+    Verifica automáticamente si la versión en la nube (GCS) es más reciente
+    que la versión local en disco. Si no existe la base local o hay una versión
+    más nueva en GCS (distinta generación), descarga inmediatamente la base de datos
+    para que el usuario SIEMPRE vea los datos 100% correctos y actualizados al abrir la página.
+    """
+    try:
+        if not os.path.exists(destination_path):
+            logger.info("Base de datos local no existe. Descargando desde GCS...")
+            return download_db_from_gcs(db_filename=db_filename, destination_path=destination_path)
+
+        status = get_gcs_cloud_status(db_filename=db_filename)
+        if not status.get("exists"):
+            logger.warning("Bóveda no accesible en GCS. Se mantiene copia local.")
+            return False
+
+        cloud_gen = str(status.get("generation"))
+        gen_file = os.path.join(os.path.dirname(destination_path), ".gcs_local_generation")
+        local_gen = None
+        if os.path.exists(gen_file):
+            try:
+                with open(gen_file, "r") as gf:
+                    local_gen = gf.read().strip()
+            except Exception:
+                local_gen = None
+
+        if local_gen != cloud_gen:
+            logger.info(f"Sincronizando: Nube tiene gen {cloud_gen} vs local {local_gen}. Descargando última versión...")
+            return download_db_from_gcs(db_filename=db_filename, destination_path=destination_path)
+
+        return True
+    except Exception as e:
+        logger.warning(f"Error en ensure_latest_database_from_gcs: {e}")
+        return False
 
 def upload_db_to_gcs(source_path="data/crm_database.db", db_filename="crm_database.db", expected_generation=None, force=False):
     """
@@ -238,10 +281,17 @@ def upload_db_to_gcs(source_path="data/crm_database.db", db_filename="crm_databa
             
         logger.info(f"DB subida exitosamente a GCS en modo SafeSync: {source_path} -> gs://{BUCKET_NAME}/{db_filename}")
         
-        # Actualizamos la versión local segura en session_state
+        # Actualizamos la versión local segura en session_state y en disco
+        try:
+            blob.reload()
+            gen_file = os.path.join(os.path.dirname(source_path), ".gcs_local_generation")
+            with open(gen_file, "w") as gf:
+                gf.write(str(blob.generation))
+        except Exception:
+            pass
+
         try:
             import streamlit as st
-            blob.reload()
             st.session_state.gcs_db_generation = blob.generation
             from datetime import timezone, timedelta
             tz_chile = timezone(timedelta(hours=-3))
