@@ -1169,11 +1169,10 @@ def render_campaign_launcher():
             
     # Tabla Interactiva de Selección
     display_df = filtered_df.copy()
-    def clp_format(val):
-        if pd.isna(val) or val == 0: return "$ 0"
-        return f"$ {int(val):,}".replace(",", ".")
     if 'monto_suscrito' in display_df.columns:
-        display_df['monto_suscrito'] = display_df['monto_suscrito'].apply(clp_format)
+        display_df['monto_suscrito'] = pd.to_numeric(display_df['monto_suscrito'], errors='coerce').fillna(0)
+    if 'saldo_administrado' in display_df.columns:
+        display_df['saldo_administrado'] = pd.to_numeric(display_df['saldo_administrado'], errors='coerce').fillna(0)
         
     default_select = st.session_state.get('select_all_toggle', False)
     display_df.insert(0, "Seleccionar", default_select)
@@ -1183,9 +1182,23 @@ def render_campaign_launcher():
         key=f"data_editor_prospects_{modo_crm}",
         column_config={
             "Seleccionar": st.column_config.CheckboxColumn("✅ Enviar", help="Márcalo para INCLUIRLO en la campaña de mensajes.", default=False),
-            "id": None, "rut": "RUT", "nombre": "Nombre (Doble clic para corregir)", "telefono": "Teléfono", "ciudad": "Ciudad", "monto_suscrito": "Monto"
+            "id": None,
+            "rut": "RUT",
+            "nombre": "Nombre (Doble clic para corregir)",
+            "telefono": "Teléfono",
+            "ciudad": "Ciudad",
+            "monto_suscrito": st.column_config.NumberColumn(
+                "Monto",
+                format="$ %,.0f",
+                help="Monto suscrito / inversión"
+            ),
+            "saldo_administrado": st.column_config.NumberColumn(
+                "Saldo Administrado",
+                format="$ %,.0f",
+                help="Saldo administrado"
+            )
         },
-        disabled=["rut", "telefono", "ciudad", "monto_suscrito"], 
+        disabled=["rut", "telefono", "ciudad", "monto_suscrito", "saldo_administrado"], 
         hide_index=True, width="stretch"
     )
     
