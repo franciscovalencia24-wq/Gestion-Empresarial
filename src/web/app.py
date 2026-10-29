@@ -1188,13 +1188,15 @@ def render_campaign_launcher():
             "telefono": "Teléfono",
             "ciudad": "Ciudad",
             "monto_suscrito": st.column_config.NumberColumn(
-                "Monto",
+                "Monto ($)",
                 format="$ %,.0f",
+                width=175,
                 help="Monto suscrito / inversión"
             ),
             "saldo_administrado": st.column_config.NumberColumn(
-                "Saldo Administrado",
+                "Saldo Administrado ($)",
                 format="$ %,.0f",
+                width=175,
                 help="Saldo administrado"
             )
         },
