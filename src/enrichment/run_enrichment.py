@@ -13,13 +13,17 @@ load_dotenv(override=True)
 APOLLO_API_KEY   = os.getenv("APOLLO_API_KEY", "")
 TRANSUNION_USER  = os.getenv("TRANSUNION_USER", "")
 TRANSUNION_PASS  = os.getenv("TRANSUNION_PASS", "")
+DATAFINDER_USER  = os.getenv("DATAFINDER_USER", "")
+DATAFINDER_PASS  = os.getenv("DATAFINDER_PASS", "")
 
 
 def get_active_provider() -> str:
     """Retorna el nombre del proveedor activo según las credenciales disponibles."""
+    if DATAFINDER_USER and DATAFINDER_PASS and "tu_usuario" not in DATAFINDER_USER:
+        return "datafinder"
     if APOLLO_API_KEY and len(APOLLO_API_KEY) > 10:
         return "apollo"
-    if TRANSUNION_USER and TRANSUNION_PASS:
+    if TRANSUNION_USER and TRANSUNION_PASS and "tu_usuario" not in TRANSUNION_USER:
         return "transunion"
     return "none"
 
@@ -71,6 +75,33 @@ def enrich_prospect_transunion(rut: str) -> dict:
         return {"success": False, "source": "transunion", "message": str(e)}
 
 
+def enrich_prospect_datafinder(rut: str, prospect_id: int = None, force: bool = False) -> dict:
+    """
+    Enriquece un prospecto mediante la plataforma Equifax DataFinder Chile.
+    Controla estrictamente la cuota mensual de 100 consultas.
+    """
+    try:
+        from src.enrichment.datafinder_api import enrich_prospect_datafinder as df_enrich
+        res = df_enrich(rut=rut, prospect_id=prospect_id, force=force, inject_db=False)
+        if res.get("encontrado"):
+            return {
+                "success": True,
+                "source": "datafinder",
+                "telefono": res.get("telefono_principal"),
+                "telefonos": res.get("telefonos", []),
+                "email": res.get("email_principal"),
+                "emails": res.get("emails", []),
+                "ise": res.get("ise"),
+                "fecha_nacimiento": res.get("fecha_nacimiento"),
+                "direccion": res.get("direccion"),
+                "comuna": res.get("comuna"),
+                "consultas_restantes": res.get("consultas_restantes_mes")
+            }
+        return {"success": False, "source": "datafinder", "message": res.get("error", "Sin resultados")}
+    except Exception as e:
+        return {"success": False, "source": "datafinder", "message": str(e)}
+
+
 def enrich_and_save(prospect_id: int, rut: str, nombre: str = None, empresa: str = None) -> dict:
     """
     Orquestador principal. Enriquece el prospecto con el mejor proveedor disponible
@@ -83,12 +114,14 @@ def enrich_and_save(prospect_id: int, rut: str, nombre: str = None, empresa: str
             "success": False,
             "message": (
                 "No hay proveedores de enriquecimiento configurados. "
-                "Agrega APOLLO_API_KEY o TRANSUNION_USER/TRANSUNION_PASS al archivo .env."
+                "Agrega DATAFINDER_USER/DATAFINDER_PASS, APOLLO_API_KEY o TRANSUNION_USER al archivo .env."
             ),
         }
 
     result = {}
-    if provider == "apollo":
+    if provider == "datafinder":
+        result = enrich_prospect_datafinder(rut, prospect_id)
+    elif provider == "apollo":
         result = enrich_prospect_apollo(rut, nombre, empresa)
     elif provider == "transunion":
         result = enrich_prospect_transunion(rut)
@@ -102,6 +135,12 @@ def enrich_and_save(prospect_id: int, rut: str, nombre: str = None, empresa: str
             updates["email"] = result["email"]
         if result.get("nombre") and not nombre:
             updates["nombre"] = result["nombre"]
+        if result.get("fecha_nacimiento"):
+            updates["fecha_nacimiento"] = result["fecha_nacimiento"]
+        if result.get("direccion"):
+            updates["direccion"] = result["direccion"]
+        if result.get("comuna"):
+            updates["ciudad"] = result["comuna"]
 
         if updates:
             set_clause = ", ".join([f"{k} = :{k}" for k in updates])
