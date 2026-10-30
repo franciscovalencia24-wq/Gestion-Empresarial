@@ -100,9 +100,10 @@ def render_client_management_ui():
 
         c_search1, c_search2 = st.columns(2)
         with c_search1:
-            rut_manual = st.text_input("🔍 Escribir RUT Exacto (opcional):", placeholder="Ej: 12345678-9")
+            rut_manual = st.text_input("🔍 Escribir RUT Exacto (opcional):", placeholder="Ej: 12.345.678-9 o 12345678-9")
         
-        opciones = df.apply(lambda row: f"{row['rut']} - {row['nombre']} {'(Cliente)' if row['es_cliente'] else '(Prospecto)'}", axis=1).tolist()
+        from src.utils.rut_utils import format_rut_miles, clean_rut
+        opciones = df.apply(lambda row: f"{format_rut_miles(row['rut'])} - {row['nombre']} {'(Cliente)' if row['es_cliente'] else '(Prospecto)'}", axis=1).tolist()
         
         with c_search2:
             cliente_seleccionado_texto = st.selectbox("O buscar en lista desplegable:", ["Seleccione..."] + opciones)
@@ -111,7 +112,8 @@ def render_client_management_ui():
         nombre_seleccionado = None
 
         if rut_manual:
-            match = df[df['rut'].str.contains(rut_manual, na=False, case=False)]
+            rut_manual_clean = clean_rut(rut_manual)
+            match = df[df['rut'].str.contains(rut_manual, na=False, case=False) | df['rut'].str.contains(rut_manual_clean, na=False, case=False)]
             if not match.empty:
                 rut_seleccionado = match.iloc[0]['rut']
                 nombre_seleccionado = match.iloc[0]['nombre']
@@ -123,9 +125,9 @@ def render_client_management_ui():
                         if nuevo_nombre.strip():
                             try:
                                 with engine.begin() as con:
-                                    con.execute(text("INSERT INTO prospects (rut, nombre, es_cliente) VALUES (:r, :n, 0)"), {"r": rut_manual, "n": nuevo_nombre})
+                                    con.execute(text("INSERT INTO prospects (rut, nombre, es_cliente) VALUES (:r, :n, 0)"), {"r": rut_manual_clean, "n": nuevo_nombre})
                                 st.success("Prospecto creado exitosamente.")
-                                st.session_state.current_client_rut = rut_manual
+                                st.session_state.current_client_rut = rut_manual_clean
                                 st.session_state.current_client_name = nuevo_nombre
                                 st.rerun()
                             except Exception as e:
@@ -133,17 +135,18 @@ def render_client_management_ui():
                         else:
                             st.error("Por favor, ingresa un nombre para registrar el prospecto.")
         elif cliente_seleccionado_texto != "Seleccione...":
-            rut_seleccionado = cliente_seleccionado_texto.split(" - ")[0]
+            rut_raw = cliente_seleccionado_texto.split(" - ")[0]
+            rut_seleccionado = clean_rut(rut_raw)
             nombre_seleccionado = cliente_seleccionado_texto.split(" - ")[1].split(" (")[0]
 
         if rut_seleccionado and nombre_seleccionado:
             st.session_state.current_client_rut = rut_seleccionado
             st.session_state.current_client_name = nombre_seleccionado
-            st.success(f"✅ Cliente Seleccionado: {st.session_state.current_client_name} ({rut_seleccionado})")
+            st.success(f"✅ Cliente Seleccionado: {st.session_state.current_client_name} ({format_rut_miles(rut_seleccionado)})")
             st.info("Este cliente se utilizará como base para los análisis posteriores en la plataforma.")
         else:
             if "current_client_rut" in st.session_state:
-                st.info(f"Cliente activo actualmente: {st.session_state.current_client_name} ({st.session_state.current_client_rut})")
+                st.info(f"Cliente activo actualmente: {st.session_state.current_client_name} ({format_rut_miles(st.session_state.current_client_rut)})")
 
 
 
@@ -341,17 +344,29 @@ def render_client_profile(is_b2b=False):
                         "Poderes y Restricciones": r.poderes_restricciones
                     } for r in prospect.company_representatives])
 
-                if prospect.profile:
-                    nota_val = prospect.profile.notas_neuroventas or ""
-                    alerta_val = prospect.profile.alertas_sistema or ""
-                    tipo_persona_val = getattr(prospect.profile, 'tipo_persona', 'PN') or 'PN'
-                    fecha_const_val = getattr(prospect.profile, 'fecha_constitucion', None)
-                    notaria_val = getattr(prospect.profile, 'notaria_constitucion', "") or ""
-                    repertorio_val = getattr(prospect.profile, 'repertorio_constitucion', "") or ""
-                    fecha_vig_val = getattr(prospect.profile, 'fecha_ultima_vigencia', None)
-                    doc_legal_val = getattr(prospect.profile, 'documentos_legales_path', "") or ""
+                profile_obj = None
+                try:
+                    profile_obj = prospect.profile
+                except Exception:
+                    try:
+                        with engine.begin() as _con:
+                            _con.execute(text("ALTER TABLE client_profiles ADD COLUMN regimen_patrimonial VARCHAR(100) DEFAULT 'No Informado';"))
+                        db.expire_all()
+                        profile_obj = prospect.profile
+                    except Exception:
+                        profile_obj = None
+
+                if profile_obj:
+                    nota_val = profile_obj.notas_neuroventas or ""
+                    alerta_val = profile_obj.alertas_sistema or ""
+                    tipo_persona_val = getattr(profile_obj, 'tipo_persona', 'PN') or 'PN'
+                    fecha_const_val = getattr(profile_obj, 'fecha_constitucion', None)
+                    notaria_val = getattr(profile_obj, 'notaria_constitucion', "") or ""
+                    repertorio_val = getattr(profile_obj, 'repertorio_constitucion', "") or ""
+                    fecha_vig_val = getattr(profile_obj, 'fecha_ultima_vigencia', None)
+                    doc_legal_val = getattr(profile_obj, 'documentos_legales_path', "") or ""
                 
-                    if not heirs and prospect.profile.cantidad_herederos == 0:
+                    if not heirs and profile_obj.cantidad_herederos == 0:
                         na_val = True
 
             db.close()

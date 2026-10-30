@@ -1174,6 +1174,11 @@ def render_campaign_launcher():
     if 'saldo_administrado' in display_df.columns:
         display_df['saldo_administrado'] = pd.to_numeric(display_df['saldo_administrado'], errors='coerce').fillna(0)
         
+    # Visualización de RUT con separadores de miles
+    if 'rut' in display_df.columns:
+        from src.utils.rut_utils import format_rut_miles
+        display_df['rut'] = display_df['rut'].apply(format_rut_miles)
+
     default_select = st.session_state.get('select_all_toggle', False)
     display_df.insert(0, "Seleccionar", default_select)
 
@@ -1209,7 +1214,12 @@ def render_campaign_launcher():
     if not changed_names.empty:
         with engine.connect() as con:
             for _, row in changed_names.iterrows():
-                con.execute(text("UPDATE prospects SET nombre = :nombre WHERE rut = :rut"), {"nombre": row['nombre'], "rut": row['rut']})
+                clean_r = str(row['rut']).replace('.', '').strip()
+                con.execute(text("UPDATE prospects SET nombre = :nombre WHERE rut = :rut OR rut = :clean_r"), {
+                    "nombre": row['nombre'], 
+                    "rut": row['rut'],
+                    "clean_r": clean_r
+                })
             con.commit()
         st.toast(f"✅ Se guardaron {len(changed_names)} cambio(s) en la base de datos.", icon="💾")
             
@@ -1246,8 +1256,12 @@ def render_campaign_launcher():
                 st.error("Selecciona al menos un prospecto con la casilla ✅ Enviar para descartarlo.")
             else:
                 with engine.connect() as con:
-                    rut_list_str = "','".join(prospectos_seleccionados)
-                    con.execute(text(f"UPDATE prospects SET status_contacto = 'Descartado' WHERE rut IN ('{rut_list_str}')"))
+                    rut_list = [str(r).strip() for r in prospectos_seleccionados]
+                    clean_ruts = [r.replace('.', '') for r in rut_list]
+                    all_targets = list(set(rut_list + clean_ruts))
+                    placeholders = ", ".join([f":r{i}" for i in range(len(all_targets))])
+                    params = {f"r{i}": r for i, r in enumerate(all_targets)}
+                    con.execute(text(f"UPDATE prospects SET status_contacto = 'Descartado' WHERE rut IN ({placeholders})"), params)
                     con.commit()
                 if cache_key in st.session_state:
                     del st.session_state[cache_key]
@@ -1260,8 +1274,12 @@ def render_campaign_launcher():
                 st.error("Selecciona al menos un prospecto con la casilla ✅ Enviar para restaurarlo.")
             else:
                 with engine.connect() as con:
-                    rut_list_str = "','".join(prospectos_seleccionados)
-                    con.execute(text(f"UPDATE prospects SET status_contacto = 'Pendiente' WHERE rut IN ('{rut_list_str}')"))
+                    rut_list = [str(r).strip() for r in prospectos_seleccionados]
+                    clean_ruts = [r.replace('.', '') for r in rut_list]
+                    all_targets = list(set(rut_list + clean_ruts))
+                    placeholders = ", ".join([f":r{i}" for i in range(len(all_targets))])
+                    params = {f"r{i}": r for i, r in enumerate(all_targets)}
+                    con.execute(text(f"UPDATE prospects SET status_contacto = 'Pendiente' WHERE rut IN ({placeholders})"), params)
                     con.commit()
                 if cache_key in st.session_state:
                     del st.session_state[cache_key]
